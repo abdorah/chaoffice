@@ -1,6 +1,7 @@
 // lib/core/themes.dart
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class AppThemes {
   static const Color _primaryColor = CupertinoColors.systemBlue;
@@ -43,5 +44,9 @@ class AppThemes {
 
   static CupertinoThemeData getTheme(Brightness brightness) {
     return brightness == Brightness.light ? lightTheme : darkTheme;
+  }
+
+  static TextStyle getTextStyle(context) {
+    return getTheme(Theme.of(context).brightness).textTheme.textStyle;
   }
 }

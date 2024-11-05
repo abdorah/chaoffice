@@ -1,5 +1,6 @@
 // lib/src/screens/sidebar_menu.dart
 
+import 'package:chaoffice/src/core/themes.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -22,42 +23,42 @@ class SideBarMenu extends StatelessWidget {
           ),
           const DrawerListTile(
             title: 'Home',
-            icon: CupertinoIcons.chart_pie,
+            icon: Icons.pie_chart_outline,
             route: 'Home',
           ),
           const DrawerListTile(
             title: 'Dashboard',
-            icon: CupertinoIcons.square_grid_2x2,
+            icon: Icons.dashboard_outlined,
             route: 'Dashboard',
           ),
           const DrawerListTile(
             title: 'Plugins',
-            icon: CupertinoIcons.app_badge,
+            icon: Icons.dashboard_customize_outlined,
             route: 'Plugins',
           ),
           const DrawerListTile(
             title: 'Documents',
-            icon: CupertinoIcons.doc,
+            icon: Icons.document_scanner_outlined,
             route: 'logout',
           ),
           const DrawerListTile(
             title: 'Store',
-            icon: CupertinoIcons.collections,
+            icon: Icons.storefront_outlined,
             route: 'logout',
           ),
           const DrawerListTile(
             title: 'Notification',
-            icon: CupertinoIcons.bell,
+            icon: Icons.notification_add_outlined,
             route: 'logout',
           ),
           const DrawerListTile(
             title: 'Settings',
-            icon: CupertinoIcons.settings,
+            icon: Icons.settings,
             route: 'logout',
           ),
           const DrawerListTile(
             title: 'log out',
-            icon: CupertinoIcons.person_alt_circle,
+            icon: Icons.logout,
             route: 'logout',
           ),
         ],
@@ -89,10 +90,7 @@ class DrawerListTile extends StatelessWidget {
       },
       horizontalTitleGap: 0.0,
       leading: Icon(icon),
-      title: Text(
-        title,
-        style: const TextStyle(color: Colors.white54),
-      ),
+      title: Text(title, style: AppThemes.getTextStyle(context)),
     );
   }
 }
