@@ -179,6 +179,7 @@ gantt
 
 This is a tree structure of the dart POC of the chaoffice (ex k_trade) applications. They should both follow the same strucutre:
 
+```
 [Application]
 │
 ├─[AuthWrapper]
@@ -208,3 +209,4 @@ This is a tree structure of the dart POC of the chaoffice (ex k_trade) applicati
 ├─[DatabaseService]
 │
 └─[PluginManager]
+```
