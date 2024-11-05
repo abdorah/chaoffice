@@ -1,0 +1,9 @@
+{
+    "create_plugins_table": "CREATE TABLE plugins (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, version TEXT NOT NULL, isActive INTEGER NOT NULL)",
+    "create_users_table": "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL)",
+    "insert_default_user": "INSERT INTO users (username, password) VALUES (?, ?)",
+    "get_all_plugins": "SELECT * FROM plugins",
+    "get_all_users": "SELECT * FROM users",
+    "update_plugin": "UPDATE plugins SET isActive = ? WHERE id = ?",
+    "delete_plugin": "DELETE FROM plugins WHERE id = ?"
+  }

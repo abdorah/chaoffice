@@ -1,0 +1,6 @@
+{
+  "appTitle": "chaoffice",
+  "@appTitle": {
+    "description": "The title of the application"
+  }
+}
