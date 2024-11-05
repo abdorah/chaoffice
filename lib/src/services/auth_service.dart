@@ -30,7 +30,8 @@ class AuthService extends ChangeNotifier {
       _isAuthenticated = false;
       _currentUser = null;
       if (kDebugMode) {
-        print("AuthService initialized: isAuthenticated=$_isAuthenticated, currentUser=$_currentUser");
+        print(
+            "AuthService initialized: isAuthenticated=$_isAuthenticated, currentUser=$_currentUser");
       }
     } catch (e) {
       if (kDebugMode) {

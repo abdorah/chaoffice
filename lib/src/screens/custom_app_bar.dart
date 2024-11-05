@@ -2,7 +2,8 @@
 
 import 'package:flutter/cupertino.dart';
 
-class CustomAppBar extends StatelessWidget implements ObstructingPreferredSizeWidget {
+class CustomAppBar extends StatelessWidget
+    implements ObstructingPreferredSizeWidget {
   final String title;
   final bool showBackButton;
   final VoidCallback? onBackPressed;

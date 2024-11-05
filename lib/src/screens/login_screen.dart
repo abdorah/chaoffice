@@ -57,6 +57,7 @@ class LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
 
+      if (!mounted) return;
       if (success) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.home);
       } else {
@@ -76,9 +77,9 @@ class LoginScreenState extends State<LoginScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(
-                      'Login',
-                      style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
-                    ),
+          'Login',
+          style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
+        ),
       ),
       child: SafeArea(
         child: Padding(

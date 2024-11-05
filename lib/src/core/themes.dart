@@ -12,15 +12,15 @@ class AppThemes {
     scaffoldBackgroundColor: CupertinoColors.systemBackground,
     barBackgroundColor: CupertinoColors.systemBackground,
     textTheme: CupertinoTextThemeData(
-    textStyle: TextStyle(inherit: false, color: CupertinoColors.black),
-    actionTextStyle: TextStyle(inherit: false, color: _primaryColor),
-    navTitleTextStyle: TextStyle(
-      inherit: false,
-      color: CupertinoColors.black,
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
+      textStyle: TextStyle(inherit: false, color: CupertinoColors.black),
+      actionTextStyle: TextStyle(inherit: false, color: _primaryColor),
+      navTitleTextStyle: TextStyle(
+        inherit: false,
+        color: CupertinoColors.black,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
     ),
-  ),
   );
 
   static final CupertinoThemeData darkTheme = CupertinoThemeData(

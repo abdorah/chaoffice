@@ -69,20 +69,24 @@ class ApplicationState extends State<Application> {
       providers: [
         Provider<DatabaseService>.value(value: widget.databaseService),
         ChangeNotifierProvider<AuthService>.value(value: _authService),
-        ChangeNotifierProvider<PluginManager>.value(value: widget.pluginManager),
+        ChangeNotifierProvider<PluginManager>.value(
+            value: widget.pluginManager),
         ChangeNotifierProvider<ThemeProvider>.value(value: _themeProvider),
       ],
       child: Consumer2<AuthService, ThemeProvider>(
         builder: (context, authService, themeProvider, _) {
           if (kDebugMode) {
             print("Builder in Application called");
-            print("AuthService isAuthenticated: ${authService.isAuthenticated}");
+            print(
+                "AuthService isAuthenticated: ${authService.isAuthenticated}");
             print("ThemeProvider isDarkMode: ${themeProvider.isDarkMode}");
           }
 
           return CupertinoApp(
             title: 'K Trade',
-            theme: themeProvider.isDarkMode ? AppThemes.darkTheme : AppThemes.lightTheme,
+            theme: themeProvider.isDarkMode
+                ? AppThemes.darkTheme
+                : AppThemes.lightTheme,
             initialRoute: AppRoutes.login,
             onGenerateRoute: AppRoutes.generateRoute,
             localizationsDelegates: const [

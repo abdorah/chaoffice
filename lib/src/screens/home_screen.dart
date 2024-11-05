@@ -29,11 +29,15 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Welcome to K Trade',
-                          style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
+                          style: CupertinoTheme.of(context)
+                              .textTheme
+                              .navTitleTextStyle,
                         ),
                         const SizedBox(height: 20),
                         CupertinoButton(
-                          child: Text(themeProvider.isDarkMode ? 'Switch to Light Theme' : 'Switch to Dark Theme'),
+                          child: Text(themeProvider.isDarkMode
+                              ? 'Switch to Light Theme'
+                              : 'Switch to Dark Theme'),
                           onPressed: () {
                             themeProvider.toggleTheme();
                           },
