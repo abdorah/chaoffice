@@ -7,6 +7,7 @@ import 'package:chaoffice/src/core/routes.dart';
 import 'package:chaoffice/src/core/themes.dart';
 import 'package:chaoffice/src/services/database_service.dart';
 import 'package:chaoffice/src/services/auth_service.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chaoffice/src/core/theme_provider.dart';
 
@@ -91,9 +92,12 @@ class ApplicationState extends State<Application> {
             onGenerateRoute: AppRoutes.generateRoute,
             localizationsDelegates: const [
               DefaultCupertinoLocalizations.delegate,
+              DefaultWidgetsLocalizations.delegate,
+              DefaultMaterialLocalizations.delegate
             ],
             supportedLocales: const [
-              Locale('en', 'ar'),
+              Locale('en', ''),
+              Locale('ar', ''),
             ],
             builder: (context, child) {
               if (kDebugMode) {

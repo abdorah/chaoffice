@@ -21,7 +21,7 @@ class HomeScreen extends StatelessWidget {
           child: SafeArea(
             child: Row(
               children: [
-                const SizedBox(width: 200, child: SidebarMenu()),
+                const SizedBox(width: 200, child: SideBarMenu()),
                 Expanded(
                   child: Center(
                     child: Column(
