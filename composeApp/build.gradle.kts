@@ -21,6 +21,15 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.androidx.material3.desktop)
+            implementation(libs.androidx.compose.material3)
+            implementation(libs.androidx.compose.material3.adaptive)
+            implementation(libs.androidx.compose.material3.adaptive.layout)
+            implementation(libs.androidx.compose.material3.adaptive.navigation)
+            implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
+            implementation(libs.androidx.compose.material)
+            implementation(libs.androidx.window.core)
+            implementation(libs.material3.window.size.multiplatform)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -28,7 +37,6 @@ kotlin {
         }
     }
 }
-
 
 compose.desktop {
     application {
