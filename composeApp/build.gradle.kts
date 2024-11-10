@@ -30,6 +30,7 @@ kotlin {
             implementation(libs.androidx.compose.material)
             implementation(libs.androidx.window.core)
             implementation(libs.material3.window.size.multiplatform)
+            implementation(libs.androidx.datastore.core)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
