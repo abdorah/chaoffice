@@ -7,10 +7,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import org.chaos.office.configuration.PageSize
 import org.chaos.office.style.AppTheme
 
 @Composable
-fun LoginPage(screenSize: PageSize) {
+fun SignInPage(
+    screenSize: PageSize,
+    handleSignIn: () -> Unit
+) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -20,17 +24,25 @@ fun LoginPage(screenSize: PageSize) {
             color = MaterialTheme.colorScheme.background
         ) {
             when (screenSize) {
-                PageSize.Compact -> CompactLoginLayout(username, password,
+                PageSize.Compact -> CompactSignInLayout(
+                    username, password,
                     onUsernameChange = { username = it },
-                    onPasswordChange = { password = it }
+                    onPasswordChange = { password = it },
+                    handleSignIn
                 )
-                PageSize.Medium -> MediumLoginLayout(username, password,
+
+                PageSize.Medium -> MediumSignInLayout(
+                    username, password,
                     onUsernameChange = { username = it },
-                    onPasswordChange = { password = it }
+                    onPasswordChange = { password = it },
+                    handleSignIn
                 )
-                PageSize.Expanded -> ExpandedLoginLayout(username, password,
+
+                PageSize.Expanded -> ExpandedSignInLayout(
+                    username, password,
                     onUsernameChange = { username = it },
-                    onPasswordChange = { password = it }
+                    onPasswordChange = { password = it },
+                    handleSignIn
                 )
             }
         }
@@ -38,11 +50,12 @@ fun LoginPage(screenSize: PageSize) {
 }
 
 @Composable
-fun CompactLoginLayout(
+fun CompactSignInLayout(
     username: String,
     password: String,
     onUsernameChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit
+    onPasswordChange: (String) -> Unit,
+    handleSignIn: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -52,7 +65,7 @@ fun CompactLoginLayout(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Login",
+            text = "SignIn",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
@@ -72,20 +85,21 @@ fun CompactLoginLayout(
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(
-            onClick = { /* Handle login */ },
+            onClick = handleSignIn,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Login")
+            Text("SignIn")
         }
     }
 }
 
 @Composable
-fun MediumLoginLayout(
+fun MediumSignInLayout(
     username: String,
     password: String,
     onUsernameChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit
+    onPasswordChange: (String) -> Unit,
+    handleSignIn: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -115,7 +129,7 @@ fun MediumLoginLayout(
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(
-            onClick = { /* Handle login */ },
+            onClick = handleSignIn,
             modifier = Modifier.width(200.dp)
         ) {
             Text("Sign In")
@@ -124,11 +138,12 @@ fun MediumLoginLayout(
 }
 
 @Composable
-fun ExpandedLoginLayout(
+fun ExpandedSignInLayout(
     username: String,
     password: String,
     onUsernameChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit
+    onPasswordChange: (String) -> Unit,
+    handleSignIn: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -181,10 +196,10 @@ fun ExpandedLoginLayout(
                 )
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(
-                    onClick = { /* Handle login */ },
+                    onClick = handleSignIn,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Login")
+                    Text("SignIn")
                 }
             }
         }

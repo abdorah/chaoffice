@@ -90,7 +90,6 @@ fun Sidebar() {
 
 
 @Composable
-@Preview
 fun NavigationBar() {
     var selectedItem by remember { mutableIntStateOf(0) }
     val items = listOf("Songs", "Artists", "Playlists")
