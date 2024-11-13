@@ -21,13 +21,13 @@ fun navigation(
         startDestination = "login",
         modifier = modifier
     ) {
-        composable(route = "home") {
-            HomePage(screenSize)
-        }
         composable(route = "login") {
             SignInPage(screenSize) {
                 navController.navigate(route = "home")
             }
+        }
+        composable(route = "home") {
+            HomePage(screenSize)
         }
     }
 }

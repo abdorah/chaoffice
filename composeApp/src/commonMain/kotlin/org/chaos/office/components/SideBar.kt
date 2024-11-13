@@ -2,6 +2,8 @@ package org.chaos.office.components
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Favorite
@@ -16,7 +18,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,9 +98,9 @@ fun NavigationBar() {
     val unselectedIcons =
         listOf(Icons.TwoTone.Home, Icons.TwoTone.Favorite, Icons.TwoTone.Star)
 
-    NavigationBar {
+    BottomNavigation {
         items.forEachIndexed { index, item ->
-            NavigationBarItem(
+            BottomNavigationItem(
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],

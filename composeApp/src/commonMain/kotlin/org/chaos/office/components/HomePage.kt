@@ -32,7 +32,7 @@ fun CompactHomeLayout() {
     ) { paddingValues ->
         Row(Modifier.padding(paddingValues)) {
             if (showSidebar) {
-                Sidebar()
+                NavigationBar()
             }
             MainContent()
         }
@@ -42,11 +42,11 @@ fun CompactHomeLayout() {
 @Composable
 fun MediumHomeLayout() {
     Row {
-        Sidebar()
         Column {
             Header()
             MainContent()
         }
+        NavigationBar()
     }
 }
 
