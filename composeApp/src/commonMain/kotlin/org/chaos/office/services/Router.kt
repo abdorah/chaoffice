@@ -6,12 +6,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.chaos.office.components.HomePage
-import org.chaos.office.components.SignInPage
+import org.chaos.office.pages.HomePage
+import org.chaos.office.pages.SignInPage
 import org.chaos.office.configuration.PageSize
 
 @Composable
-fun navigation(
+fun router(
     navController: NavHostController = rememberNavController(),
     screenSize: PageSize,
     modifier: Modifier

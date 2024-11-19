@@ -1,4 +1,4 @@
-package org.chaos.office.components
+package org.chaos.office.pages
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Scaffold
@@ -9,9 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.chaos.office.configuration.PageSize
 import org.chaos.office.services.Settings
-import org.chaos.office.services.navigation
+import org.chaos.office.services.router
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
@@ -39,13 +40,13 @@ fun mainPage(settings: Settings, applicationVersion: String) {
                 appVersion = applicationVersion,
                 onFinish = {
                     showWelcomePage = false
-                    kotlinx.coroutines.runBlocking {
+                    runBlocking {
                         settings.setLastSeenVersion(applicationVersion)
                     }
                 }
             )
         } else {
-            navigation(
+            router(
                 navController = rememberNavController(),
                 screenSize = screenSize,
                 modifier = Modifier

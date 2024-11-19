@@ -1,4 +1,4 @@
-package org.chaos.office.components
+package org.chaos.office.pages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*

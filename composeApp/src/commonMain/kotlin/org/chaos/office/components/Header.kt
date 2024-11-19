@@ -1,40 +1,40 @@
 package org.chaos.office.components
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import chaoffice.composeapp.generated.resources.Res
-import chaoffice.composeapp.generated.resources.compose_multiplatform
-import org.chaos.office.style.primaryLight
-import org.jetbrains.compose.resources.painterResource
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import org.chaos.office.configuration.NavigationItem
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Header(title: String) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        color = primaryLight
-    ) {
-        Row(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 30.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(painterResource(Res.drawable.compose_multiplatform), null)
-            Text(
-                text = title,
-                style = MaterialTheme.typography.h3,
-                color = MaterialTheme.colors.onPrimary
-            )
+fun Header(
+    currentNavItem: NavigationItem,
+    onSearchClick: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            Row {
+                Icon(
+                    if (currentNavItem == NavigationItem.Home) Icons.Default.Home else Icons.Default.Search,
+                    contentDescription = currentNavItem.name
+                )
+                Text(currentNavItem.name)
+            }
+        },
+        actions = {
+            IconButton(onClick = onSearchClick) {
+                Icon(Icons.Default.Search, contentDescription = "Search")
+            }
+            IconButton(onClick = { /* TODO: Implement notifications */ }) {
+                Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+            }
         }
-    }
+    )
 }
