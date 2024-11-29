@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+
+<HBox fx:id="header" styleClass="header" alignment="CENTER_LEFT" spacing="10" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.chaos.office.core.controller.HeaderController"
+stylesheets="@../styles/main.css">
+    <Label text="ChaOffice" styleClass="header-title" />
+    <HBox HBox.hgrow="ALWAYS" />
+    <Button text="Settings" onAction="#onSettingsClicked" styleClass="header-button" />
+</HBox>

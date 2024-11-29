@@ -7,5 +7,8 @@ module org.chaos.office {
     requires javafx.web;
     requires transitive org.slf4j;
     
+    opens org.chaos.office.core.controller to javafx.fxml;
+
+    exports org.chaos.office.core.controller to javafx.fxml;
     exports org.chaos.office;
 }

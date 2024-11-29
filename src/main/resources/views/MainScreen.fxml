@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.chaos.office.core.controller.MainScreenController"
+            stylesheets="@../styles/main.css">
+    <top>
+        <fx:include source="../components/Header.fxml" />
+    </top>
+    <left>
+        <fx:include source="../components/SideBar.fxml" />
+    </left>
+    <center>
+        <fx:include source="../components/MainContent.fxml" />
+    </center>
+</BorderPane>
