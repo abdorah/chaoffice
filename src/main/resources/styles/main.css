@@ -36,6 +36,36 @@
     -fx-font-family: "Ubuntu Medium";
 }
 
+/* Sign In */
+
+.label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.text-field {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 4px;
+}
+
+.button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-border-radius: 4px;
+}
+
+.button:hover {
+    -fx-background-color: #45a049;
+}
+
+#messageText {
+    -fx-fill: #ff0000;
+    -fx-font-size: 12px;
+}
+
 /* Side Bar */
 
 .sidebar {

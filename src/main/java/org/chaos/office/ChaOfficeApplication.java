@@ -6,7 +6,6 @@ import org.chaos.office.core.navigation.ViewManager;
 
 import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.text.Font;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
@@ -42,6 +41,11 @@ public class ChaOfficeApplication extends Application {
                 .withCss("/styles/main.css")
                 .register();
 
+        viewManager.createView("SignInScreen")
+                .withFxml("/views/SignInScreen.fxml")
+                .withCss("/styles/main.css")
+                .register();
+        
         primaryStage.setTitle("ChaOffice");
 
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
@@ -52,9 +56,6 @@ public class ChaOfficeApplication extends Application {
         primaryStage.setMinWidth(300);
         primaryStage.setMinHeight(600);
 
-        Font font = Font.loadFont(getClass().getResource("/fonts/Ubuntu-BoldItalic.ttf").toURI().toString(), 0);
-
-        System.out.println(font.getName());
         primaryStage.centerOnScreen();
 
         viewManager.loadView("WelcomeScreen");

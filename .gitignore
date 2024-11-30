@@ -22,3 +22,6 @@ buildNumber.properties
 *.iml
 modules.xml
 *.ipr
+
+## VSCODE ##
+.vscode/

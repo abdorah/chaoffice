@@ -11,6 +11,6 @@ public class WelcomeScreenController {
     @FXML
     private void handleStartButton() throws IOException {
         System.out.println("Start button");
-        ViewManager.getInstance().loadView("MainScreen");
+        ViewManager.getInstance().loadView("SignInScreen");
     }
 }
