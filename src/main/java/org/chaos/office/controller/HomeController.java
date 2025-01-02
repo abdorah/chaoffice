@@ -12,18 +12,18 @@ import javafx.stage.Stage;
 public class HomeController {
 
     @Inject
-    DatabaseController databaseController;
+    MainController  mainController;
 
     @FXML
     public void initialize() {
         // Create UI components
-        Button button = new Button("Click Me");
+        Button button = new Button("Click Home");
         button.setOnAction(event -> System.out.println("Welcome Home!"));
 
         // Arrange components in a layout
         VBox root = new VBox(button);
 
-        Stage primaryStage = databaseController.stage();
+        Stage primaryStage = mainController.stage();
         // Set up the scene and stage
         Scene scene = new Scene(root, 300, 200);
         primaryStage.setScene(scene);
