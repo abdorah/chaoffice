@@ -2,9 +2,12 @@ package org.chaos.office.model;
 
 public enum Type {
   TEXT("TEXT"),
-  JSON("JSON");
+  JSON("JSON"),
+  XML("XML"),
+  CSV("CSV"),
+  EXCEL("EXCEL");
 
-  private String value;
+  private final String value;
 
   private Type(String value) {
     this.value = value;

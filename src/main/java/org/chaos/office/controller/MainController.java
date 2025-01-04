@@ -7,7 +7,6 @@ import jakarta.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
-import org.chaos.office.utils.View;
 
 /**
  * Main Stage loader. This class is the only view that will be loaded onto the Fx Thread.
@@ -19,9 +18,9 @@ import org.chaos.office.utils.View;
 @FxView
 @RunOnFxThread
 @ApplicationScoped
-public class MainController {
+public class MainController extends BaseController {
 
-  @Inject View view;
+  @Inject WelcomeController welcomeController;
 
   @Inject HomeController homeController;
 
@@ -43,12 +42,18 @@ public class MainController {
           System.out.println("Database!");
           databaseController.initialize();
         });
+    Button welcomeButton = new Button("Welcome");
+    welcomeButton.setOnAction(
+        event -> {
+          System.out.println("Welcome!");
+          welcomeController.initialize();
+        });
 
     // Arrange components in a layout
-    VBox root = new VBox(homeButton, databaseButton);
+    VBox root = new VBox(homeButton, welcomeButton, databaseButton);
 
     // Set scene root node and show the scene
-    view.getStage().getScene().setRoot(root);
-    view.getStage().show();
+    super.getView().getStage().getScene().setRoot(root);
+    super.getView().getStage().show();
   }
 }
