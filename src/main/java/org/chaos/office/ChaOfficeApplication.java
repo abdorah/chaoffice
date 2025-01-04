@@ -8,9 +8,9 @@ import javafx.application.Application;
 @QuarkusMain
 public class ChaOfficeApplication implements QuarkusApplication {
 
-    @Override
-    public int run(final String... args) {
-        Application.launch(FxApplication.class, args);
-        return 0;
-    }
+  @Override
+  public int run(final String... args) {
+    Application.launch(FxApplication.class, args);
+    return 0;
+  }
 }

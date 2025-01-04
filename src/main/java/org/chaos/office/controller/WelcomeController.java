@@ -8,14 +8,15 @@ import javafx.scene.layout.VBox;
 import org.chaos.office.utils.View;
 
 @ApplicationScoped
-public class DatabaseController {
+public class WelcomeController {
 
   @Inject View view;
 
   @FXML
   public void initialize() {
-    Button button = new Button("Click Database");
-    button.setOnAction(event -> System.out.println("Welcome Database!"));
+    // Create UI components
+    Button button = new Button("Click Welcome");
+    button.setOnAction(event -> System.out.println("Welcome Welcome!"));
 
     // Arrange components in a layout
     VBox root = new VBox(button);
