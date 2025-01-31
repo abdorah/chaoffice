@@ -21,9 +21,8 @@ public class DataSourceProducer {
   private final Map<String, AgroalDataSource> dataSourceMap = new HashMap<>();
 
   // Example of dynamic datasource creation method
-  public void addDataSource(String name, String jdbcUrl, String username, String password)
-      throws SQLException {
-    AgroalDataSource dataSource = createDataSource(jdbcUrl, username, password);
+  public void addDataSource(String name, String username, String password) throws SQLException {
+    AgroalDataSource dataSource = createDataSource(name, username, password);
     dataSourceMap.put(name, dataSource);
   }
 

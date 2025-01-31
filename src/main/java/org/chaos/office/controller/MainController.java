@@ -1,6 +1,5 @@
 package org.chaos.office.controller;
 
-import io.quarkiverse.fx.RunOnFxThread;
 import io.quarkiverse.fx.views.FxView;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -16,7 +15,6 @@ import javafx.scene.layout.VBox;
  * @author KOTBI Abderrahmane
  */
 @FxView
-@RunOnFxThread
 @ApplicationScoped
 public class MainController extends BaseController {
 

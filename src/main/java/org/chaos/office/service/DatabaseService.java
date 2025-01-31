@@ -15,10 +15,9 @@ public class DatabaseService {
 
   @Inject DataSourceProducer dataSourceProducer;
 
-  public void initDataSource(String name, String path, String user, String password)
-      throws SQLException {
+  public void initDataSource(String name, String user, String password) throws SQLException {
     // Add a primary datasource
-    dataSourceProducer.addDataSource(name, path, user, password);
+    dataSourceProducer.addDataSource(name, user, password);
 
     // Retrieve a datasource by name
     AgroalDataSource dataSource = dataSourceProducer.getDataSource(name);
@@ -27,7 +26,7 @@ public class DatabaseService {
     Jdbi.create(dataSource);
   }
 
-  public void saveCheckPoint(String dataSourceName, String backUpName, String user, String password)
+  public void saveCheckPoint(String dataSourceName, String backUpName)
       throws SQLException, IOException {
     // Get the path of database file
     File database =

@@ -2,6 +2,7 @@ package org.chaos.office.controller;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.Objects;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -23,10 +24,14 @@ public class WelcomeController extends BaseController {
     Label greetingLabel = new Label("Welcome to Chaos Office...");
     Label introductionLabel = new Label("Your success companion!");
     Label instructionLabel = new Label("Start your journey here, by clicking on the start button:");
-    Region region = new Region();
+    Region spacer = new Region();
 
-    // Set the style of the components
-    // TODO: implement this after finishing the application logic.
+    // Add CSS classes
+    nextPageButton.getStyleClass().add("next-button");
+    greetingLabel.getStyleClass().add("greeting-label");
+    introductionLabel.getStyleClass().add("introduction-label");
+    instructionLabel.getStyleClass().add("instruction-label");
+    spacer.getStyleClass().add("spacer");
 
     // Set behavior of the UI elements
     nextPageButton.setOnAction(
@@ -37,9 +42,15 @@ public class WelcomeController extends BaseController {
 
     // Arrange components in a layout
     VBox root =
-        new VBox(greetingLabel, introductionLabel, instructionLabel, region, nextPageButton);
+        new VBox(greetingLabel, introductionLabel, instructionLabel, spacer, nextPageButton);
+    root.getStyleClass().add("welcome-layout");
 
     // Reset up the scene and the root node
     super.getView().getStage().getScene().setRoot(root);
+
+    // Apply the CSS file
+    String cssPath =
+        Objects.requireNonNull(getClass().getResource("/style/welcome.css")).toExternalForm();
+    super.getView().getStage().getScene().getStylesheets().add(cssPath);
   }
 }
