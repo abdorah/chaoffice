@@ -1,10 +1,9 @@
-package org.chaos.office.controller;
+package org.chaos.office.utils;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.Stack;
 import lombok.Getter;
-import org.chaos.office.utils.ViewManager;
 
 @Singleton
 public class BaseController {

@@ -4,16 +4,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
-import lombok.Singular;
+import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.Jdbi;
+import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
 @Data
 public class Table {
   private String base;
   private String name;
-  @Singular private List<Field<?>> fields;
+  private List<Field<?>> fields;
 
   Table(final String base, final String name, final List<Field<?>> fields) {
     this.base = base;
@@ -26,7 +31,7 @@ public class Table {
   }
 
   public org.jooq.Table<?> getTable() {
-    org.jooq.Table table = DSL.table(this.name);
+    org.jooq.Table<Record> table = DSL.table(this.name);
     for (Field<?> field : this.fields) {
       table.field(field);
     }
@@ -52,7 +57,7 @@ public class Table {
 
     public TableBuilder field(final Field<?> field) {
       if (this.fields == null) {
-        this.fields = new ArrayList();
+        this.fields = new ArrayList<>();
       }
 
       this.fields.add(field);
@@ -61,7 +66,7 @@ public class Table {
 
     public TableBuilder field(final String fieldName, final Class<?> fieldType) {
       if (this.fields == null) {
-        this.fields = new ArrayList();
+        this.fields = new ArrayList<>();
       }
 
       this.fields.add(DSL.field(fieldName, fieldType));
@@ -73,7 +78,7 @@ public class Table {
         throw new NullPointerException("fields cannot be null");
       } else {
         if (this.fields == null) {
-          this.fields = new ArrayList();
+          this.fields = new ArrayList<>();
         }
 
         this.fields.addAll(fields);
@@ -93,8 +98,8 @@ public class Table {
       List<Field<?>> fields;
       switch (this.fields == null ? 0 : this.fields.size()) {
         case 0 -> fields = Collections.emptyList();
-        case 1 -> fields = Collections.singletonList((Field) this.fields.get(0));
-        default -> fields = Collections.unmodifiableList(new ArrayList(this.fields));
+        case 1 -> fields = List.of(this.fields.get(0));
+        default -> fields = List.copyOf(this.fields);
       }
 
       return new Table(this.base, this.name, fields);
@@ -109,5 +114,46 @@ public class Table {
           + this.fields
           + ")";
     }
+  }
+
+  public Jdbi createBase(String baseName) {
+    if (baseName.matches("\\w+\\.db")) {
+      return Jdbi.create("jdbc:sqlite:data/" + baseName);
+    }
+    throw new RuntimeException("Invalid base name: " + baseName);
+  }
+
+  public void createTable(Jdbi base, org.jooq.Table table) {
+    SQLDialect dialect = DSL.using(SQLDialect.SQLITE).configuration().dialect();
+    DSLContext jooq = DSL.using(dialect);
+    if (table.getName().matches("\\w+")) {
+      try (Handle handle = base.open()) {
+        String createTableSQL = jooq.createTable(table.getName()).columns(table.fields()).getSQL();
+        handle.execute(createTableSQL);
+      }
+    } else {
+      throw new RuntimeException("Invalid table name: " + table.getName());
+    }
+  }
+
+  public void createTable(String baseName, String tableName, Map<String, String> fields) {
+    org.chaos.office.model.Table.TableBuilder tableBuilder =
+        org.chaos.office.model.Table.builder().name(tableName).base(baseName);
+    for (Map.Entry<String, String> field : fields.entrySet()) {
+      tableBuilder.field(field.getKey(), mapFieldType(field.getValue())).build().getTable();
+    }
+    createTable(createBase(baseName), tableBuilder.build().getTable());
+  }
+
+  public Class<?> mapFieldType(String fieldType) {
+    return switch (fieldType) {
+      case "varchar" -> String.class;
+      case "int" -> Integer.class;
+      case "long" -> Long.class;
+      case "double" -> Double.class;
+      case "float" -> Float.class;
+      case "boolean" -> Boolean.class;
+      default -> throw new RuntimeException("Invalid field type: " + fieldType);
+    };
   }
 }
