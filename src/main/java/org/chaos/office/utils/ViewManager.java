@@ -1,6 +1,7 @@
 package org.chaos.office.utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import java.util.Objects;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
@@ -20,7 +21,7 @@ public class ViewManager {
   }
 
   public ViewManager() {
-    this.stage = new ViewManager(new StackPane(), 300, 200, "Chaos Office Application").getStage();
+    this.stage = new ViewManager(new StackPane(), 800, 600, "Chaos Office Application").getStage();
   }
 
   public Scene getScene() {
@@ -42,5 +43,12 @@ public class ViewManager {
   public void show(Parent root) {
     this.setRoot(root);
     this.show();
+  }
+
+  public void applyCss(String fileName) {
+    String cssPath =
+        Objects.requireNonNull(getClass().getResource(String.format("/style/%s.css", fileName)))
+            .toExternalForm();
+    this.getStage().getScene().getStylesheets().add(cssPath);
   }
 }

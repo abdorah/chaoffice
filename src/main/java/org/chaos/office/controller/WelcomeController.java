@@ -1,7 +1,7 @@
 package org.chaos.office.controller;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import java.util.Objects;
+import jakarta.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -11,6 +11,8 @@ import org.chaos.office.utils.BaseController;
 
 @ApplicationScoped
 public class WelcomeController extends BaseController {
+
+  @Inject DashboardController dashboardController;
 
   @FXML
   public void initialize() {
@@ -31,10 +33,10 @@ public class WelcomeController extends BaseController {
     instructionLabel.getStyleClass().add("instruction-label");
     spacer.getStyleClass().add("spacer");
 
-    // Set behavior of the UI elements
     nextPageButton.setOnAction(
         event -> {
-          System.out.println("Welcome Welcome!");
+          System.out.println("Navigating to dashboard...");
+          dashboardController.initialize();
         });
 
     // Arrange components in a layout
@@ -46,8 +48,6 @@ public class WelcomeController extends BaseController {
     super.getViewManager().getStage().getScene().setRoot(root);
 
     // Apply the CSS file
-    String cssPath =
-        Objects.requireNonNull(getClass().getResource("/style/welcome.css")).toExternalForm();
-    super.getViewManager().getStage().getScene().getStylesheets().add(cssPath);
+    this.getViewManager().applyCss("welcome");
   }
 }

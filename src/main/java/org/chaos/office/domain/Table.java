@@ -1,17 +1,10 @@
-package org.chaos.office.model;
+package org.chaos.office.domain;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import lombok.Data;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.Record;
-import org.jooq.SQLDialect;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 
 @Data
@@ -20,22 +13,18 @@ public class Table {
   private String name;
   private List<Field<?>> fields;
 
+  public static Table table = new Table();
+
   Table(final String base, final String name, final List<Field<?>> fields) {
     this.base = base;
     this.name = name;
     this.fields = fields;
   }
 
+  Table() {}
+
   public static TableBuilder builder() {
     return new TableBuilder();
-  }
-
-  public org.jooq.Table<?> getTable() {
-    org.jooq.Table<Record> table = DSL.table(this.name);
-    for (Field<?> field : this.fields) {
-      table.field(field);
-    }
-    return table;
   }
 
   public static class TableBuilder {
@@ -118,17 +107,19 @@ public class Table {
 
   public Jdbi createBase(String baseName) {
     if (baseName.matches("\\w+\\.db")) {
-      return Jdbi.create("jdbc:sqlite:data/" + baseName);
+      table.setBase(baseName);
+      return Jdbi.create("jdbc:sqlite:data/" + baseName).open().commit().getJdbi();
     }
     throw new RuntimeException("Invalid base name: " + baseName);
   }
 
-  public void createTable(Jdbi base, org.jooq.Table table) {
+  public void createTable(Jdbi base, Table table) {
     SQLDialect dialect = DSL.using(SQLDialect.SQLITE).configuration().dialect();
     DSLContext jooq = DSL.using(dialect);
     if (table.getName().matches("\\w+")) {
       try (Handle handle = base.open()) {
-        String createTableSQL = jooq.createTable(table.getName()).columns(table.fields()).getSQL();
+        String createTableSQL =
+            jooq.createTable(table.getName()).columns(table.getFields()).getSQL();
         handle.execute(createTableSQL);
       }
     } else {
@@ -137,12 +128,12 @@ public class Table {
   }
 
   public void createTable(String baseName, String tableName, Map<String, String> fields) {
-    org.chaos.office.model.Table.TableBuilder tableBuilder =
-        org.chaos.office.model.Table.builder().name(tableName).base(baseName);
+    org.chaos.office.domain.Table.TableBuilder tableBuilder =
+        org.chaos.office.domain.Table.builder().name(tableName).base(baseName);
     for (Map.Entry<String, String> field : fields.entrySet()) {
-      tableBuilder.field(field.getKey(), mapFieldType(field.getValue())).build().getTable();
+      tableBuilder.field(field.getKey(), mapFieldType(field.getValue())).build();
     }
-    createTable(createBase(baseName), tableBuilder.build().getTable());
+    createTable(createBase(baseName), tableBuilder.build());
   }
 
   public Class<?> mapFieldType(String fieldType) {

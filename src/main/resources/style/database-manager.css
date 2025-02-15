@@ -1,0 +1,52 @@
+.database-manager {
+    -fx-background-color: #f5f5f5;
+}
+
+.section {
+    -fx-background-color: white;
+    -fx-padding: 20;
+    -fx-spacing: 10;
+    -fx-background-radius: 5;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0, 0, 3);
+}
+
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-padding: 8 15;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #45a049;
+}
+
+.button.remove {
+    -fx-background-color: #f44336;
+}
+
+.button.remove:hover {
+    -fx-background-color: #da190b;
+}
+
+.text-field {
+    -fx-padding: 8;
+    -fx-pref-width: 200;
+}
+
+.combo-box {
+    -fx-padding: 8;
+    -fx-pref-width: 150;
+}
+
+.fields-container {
+    -fx-spacing: 10;
+    -fx-padding: 10;
+    -fx-background-color: #fafafa;
+    -fx-background-radius: 5;
+}
