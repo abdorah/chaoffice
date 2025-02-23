@@ -1,16 +1,12 @@
 module org.chaos.office {
-    requires java.desktop;
-    requires transitive java.sql;
-    requires org.xerial.sqlitejdbc;
-    requires transitive javafx.controls;
-    requires javafx.fxml;
-    requires javafx.web;
-    requires transitive org.slf4j;
-    
-    opens org.chaos.office.core.controller to javafx.fxml;
-    opens org.chaos.office.data.controller to javafx.fxml;
+  requires java.desktop;
+  requires transitive javafx.controls;
+  requires javafx.fxml;
+  requires javafx.web;
+  requires transitive org.slf4j;
 
-    exports org.chaos.office.core.controller;
-    exports org.chaos.office.data.controller;
-    exports org.chaos.office;
+  opens org.chaos.office to
+      javafx.fxml;
+
+  exports org.chaos.office;
 }
