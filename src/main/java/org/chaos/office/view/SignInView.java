@@ -22,7 +22,7 @@ public class SignInView extends BorderPane {
     TextField idField = new TextField();
     idField.getStyleClass().add("sign-in-id-field");
     idField.setFont(new Font("Arial", 24));
-    idField.setText("username");
+    idField.setPromptText("Username");
     return idField;
   }
 
@@ -30,12 +30,13 @@ public class SignInView extends BorderPane {
     PasswordField passwordField = new PasswordField();
     passwordField.getStyleClass().add("sign-in-password-field");
     passwordField.setFont(new Font("Arial", 24));
-    passwordField.setText("password");
+    passwordField.setPromptText("password");
     return passwordField;
   }
 
   public SignInView() {
     VBox vbox = new VBox();
+    vbox.setSpacing(10);
     vbox.getChildren().add(signInLabel());
     vbox.getChildren().add(idField());
     vbox.getChildren().add(passwordField());
