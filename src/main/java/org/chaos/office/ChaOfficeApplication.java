@@ -1,6 +1,5 @@
 package org.chaos.office;
 
-import java.util.Objects;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import org.chaos.office.controller.GreetingController;
@@ -15,10 +14,6 @@ public class ChaOfficeApplication extends Application {
     SceneService.switchScene(new GreetingController());
     primaryStage.setHeight(768);
     primaryStage.setWidth(1024);
-    primaryStage
-        .getScene()
-        .getStylesheets()
-        .add(Objects.requireNonNull(getClass().getResource("/style/main.css")).toExternalForm());
     primaryStage.centerOnScreen();
     primaryStage.show();
   }
