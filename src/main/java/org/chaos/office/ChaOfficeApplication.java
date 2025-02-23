@@ -46,6 +46,11 @@ public class ChaOfficeApplication extends Application {
                 .withCss("/styles/main.css")
                 .register();
         
+        viewManager.createView("KData")
+                .withFxml("/components/KData.fxml")
+                .withCss("/styles/main.css")
+                .register();
+        
         primaryStage.setTitle("ChaOffice");
 
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();

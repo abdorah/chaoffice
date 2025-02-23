@@ -1,4 +1,3 @@
-
 # ChaOffice Project Overview
 
 ## Introduction

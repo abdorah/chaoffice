@@ -8,7 +8,9 @@ module org.chaos.office {
     requires transitive org.slf4j;
     
     opens org.chaos.office.core.controller to javafx.fxml;
+    opens org.chaos.office.data.controller to javafx.fxml;
 
-    exports org.chaos.office.core.controller to javafx.fxml;
+    exports org.chaos.office.core.controller;
+    exports org.chaos.office.data.controller;
     exports org.chaos.office;
 }

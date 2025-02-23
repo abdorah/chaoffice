@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.*?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.chaos.office.core.controller.MainScreenController"
-            stylesheets="@../styles/main.css">
-    <top>
-        <fx:include source="../components/Header.fxml" />
-    </top>
-    <left>
-        <fx:include source="../components/SideBar.fxml" />
-    </left>
-    <center>
-        <fx:include source="../components/MainContent.fxml" />
-    </center>
-</BorderPane>
+<VBox xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/22"
+      fx:controller="org.chaos.office.core.controller.MainScreenController"
+      styleClass="root" stylesheets="@../styles/main.css">
+    <BorderPane VBox.vgrow="ALWAYS">
+        <top>
+            <fx:include source="../components/Header.fxml"/>
+        </top>
+        <left>
+            <fx:include source="../components/SideBar.fxml"/>
+        </left>
+        <center>
+            <fx:include source="../components/MainContent.fxml"/>
+        </center>
+    </BorderPane>
+</VBox>

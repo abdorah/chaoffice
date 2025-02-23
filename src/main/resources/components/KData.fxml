@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/22"
+      fx:controller="org.chaos.office.data.controller.KDataController"
+      styleClass="root" stylesheets="@../styles/main.css">
+    <MenuBar>
+        <menus>
+            <Menu text="File">
+                <items>
+                    <MenuItem text="New Database" onAction="#newDatabase"/>
+                    <MenuItem text="Open Database" onAction="#openDatabase"/>
+                    <MenuItem text="Close Database" onAction="#closeDatabase"/>
+                    <SeparatorMenuItem/>
+                    <MenuItem text="Exit" onAction="#exit"/>
+                </items>
+            </Menu>
+            <Menu text="Edit">
+                <items>
+                    <MenuItem text="Copy" onAction="#copy"/>
+                    <MenuItem text="Paste" onAction="#paste"/>
+                    <MenuItem text="Find" onAction="#find"/>
+                </items>
+            </Menu>
+            <Menu text="View">
+                <items>
+                    <CheckMenuItem text="Toggle Sidebar" onAction="#toggleSidebar"/>
+                    <MenuItem text="Refresh" onAction="#refresh"/>
+                </items>
+            </Menu>
+            <Menu text="Tools">
+                <items>
+                    <MenuItem text="Import Data" onAction="#importData"/>
+                    <MenuItem text="Export Data" onAction="#exportData"/>
+                    <MenuItem text="Preferences" onAction="#showPreferences"/>
+                </items>
+            </Menu>
+            <Menu text="Help">
+                <items>
+                    <MenuItem text="Documentation" onAction="#showDocumentation"/>
+                    <MenuItem text="About" onAction="#showAbout"/>
+                </items>
+            </Menu>
+        </menus>
+    </MenuBar>
+
+    <SplitPane VBox.vgrow="ALWAYS">
+        <items>
+            <VBox minWidth="200">
+                <TreeView fx:id="databaseTree" VBox.vgrow="ALWAYS"/>
+                <Button text="Create Database" onAction="#createDatabase" maxWidth="Infinity"/>
+                <Button text="Import Data" onAction="#importData" maxWidth="Infinity"/>
+                <Button text="Export Data" onAction="#exportData" maxWidth="Infinity"/>
+            </VBox>
+            <TabPane>
+                <tabs>
+                    <Tab text="Query">
+                        <content>
+                            <VBox>
+                                <TextArea fx:id="queryEditor" VBox.vgrow="ALWAYS"/>
+                                <Button text="Execute Query" onAction="#executeQuery"/>
+                                <TableView fx:id="queryResultTable" VBox.vgrow="ALWAYS"/>
+                            </VBox>
+                        </content>
+                    </Tab>
+                    <Tab text="Table View">
+                        <content>
+                            <TableView fx:id="tableContentView"/>
+                        </content>
+                    </Tab>
+                    <Tab text="Structure">
+                        <content>
+                            <TreeTableView fx:id="databaseStructureView"/>
+                        </content>
+                    </Tab>
+                    <Tab text="Import/Export">
+                        <content>
+                            <VBox>
+                                <TitledPane text="Import">
+                                    <content>
+                                        <VBox>
+                                            <ComboBox fx:id="importSourceType" promptText="Select Source Type"/>
+                                            <TextField fx:id="importSourcePath" promptText="Source Path"/>
+                                            <Button text="Import" onAction="#performImport"/>
+                                        </VBox>
+                                    </content>
+                                </TitledPane>
+                                <TitledPane text="Export">
+                                    <content>
+                                        <VBox>
+                                            <ComboBox fx:id="exportTargetType" promptText="Select Target Type"/>
+                                            <TextField fx:id="exportDestinationPath" promptText="Destination Path"/>
+                                            <Button text="Export" onAction="#performExport"/>
+                                        </VBox>
+                                    </content>
+                                </TitledPane>
+                            </VBox>
+                        </content>
+                    </Tab>
+                </tabs>
+            </TabPane>
+        </items>
+    </SplitPane>
+
+    <HBox fx:id="statusBar" styleClass="status-bar">
+        <children>
+            <Label fx:id="connectionStatus"/>
+            <Label fx:id="currentDatabase"/>
+            <Label fx:id="queryExecutionTime"/>
+        </children>
+    </HBox>
+</VBox>

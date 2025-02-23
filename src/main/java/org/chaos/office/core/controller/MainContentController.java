@@ -1,15 +1,15 @@
 package org.chaos.office.core.controller;
 
 import javafx.fxml.FXML;
-import javafx.scene.web.WebView;
-import javafx.scene.web.WebEngine;
+import javafx.scene.layout.StackPane;
+import org.chaos.office.core.navigation.ViewManager;
 
 public class MainContentController {
     @FXML
-    private WebView webView;
-
+    private StackPane rootComponent;
+    
     public void initialize() {
-        WebEngine webEngine = webView.getEngine();
-        webEngine.load(getClass().getResource("/html/content.html").toExternalForm());
+        ViewManager viewManager = ViewManager.getInstance();
+        viewManager.loadViewIntoPane("KData", rootComponent);
     }
 }

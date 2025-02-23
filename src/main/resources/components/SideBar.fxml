@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="sidebar" styleClass="sidebar" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1">
+<VBox fx:id="sidebar" styleClass="sidebar" stylesheets="@../styles/main.css" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1">
     <Button styleClass="sidebar-button" text="Dashboard">
       <graphic>
          <ImageView fitHeight="39.0" fitWidth="23.0" pickOnBounds="true" preserveRatio="true">

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.web.WebView?>
 <?import javafx.scene.layout.StackPane?>
 
-<StackPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.chaos.office.core.controller.MainContentController" stylesheets="@../styles/main.css">
-    <WebView fx:id="webView" />
+
+<StackPane fx:id="rootComponent" stylesheets="@../styles/main.css" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/22" fx:controller="org.chaos.office.core.controller.MainContentController">
 </StackPane>

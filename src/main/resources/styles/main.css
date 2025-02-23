@@ -1,151 +1,192 @@
-@font-face {
-    font-family: 'Ubuntu';
-    src: url('../fonts/Ubuntu-Regular.ttf');
-}
+/* main.css */
 
-@font-face {
-    font-family: 'Ubuntu Medium';
-    src: url('../fonts/Ubuntu-Medium.ttf');
-}
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
 
-/* Welcome Screen */
-
+/* Root styles and variables */
 .root {
-    -fx-background-color: #f0f0f0;
-    -fx-font-family: "Ubuntu Medium";
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: #f5f5f5;
+
+    /* Color palette */
+    -fx-primary-color: #3498db;
+    -fx-secondary-color: #2c3e50;
+    -fx-accent-color: #e74c3c;
+    -fx-light-gray: #ecf0f1;
+    -fx-dark-gray: #7f8c8d;
+    -fx-success-color: #2ecc71;
+    -fx-warning-color: #f39c12;
 }
 
-.welcome-label {
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #333333;
-    -fx-font-family: "Ubuntu Medium";
-}
-
-.start-button {
-    -fx-background-color: #4CAF50;
-    -fx-text-fill: white;
-    -fx-font-size: 16px;
-    -fx-padding: 10 20;
-    -fx-cursor: hand;
-    -fx-font-family: "Ubuntu Medium";
-}
-
-.start-button:hover {
-    -fx-background-color: #45a049;
-    -fx-font-family: "Ubuntu Medium";
-}
-
-/* Sign In */
-
-.label {
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #333333;
-}
-
-.text-field {
-    -fx-background-color: #ffffff;
-    -fx-border-color: #cccccc;
-    -fx-border-radius: 4px;
-}
-
+/* Button styles */
 .button {
-    -fx-background-color: #4CAF50;
+    -fx-background-color: -fx-primary-color;
     -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-border-radius: 4px;
+    -fx-padding: 10 20;
+    -fx-background-radius: 5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 1);
+    -fx-cursor: hand;
 }
 
 .button:hover {
-    -fx-background-color: #45a049;
+    -fx-background-color: derive(-fx-primary-color, 20%);
 }
 
-#messageText {
-    -fx-fill: #ff0000;
-    -fx-font-size: 12px;
+.button:pressed {
+    -fx-background-color: derive(-fx-primary-color, -20%);
 }
 
-/* Side Bar */
+/* Text field styles */
+.text-field, .password-field {
+    -fx-background-color: white;
+    -fx-border-color: -fx-light-gray;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 8;
+}
 
+.text-field:focused, .password-field:focused {
+    -fx-border-color: -fx-primary-color;
+    -fx-effect: dropshadow(three-pass-box, rgba(52, 152, 219, 0.4), 10, 0, 0, 0);
+}
+
+/* Label styles */
+.label {
+    -fx-text-fill: -fx-secondary-color;
+}
+
+/* Sidebar styles */
 .sidebar {
-    -fx-background-color: #2c3e50;
-    -fx-padding: 10;
-    -fx-pref-width: 200;
-}
-
-.sidebar-title {
-    -fx-font-family: "Ubuntu Medium";
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-padding: 0 0 20 0;
+    -fx-background-color: -fx-secondary-color;
+    -fx-padding: 20;
 }
 
 .sidebar-button {
-    -fx-font-family: "Ubuntu Medium";
-    -fx-font-size: 16px;
     -fx-background-color: transparent;
     -fx-text-fill: white;
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 10 20;
-    -fx-pref-width: 180;
+    -fx-padding: 15;
+    -fx-font-size: 16px;
+    -fx-graphic-text-gap: 20;
 }
 
 .sidebar-button:hover {
-    -fx-background-color: #34495e;
+    -fx-background-color: rgba(255, 255, 255, 0.1);
 }
 
-.sidebar-button:pressed {
-    -fx-background-color: #2980b9;
+.sidebar-button:selected {
+    -fx-background-color: -fx-primary-color;
 }
 
-/* Header */
-
+/* Header styles */
 .header {
-    -fx-background-color: #3498db;
-    -fx-padding: 10px;
+    -fx-background-color: white;
+    -fx-padding: 15;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);
 }
 
 .header-title {
-    -fx-font-family: "Ubuntu Medium";
     -fx-font-size: 24px;
-    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-secondary-color;
+}
+
+/* Tab pane styles */
+.tab-pane {
+    -fx-tab-min-height: 40px;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: -fx-light-gray;
+}
+
+.tab-pane .tab {
+    -fx-background-color: transparent;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: white;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.tab .tab-label {
+    -fx-text-fill: -fx-secondary-color;
     -fx-font-weight: bold;
 }
 
-.header-button {
-    -fx-background-color: #2980b9;
-    -fx-text-fill: white;
-    -fx-font-family: "Ubuntu Medium";
-    -fx-font-size: 14px;
-    -fx-padding: 5 10;
-    -fx-background-radius: 5;
-}
-
-.header-button:hover {
-    -fx-background-color: #21618c;
-}
-
-.header-button:pressed {
-    -fx-background-color: #1b4f72;
-}
-
-/* Main content */
-
-.main-content {
+/* Table view styles */
+.table-view {
     -fx-background-color: white;
-    -fx-border-color: #3498db;
-    -fx-border-width: 2;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);
-    -fx-padding: 10;
+    -fx-table-cell-border-color: transparent;
 }
 
-.main-content .web-view {
-    -fx-border-color: #ecf0f1;
-    -fx-border-width: 1;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+.table-view .column-header-background {
+    -fx-background-color: -fx-light-gray;
+}
+
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: transparent;
+    -fx-size: 40;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: -fx-dark-gray;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: -fx-secondary-color;
+    -fx-font-weight: bold;
+}
+
+/* Scroll bar styles */
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: -fx-dark-gray;
+    -fx-background-radius: 5em;
+}
+
+/* Menu styles */
+.menu-bar {
+    -fx-background-color: -fx-secondary-color;
+}
+
+.menu-bar .label {
+    -fx-text-fill: white;
+}
+
+.menu-item {
+    -fx-padding: 5 20;
+}
+
+.menu-item:focused {
+    -fx-background-color: -fx-primary-color;
+}
+
+.menu-item:focused .label {
+    -fx-text-fill: white;
+}
+
+/* Custom styles for specific components */
+.welcome-label {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-color;
+}
+
+.start-button {
+    -fx-font-size: 18px;
+    -fx-padding: 15 30;
+}
+
+.status-bar {
+    -fx-background-color: -fx-light-gray;
+    -fx-padding: 10;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-color: -fx-dark-gray;
 }
