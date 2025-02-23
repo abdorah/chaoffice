@@ -19,6 +19,7 @@ public class ChaOfficeApplication extends Application {
         .getScene()
         .getStylesheets()
         .add(Objects.requireNonNull(getClass().getResource("/style/main.css")).toExternalForm());
+    primaryStage.centerOnScreen();
     primaryStage.show();
   }
 

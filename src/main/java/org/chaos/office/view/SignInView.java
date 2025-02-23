@@ -1,5 +1,6 @@
 package org.chaos.office.view;
 
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -7,6 +8,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.chaos.office.controller.DashboardController;
+import org.chaos.office.service.SceneService;
 
 public class SignInView extends BorderPane {
 
@@ -34,12 +37,24 @@ public class SignInView extends BorderPane {
     return passwordField;
   }
 
+  public Button signInButton() {
+    Button button = new Button("Sign in");
+    button.getStyleClass().add("sing-in-button");
+    button.setOnAction(
+        e -> {
+          System.out.println("Sign In Clicked");
+          SceneService.switchScene(new DashboardController());
+        });
+    return button;
+  }
+
   public SignInView() {
     VBox vbox = new VBox();
     vbox.setSpacing(10);
     vbox.getChildren().add(signInLabel());
     vbox.getChildren().add(idField());
     vbox.getChildren().add(passwordField());
+    vbox.getChildren().add(signInButton());
     this.setCenter(vbox);
   }
 }
