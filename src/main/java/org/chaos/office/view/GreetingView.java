@@ -7,6 +7,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.chaos.office.controller.SignInController;
+import org.chaos.office.service.SceneService;
 
 public class GreetingView extends BorderPane {
 
@@ -21,7 +23,11 @@ public class GreetingView extends BorderPane {
   public Button greetingButton(String text) {
     Button button = new Button(text);
     button.getStyleClass().add("greeting-button");
-    button.setOnAction(e -> System.out.println("Get Started Clicked"));
+    button.setOnAction(
+        e -> {
+          System.out.println("Get Started Clicked");
+          SceneService.switchScene(new SignInController());
+        });
 
     return button;
   }
@@ -40,6 +46,6 @@ public class GreetingView extends BorderPane {
     this.setCenter(centerBox);
 
     this.setBackground(
-        new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+        new Background(new BackgroundFill(Color.GRAY, CornerRadii.EMPTY, Insets.EMPTY)));
   }
 }

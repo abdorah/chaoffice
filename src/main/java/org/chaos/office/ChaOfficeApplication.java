@@ -4,15 +4,15 @@ import java.util.Objects;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import org.chaos.office.controller.GreetingController;
-import org.chaos.office.view.GreetingView;
+import org.chaos.office.service.SceneService;
 
 public class ChaOfficeApplication extends Application {
 
   @Override
   public void start(Stage primaryStage) {
     primaryStage.setTitle("Chaos Office");
-    primaryStage.setScene(new GreetingController());
-    primaryStage.getScene().setRoot(new GreetingView());
+    SceneService.setPrimaryStage(primaryStage);
+    SceneService.switchScene(new GreetingController());
     primaryStage.setHeight(768);
     primaryStage.setWidth(1024);
     primaryStage
