@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -16,6 +17,10 @@ public class ComponentService {
 
   public static void setPrimaryStage(Stage stage) {
     primaryStage = stage;
+  }
+
+  public static <T extends Parent> T getView(Scene scene) {
+    return (T) scene.getRoot();
   }
 
   public static void switchScene(Scene scene) {

@@ -10,12 +10,10 @@ import org.chaos.office.controller.SignInController;
 import org.chaos.office.service.ComponentService;
 
 public class DashboardView extends BorderPane {
-  private VBox sidebar;
 
   public DashboardView() {
     this.setTop(createHeader());
-    this.sidebar = createSidebar();
-    this.setLeft(sidebar);
+    this.setLeft(createSidebar());
     this.setRight(null);
     this.setBottom(null);
   }
@@ -43,24 +41,21 @@ public class DashboardView extends BorderPane {
     header.getChildren().add(ComponentService.createHeaderLabel("Chaos Office"));
     header
         .getChildren()
-        .add(ComponentService.createSwitchButton("Go Home", new GreetingController(), "Arial", 20));
-    return header;
-  }
-
-  public void addSidebarToggle(Runnable toggleAction) {
-    HBox header = (HBox) this.getTop();
-    header
-        .getChildren()
         .add(
             ComponentService.createOperationButton(
-                "Toggle Side Bar", "Arial", 20, button -> toggleAction.run()));
-  }
-
-  public void toggleSidebar() {
-    if (this.getLeft() == null) {
-      this.setLeft(this.sidebar);
-    } else {
-      this.setLeft(null);
-    }
+                "Toggle Side Bar",
+                "Arial",
+                20,
+                button -> {
+                  if (this.getLeft() == null) {
+                    this.setLeft(createSidebar());
+                  } else {
+                    this.setLeft(null);
+                  }
+                }));
+    header
+        .getChildren()
+        .add(ComponentService.createSwitchButton("Go Home", new GreetingController(), "Arial", 20));
+    return header;
   }
 }
