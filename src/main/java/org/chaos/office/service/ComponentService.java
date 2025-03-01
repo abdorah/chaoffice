@@ -1,7 +1,9 @@
 package org.chaos.office.service;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
@@ -39,12 +41,23 @@ public class ComponentService {
     return box;
   }
 
-  public static Button createButton(String text, Scene targetScene, String fontName, int fontSize) {
+  public static Button createSwitchButton(
+      String text, Scene targetScene, String fontName, int fontSize) {
     Button button = new Button(text);
     button.setFont(new Font(fontName, fontSize));
     button.setTextFill(Color.BLACK);
     button.getStyleClass().add("sidebar-button");
     button.setOnAction(e -> ComponentService.switchScene(targetScene));
+    return button;
+  }
+
+  public static Button createOperationButton(
+      String text, String fontName, int fontSize, Consumer<Node> action) {
+    Button button = new Button(text);
+    button.setFont(new Font(fontName, fontSize));
+    button.setTextFill(Color.BLACK);
+    button.getStyleClass().add("sidebar-button");
+    button.setOnAction(e -> action.accept(button));
     return button;
   }
 }

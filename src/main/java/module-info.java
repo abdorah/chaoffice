@@ -7,6 +7,8 @@ module org.chaos.office {
 
   opens org.chaos.office to
       javafx.fxml;
+  opens org.chaos.office.view to
+      javafx.base;
 
   exports org.chaos.office;
 }
