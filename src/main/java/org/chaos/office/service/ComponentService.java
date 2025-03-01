@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -39,6 +40,14 @@ public class ComponentService {
     }
     box.setPadding(new Insets(padding));
     return box;
+  }
+
+  public static Label createHeaderLabel(String text) {
+    Label label = new Label(text);
+    label.setFont(new Font("Arial", 16));
+    label.setTextFill(Color.BLACK);
+    label.getStyleClass().add("sidebar-button");
+    return label;
   }
 
   public static Button createSwitchButton(
