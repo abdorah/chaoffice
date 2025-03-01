@@ -1,0 +1,50 @@
+package org.chaos.office.service;
+
+import java.util.Objects;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+
+public class ComponentService {
+  private static Stage primaryStage;
+
+  public static void setPrimaryStage(Stage stage) {
+    primaryStage = stage;
+  }
+
+  public static void switchScene(Scene scene) {
+    if (primaryStage != null) {
+      primaryStage.setScene(scene);
+      primaryStage
+          .getScene()
+          .getStylesheets()
+          .add(
+              Objects.requireNonNull(ComponentService.class.getResource("/style/main.css"))
+                  .toExternalForm());
+      primaryStage.show();
+    } else {
+      throw new IllegalStateException("Primary stage is not set.");
+    }
+  }
+
+  public static <T extends javafx.scene.layout.Pane> T createBox(
+      T box, double prefWidth, double padding) {
+    if (prefWidth > 0) {
+      box.setPrefWidth(prefWidth);
+    }
+    box.setPadding(new Insets(padding));
+    return box;
+  }
+
+  public static Button createButton(String text, Scene targetScene, String fontName, int fontSize) {
+    Button button = new Button(text);
+    button.setFont(new Font(fontName, fontSize));
+    button.setTextFill(Color.BLACK);
+    button.getStyleClass().add("sidebar-button");
+    button.setOnAction(e -> ComponentService.switchScene(targetScene));
+    return button;
+  }
+}

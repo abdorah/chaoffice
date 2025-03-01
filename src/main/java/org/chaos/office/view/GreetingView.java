@@ -8,7 +8,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import org.chaos.office.controller.SignInController;
-import org.chaos.office.service.SceneService;
+import org.chaos.office.service.ComponentService;
 
 public class GreetingView extends BorderPane {
 
@@ -16,7 +16,7 @@ public class GreetingView extends BorderPane {
     Label label = new Label(text);
     label.getStyleClass().add("greeting-label");
     label.setFont(new Font("Arial", 24));
-    label.setTextFill(Color.WHITE);
+    label.setTextFill(Color.BLACK);
     return label;
   }
 
@@ -26,7 +26,7 @@ public class GreetingView extends BorderPane {
     button.setOnAction(
         e -> {
           System.out.println("Get Started Clicked");
-          SceneService.switchScene(new SignInController());
+          ComponentService.switchScene(new SignInController());
         });
 
     return button;

@@ -9,7 +9,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import org.chaos.office.controller.DashboardController;
-import org.chaos.office.service.SceneService;
+import org.chaos.office.service.ComponentService;
 
 public class SignInView extends BorderPane {
 
@@ -17,7 +17,7 @@ public class SignInView extends BorderPane {
     Label label = new Label("Sign In");
     label.getStyleClass().add("sign-in-label");
     label.setFont(new Font("Arial", 24));
-    label.setTextFill(Color.WHITE);
+    label.setTextFill(Color.BLACK);
     return label;
   }
 
@@ -43,7 +43,7 @@ public class SignInView extends BorderPane {
     button.setOnAction(
         e -> {
           System.out.println("Sign In Clicked");
-          SceneService.switchScene(new DashboardController());
+          ComponentService.switchScene(new DashboardController());
         });
     return button;
   }

@@ -7,5 +7,6 @@ public class DashboardController extends Scene {
 
   public DashboardController() {
     super(new DashboardView());
+    this.setRoot(super.getRoot());
   }
 }
