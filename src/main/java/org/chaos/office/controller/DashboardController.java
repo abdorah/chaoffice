@@ -5,7 +5,7 @@ import org.chaos.office.view.DashboardView;
 import org.chaos.office.view.DataTableView;
 
 public class DashboardController extends Scene {
-  private DashboardView dashboardView;
+  private final DashboardView dashboardView;
 
   public DashboardController() {
     super(new DashboardView());
