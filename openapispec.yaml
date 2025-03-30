@@ -1,0 +1,1237 @@
+
+"openapi": "3.0.0"
+"info":
+  "title": "ChaOffice API"
+  "version": "v1"
+  "description": "API definition for the ChaOffice project, a distributed platform for data and communication management in small and medium-sized enterprises (SMEs)."
+"servers":
+  -
+    "url": "/api"
+"components":
+  "schemas":
+    "Superuser":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the superuser."
+          "readOnly": true
+        "email":
+          "type": "string"
+          "format": "email"
+          "description": "Email address of the superuser."
+        "password":
+          "type": "string"
+          "writeOnly": true
+          "description": "Password for the superuser."
+        "tokenKey":
+          "type": "string"
+          "description": "Token key for authentication."
+          "readOnly": true
+        "emailVisibility":
+          "type": "boolean"
+          "description": "Flag indicating email visibility."
+        "verified":
+          "type": "boolean"
+          "description": "Flag indicating email verification status."
+        "created":
+          "type": "string"
+          "format": "date-time"
+          "description": "Timestamp of superuser creation."
+          "readOnly": true
+        "updated":
+          "type": "string"
+          "format": "date-time"
+          "description": "Timestamp of last update."
+          "readOnly": true
+    "User":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the user."
+          "readOnly": true
+        "email":
+          "type": "string"
+          "format": "email"
+          "description": "Email address of the user."
+        "password":
+          "type": "string"
+          "writeOnly": true
+          "description": "Password for the user."
+        "tokenKey":
+          "type": "string"
+          "description": "Token key for authentication."
+          "readOnly": true
+        "emailVisibility":
+          "type": "boolean"
+          "description": "Flag indicating email visibility."
+        "verified":
+          "type": "boolean"
+          "description": "Flag indicating verification status."
+        "name":
+          "type": "string"
+          "description": "Full name of the user."
+        "avatar":
+          "type": "string"
+          "format": "binary"
+          "description": "User's avatar image."
+        "cluster":
+          "type": "string"
+          "description": "ID of the cluster the user belongs to."
+        "created":
+          "type": "string"
+          "format": "date-time"
+          "description": "Timestamp of user creation."
+          "readOnly": true
+        "updated":
+          "type": "string"
+          "format": "date-time"
+          "description": "Timestamp of last update."
+          "readOnly": true
+    "AuthOrigin":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier."
+          "readOnly": true
+        "collectionRef":
+          "type": "string"
+          "description": "Reference to the collection."
+        "recordRef":
+          "type": "string"
+          "description": "Reference to the record."
+        "fingerprint":
+          "type": "string"
+          "description": "Fingerprint for authentication origin."
+        "created":
+          "type": "string"
+          "format": "date-time"
+          "description": "Creation timestamp."
+          "readOnly": true
+        "updated":
+          "type": "string"
+          "format": "date-time"
+          "description": "Update timestamp."
+          "readOnly": true
+    "ExternalAuth":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier."
+          "readOnly": true
+        "collectionRef":
+          "type": "string"
+          "description": "Collection reference."
+        "recordRef":
+          "type": "string"
+          "description": "Record reference."
+        "provider":
+          "type": "string"
+          "description": "Authentication provider."
+        "providerId":
+          "type": "string"
+          "description": "Provider's user ID."
+        "created":
+          "type": "string"
+          "format": "date-time"
+          "description": "Creation timestamp."
+          "readOnly": true
+        "updated":
+          "type": "string"
+          "format": "date-time"
+          "description": "Update timestamp."
+          "readOnly": true
+    "MFA":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier."
+          "readOnly": true
+        "collectionRef":
+          "type": "string"
+          "description": "Collection reference."
+        "recordRef":
+          "type": "string"
+          "description": "Record reference."
+        "method":
+          "type": "string"
+          "description": "MFA method."
+        "created":
+          "type": "string"
+          "format": "date-time"
+          "description": "Creation timestamp."
+          "readOnly": true
+        "updated":
+          "type": "string"
+          "format": "date-time"
+          "description": "Update timestamp."
+          "readOnly": true
+    "OTP":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier."
+          "readOnly": true
+        "collectionRef":
+          "type": "string"
+          "description": "Collection reference."
+        "recordRef":
+          "type": "string"
+          "description": "Record reference."
+        "password":
+          "type": "string"
+          "description": "One-time password (hashed)."
+        "sentTo":
+          "type": "string"
+          "description": "Destination of the OTP."
+        "created":
+          "type": "string"
+          "format": "date-time"
+          "description": "Creation timestamp."
+          "readOnly": true
+        "updated":
+          "type": "string"
+          "format": "date-time"
+          "description": "Update timestamp."
+          "readOnly": true
+    "Category":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the category."
+          "readOnly": true
+        "category_name":
+          "type": "string"
+          "description": "Name of the category."
+    "Cluster":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the cluster."
+          "readOnly": true
+        "cluster_name":
+          "type": "string"
+          "description": "Name of the cluster."
+    "Product":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the product."
+          "readOnly": true
+        "name":
+          "type": "string"
+          "description": "Name of the product."
+        "description":
+          "type": "string"
+          "description": "Description of the product."
+        "price":
+          "type": "number"
+          "format": "float"
+          "description": "Price of the product."
+        "quantity":
+          "type": "number"
+          "format": "float"
+          "description": "Quantity of the product in stock."
+        "image_url":
+          "type": "string"
+          "format": "url"
+          "description": "URL of the product image."
+        "category":
+          "type": "string"
+          "description": "ID of the category the product belongs to."
+    "Sale":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the sale."
+          "readOnly": true
+        "client_name":
+          "type": "string"
+          "description": "Name of the client."
+        "sale_timestamp":
+          "type": "string"
+          "format": "date-time"
+          "description": "Timestamp of the sale."
+        "total_price":
+          "type": "number"
+          "format": "float"
+          "description": "Total price of the sale."
+        "zone":
+          "type": "string"
+          "description": "Zone where the sale occurred."
+    "Site":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the site."
+          "readOnly": true
+        "name":
+          "type": "string"
+          "description": "Name of the site."
+        "location":
+          "type": "string"
+          "description": "Location of the site."
+    "Zone":
+      "type": "object"
+      "properties":
+        "id":
+          "type": "string"
+          "description": "Unique identifier for the zone."
+          "readOnly": true
+        "zone_name":
+          "type": "string"
+          "description": "Name of the zone."
+        "site":
+          "type": "string"
+          "description": "Site the zone belongs to."
+"paths":
+  "/users":
+    "get":
+      "summary": "Retrieve a list of users"
+      "responses":
+        "200":
+          "description": "A list of users."
+          "content":
+            "application/json":
+              "schema":
+                "type": "array"
+                "items":
+                  "type": "object"
+                  "properties":
+                    "id":
+                      "type": "string"
+                      "description": "Unique identifier for the user."
+                      "readOnly": true
+                    "email":
+                      "type": "string"
+                      "format": "email"
+                      "description": "Email address of the user."
+                    "password":
+                      "type": "string"
+                      "writeOnly": true
+                      "description": "Password for the user."
+                    "tokenKey":
+                      "type": "string"
+                      "description": "Token key for authentication."
+                      "readOnly": true
+                    "emailVisibility":
+                      "type": "boolean"
+                      "description": "Flag indicating email visibility."
+                    "verified":
+                      "type": "boolean"
+                      "description": "Flag indicating verification status."
+                    "name":
+                      "type": "string"
+                      "description": "Full name of the user."
+                    "avatar":
+                      "type": "string"
+                      "format": "binary"
+                      "description": "User's avatar image."
+                    "cluster":
+                      "type": "string"
+                      "description": "ID of the cluster the user belongs to."
+                    "created":
+                      "type": "string"
+                      "format": "date-time"
+                      "description": "Timestamp of user creation."
+                      "readOnly": true
+                    "updated":
+                      "type": "string"
+                      "format": "date-time"
+                      "description": "Timestamp of last update."
+                      "readOnly": true
+    "post":
+      "summary": "Create a new user"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the user."
+                  "readOnly": true
+                "email":
+                  "type": "string"
+                  "format": "email"
+                  "description": "Email address of the user."
+                "password":
+                  "type": "string"
+                  "writeOnly": true
+                  "description": "Password for the user."
+                "tokenKey":
+                  "type": "string"
+                  "description": "Token key for authentication."
+                  "readOnly": true
+                "emailVisibility":
+                  "type": "boolean"
+                  "description": "Flag indicating email visibility."
+                "verified":
+                  "type": "boolean"
+                  "description": "Flag indicating verification status."
+                "name":
+                  "type": "string"
+                  "description": "Full name of the user."
+                "avatar":
+                  "type": "string"
+                  "format": "binary"
+                  "description": "User's avatar image."
+                "cluster":
+                  "type": "string"
+                  "description": "ID of the cluster the user belongs to."
+                "created":
+                  "type": "string"
+                  "format": "date-time"
+                  "description": "Timestamp of user creation."
+                  "readOnly": true
+                "updated":
+                  "type": "string"
+                  "format": "date-time"
+                  "description": "Timestamp of last update."
+                  "readOnly": true
+      "responses":
+        "201":
+          "description": "User created successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the user."
+                    "readOnly": true
+                  "email":
+                    "type": "string"
+                    "format": "email"
+                    "description": "Email address of the user."
+                  "password":
+                    "type": "string"
+                    "writeOnly": true
+                    "description": "Password for the user."
+                  "tokenKey":
+                    "type": "string"
+                    "description": "Token key for authentication."
+                    "readOnly": true
+                  "emailVisibility":
+                    "type": "boolean"
+                    "description": "Flag indicating email visibility."
+                  "verified":
+                    "type": "boolean"
+                    "description": "Flag indicating verification status."
+                  "name":
+                    "type": "string"
+                    "description": "Full name of the user."
+                  "avatar":
+                    "type": "string"
+                    "format": "binary"
+                    "description": "User's avatar image."
+                  "cluster":
+                    "type": "string"
+                    "description": "ID of the cluster the user belongs to."
+                  "created":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of user creation."
+                    "readOnly": true
+                  "updated":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of last update."
+                    "readOnly": true
+        "400":
+          "description": "Bad request"
+  "/users/{id}":
+    "get":
+      "summary": "Retrieve a single user by ID"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the user to retrieve"
+          "schema":
+            "type": "string"
+      "responses":
+        "200":
+          "description": "Details of the requested user"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the user."
+                    "readOnly": true
+                  "email":
+                    "type": "string"
+                    "format": "email"
+                    "description": "Email address of the user."
+                  "password":
+                    "type": "string"
+                    "writeOnly": true
+                    "description": "Password for the user."
+                  "tokenKey":
+                    "type": "string"
+                    "description": "Token key for authentication."
+                    "readOnly": true
+                  "emailVisibility":
+                    "type": "boolean"
+                    "description": "Flag indicating email visibility."
+                  "verified":
+                    "type": "boolean"
+                    "description": "Flag indicating verification status."
+                  "name":
+                    "type": "string"
+                    "description": "Full name of the user."
+                  "avatar":
+                    "type": "string"
+                    "format": "binary"
+                    "description": "User's avatar image."
+                  "cluster":
+                    "type": "string"
+                    "description": "ID of the cluster the user belongs to."
+                  "created":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of user creation."
+                    "readOnly": true
+                  "updated":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of last update."
+                    "readOnly": true
+        "404":
+          "description": "User not found"
+    "put":
+      "summary": "Update an existing user"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the user to update"
+          "schema":
+            "type": "string"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the user."
+                  "readOnly": true
+                "email":
+                  "type": "string"
+                  "format": "email"
+                  "description": "Email address of the user."
+                "password":
+                  "type": "string"
+                  "writeOnly": true
+                  "description": "Password for the user."
+                "tokenKey":
+                  "type": "string"
+                  "description": "Token key for authentication."
+                  "readOnly": true
+                "emailVisibility":
+                  "type": "boolean"
+                  "description": "Flag indicating email visibility."
+                "verified":
+                  "type": "boolean"
+                  "description": "Flag indicating verification status."
+                "name":
+                  "type": "string"
+                  "description": "Full name of the user."
+                "avatar":
+                  "type": "string"
+                  "format": "binary"
+                  "description": "User's avatar image."
+                "cluster":
+                  "type": "string"
+                  "description": "ID of the cluster the user belongs to."
+                "created":
+                  "type": "string"
+                  "format": "date-time"
+                  "description": "Timestamp of user creation."
+                  "readOnly": true
+                "updated":
+                  "type": "string"
+                  "format": "date-time"
+                  "description": "Timestamp of last update."
+                  "readOnly": true
+      "responses":
+        "200":
+          "description": "User updated successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the user."
+                    "readOnly": true
+                  "email":
+                    "type": "string"
+                    "format": "email"
+                    "description": "Email address of the user."
+                  "password":
+                    "type": "string"
+                    "writeOnly": true
+                    "description": "Password for the user."
+                  "tokenKey":
+                    "type": "string"
+                    "description": "Token key for authentication."
+                    "readOnly": true
+                  "emailVisibility":
+                    "type": "boolean"
+                    "description": "Flag indicating email visibility."
+                  "verified":
+                    "type": "boolean"
+                    "description": "Flag indicating verification status."
+                  "name":
+                    "type": "string"
+                    "description": "Full name of the user."
+                  "avatar":
+                    "type": "string"
+                    "format": "binary"
+                    "description": "User's avatar image."
+                  "cluster":
+                    "type": "string"
+                    "description": "ID of the cluster the user belongs to."
+                  "created":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of user creation."
+                    "readOnly": true
+                  "updated":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of last update."
+                    "readOnly": true
+        "400":
+          "description": "Bad request"
+        "404":
+          "description": "User not found"
+    "delete":
+      "summary": "Delete a user"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the user to delete"
+          "schema":
+            "type": "string"
+      "responses":
+        "204":
+          "description": "User deleted successfully"
+        "404":
+          "description": "User not found"
+  "/products":
+    "get":
+      "summary": "Get all products"
+      "responses":
+        "200":
+          "description": "A list of products."
+          "content":
+            "application/json":
+              "schema":
+                "type": "array"
+                "items":
+                  "type": "object"
+                  "properties":
+                    "id":
+                      "type": "string"
+                      "description": "Unique identifier for the product."
+                      "readOnly": true
+                    "name":
+                      "type": "string"
+                      "description": "Name of the product."
+                    "description":
+                      "type": "string"
+                      "description": "Description of the product."
+                    "price":
+                      "type": "number"
+                      "format": "float"
+                      "description": "Price of the product."
+                    "quantity":
+                      "type": "number"
+                      "format": "float"
+                      "description": "Quantity of the product in stock."
+                    "image_url":
+                      "type": "string"
+                      "format": "url"
+                      "description": "URL of the product image."
+                    "category":
+                      "type": "string"
+                      "description": "ID of the category the product belongs to."
+    "post":
+      "summary": "Create a new product"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the product."
+                  "readOnly": true
+                "name":
+                  "type": "string"
+                  "description": "Name of the product."
+                "description":
+                  "type": "string"
+                  "description": "Description of the product."
+                "price":
+                  "type": "number"
+                  "format": "float"
+                  "description": "Price of the product."
+                "quantity":
+                  "type": "number"
+                  "format": "float"
+                  "description": "Quantity of the product in stock."
+                "image_url":
+                  "type": "string"
+                  "format": "url"
+                  "description": "URL of the product image."
+                "category":
+                  "type": "string"
+                  "description": "ID of the category the product belongs to."
+      "responses":
+        "201":
+          "description": "Product created successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the product."
+                    "readOnly": true
+                  "name":
+                    "type": "string"
+                    "description": "Name of the product."
+                  "description":
+                    "type": "string"
+                    "description": "Description of the product."
+                  "price":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Price of the product."
+                  "quantity":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Quantity of the product in stock."
+                  "image_url":
+                    "type": "string"
+                    "format": "url"
+                    "description": "URL of the product image."
+                  "category":
+                    "type": "string"
+                    "description": "ID of the category the product belongs to."
+        "400":
+          "description": "Bad request"
+  "/products/{id}":
+    "get":
+      "summary": "Get a product by ID"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the product to retrieve"
+          "schema":
+            "type": "string"
+      "responses":
+        "200":
+          "description": "Details of the requested product"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the product."
+                    "readOnly": true
+                  "name":
+                    "type": "string"
+                    "description": "Name of the product."
+                  "description":
+                    "type": "string"
+                    "description": "Description of the product."
+                  "price":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Price of the product."
+                  "quantity":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Quantity of the product in stock."
+                  "image_url":
+                    "type": "string"
+                    "format": "url"
+                    "description": "URL of the product image."
+                  "category":
+                    "type": "string"
+                    "description": "ID of the category the product belongs to."
+        "404":
+          "description": "Product not found"
+    "put":
+      "summary": "Update a product"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the product to update"
+          "schema":
+            "type": "string"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the product."
+                  "readOnly": true
+                "name":
+                  "type": "string"
+                  "description": "Name of the product."
+                "description":
+                  "type": "string"
+                  "description": "Description of the product."
+                "price":
+                  "type": "number"
+                  "format": "float"
+                  "description": "Price of the product."
+                "quantity":
+                  "type": "number"
+                  "format": "float"
+                  "description": "Quantity of the product in stock."
+                "image_url":
+                  "type": "string"
+                  "format": "url"
+                  "description": "URL of the product image."
+                "category":
+                  "type": "string"
+                  "description": "ID of the category the product belongs to."
+      "responses":
+        "200":
+          "description": "Product updated successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the product."
+                    "readOnly": true
+                  "name":
+                    "type": "string"
+                    "description": "Name of the product."
+                  "description":
+                    "type": "string"
+                    "description": "Description of the product."
+                  "price":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Price of the product."
+                  "quantity":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Quantity of the product in stock."
+                  "image_url":
+                    "type": "string"
+                    "format": "url"
+                    "description": "URL of the product image."
+                  "category":
+                    "type": "string"
+                    "description": "ID of the category the product belongs to."
+        "400":
+          "description": "Bad request"
+        "404":
+          "description": "Product not found"
+    "delete":
+      "summary": "Delete a product"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the product to delete"
+          "schema":
+            "type": "string"
+      "responses":
+        "204":
+          "description": "Product deleted successfully"
+        "404":
+          "description": "Product not found"
+  "/categories":
+    "get":
+      "summary": "Get all categories"
+      "responses":
+        "200":
+          "description": "A list of categories."
+          "content":
+            "application/json":
+              "schema":
+                "type": "array"
+                "items":
+                  "type": "object"
+                  "properties":
+                    "id":
+                      "type": "string"
+                      "description": "Unique identifier for the category."
+                      "readOnly": true
+                    "category_name":
+                      "type": "string"
+                      "description": "Name of the category."
+    "post":
+      "summary": "Create a new category"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the category."
+                  "readOnly": true
+                "category_name":
+                  "type": "string"
+                  "description": "Name of the category."
+      "responses":
+        "201":
+          "description": "Category created successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the category."
+                    "readOnly": true
+                  "category_name":
+                    "type": "string"
+                    "description": "Name of the category."
+        "400":
+          "description": "Bad request"
+  "/categories/{id}":
+    "get":
+      "summary": "Get a category by ID"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the category to retrieve"
+          "schema":
+            "type": "string"
+      "responses":
+        "200":
+          "description": "Details of the requested category"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the category."
+                    "readOnly": true
+                  "category_name":
+                    "type": "string"
+                    "description": "Name of the category."
+        "404":
+          "description": "Category not found"
+    "put":
+      "summary": "Update a category"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the category to update"
+          "schema":
+            "type": "string"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the category."
+                  "readOnly": true
+                "category_name":
+                  "type": "string"
+                  "description": "Name of the category."
+      "responses":
+        "200":
+          "description": "Category updated successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the category."
+                    "readOnly": true
+                  "category_name":
+                    "type": "string"
+                    "description": "Name of the category."
+        "400":
+          "description": "Bad request"
+        "404":
+          "description": "Category not found"
+    "delete":
+      "summary": "Delete a category"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the category to delete"
+          "schema":
+            "type": "string"
+      "responses":
+        "204":
+          "description": "Category deleted successfully"
+        "404":
+          "description": "Category not found"
+  "/sales":
+    "get":
+      "summary": "Get all sales"
+      "responses":
+        "200":
+          "description": "A list of sales."
+          "content":
+            "application/json":
+              "schema":
+                "type": "array"
+                "items":
+                  "type": "object"
+                  "properties":
+                    "id":
+                      "type": "string"
+                      "description": "Unique identifier for the sale."
+                      "readOnly": true
+                    "client_name":
+                      "type": "string"
+                      "description": "Name of the client."
+                    "sale_timestamp":
+                      "type": "string"
+                      "format": "date-time"
+                      "description": "Timestamp of the sale."
+                    "total_price":
+                      "type": "number"
+                      "format": "float"
+                      "description": "Total price of the sale."
+                    "zone":
+                      "type": "string"
+                      "description": "Zone where the sale occurred."
+    "post":
+      "summary": "Create a new sale"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the sale."
+                  "readOnly": true
+                "client_name":
+                  "type": "string"
+                  "description": "Name of the client."
+                "sale_timestamp":
+                  "type": "string"
+                  "format": "date-time"
+                  "description": "Timestamp of the sale."
+                "total_price":
+                  "type": "number"
+                  "format": "float"
+                  "description": "Total price of the sale."
+                "zone":
+                  "type": "string"
+                  "description": "Zone where the sale occurred."
+      "responses":
+        "201":
+          "description": "Sale created successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the sale."
+                    "readOnly": true
+                  "client_name":
+                    "type": "string"
+                    "description": "Name of the client."
+                  "sale_timestamp":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of the sale."
+                  "total_price":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Total price of the sale."
+                  "zone":
+                    "type": "string"
+                    "description": "Zone where the sale occurred."
+        "400":
+          "description": "Bad request"
+  "/sales/{id}":
+    "get":
+      "summary": "Get a sale by ID"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the sale to retrieve"
+          "schema":
+            "type": "string"
+      "responses":
+        "200":
+          "description": "Details of the requested sale"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the sale."
+                    "readOnly": true
+                  "client_name":
+                    "type": "string"
+                    "description": "Name of the client."
+                  "sale_timestamp":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of the sale."
+                  "total_price":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Total price of the sale."
+                  "zone":
+                    "type": "string"
+                    "description": "Zone where the sale occurred."
+        "404":
+          "description": "Sale not found"
+    "put":
+      "summary": "Update a sale"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the sale to update"
+          "schema":
+            "type": "string"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "type": "object"
+              "properties":
+                "id":
+                  "type": "string"
+                  "description": "Unique identifier for the sale."
+                  "readOnly": true
+                "client_name":
+                  "type": "string"
+                  "description": "Name of the client."
+                "sale_timestamp":
+                  "type": "string"
+                  "format": "date-time"
+                  "description": "Timestamp of the sale."
+                "total_price":
+                  "type": "number"
+                  "format": "float"
+                  "description": "Total price of the sale."
+                "zone":
+                  "type": "string"
+                  "description": "Zone where the sale occurred."
+      "responses":
+        "200":
+          "description": "Sale updated successfully"
+          "content":
+            "application/json":
+              "schema":
+                "type": "object"
+                "properties":
+                  "id":
+                    "type": "string"
+                    "description": "Unique identifier for the sale."
+                    "readOnly": true
+                  "client_name":
+                    "type": "string"
+                    "description": "Name of the client."
+                  "sale_timestamp":
+                    "type": "string"
+                    "format": "date-time"
+                    "description": "Timestamp of the sale."
+                  "total_price":
+                    "type": "number"
+                    "format": "float"
+                    "description": "Total price of the sale."
+                  "zone":
+                    "type": "string"
+                    "description": "Zone where the sale occurred."
+        "400":
+          "description": "Bad request"
+        "404":
+          "description": "Sale not found"
+    "delete":
+      "summary": "Delete a sale"
+      "parameters":
+        -
+          "in": "path"
+          "name": "id"
+          "required": true
+          "description": "The ID of the sale to delete"
+          "schema":
+            "type": "string"
+      "responses":
+        "204":
+          "description": "Sale deleted successfully"
+        "404":
+          "description": "Unable to delete sale"
