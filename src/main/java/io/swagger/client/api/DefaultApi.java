@@ -13,25 +13,21 @@
 package io.swagger.client.api;
 
 import com.google.gson.reflect.TypeToken;
-import io.swagger.client.ApiCallback;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.ApiResponse;
-import io.swagger.client.Configuration;
-import io.swagger.client.Pair;
-import io.swagger.client.ProgressRequestBody;
-import io.swagger.client.ProgressResponseBody;
+import io.swagger.client.*;
 import io.swagger.client.model.Category;
 import io.swagger.client.model.Product;
 import io.swagger.client.model.Sale;
 import io.swagger.client.model.User;
+import okhttp3.Call;
+import okhttp3.Interceptor;
+import okhttp3.Response;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import okhttp3.*;
 
 public class DefaultApi {
   private ApiClient apiClient;
@@ -71,7 +67,7 @@ public class DefaultApi {
     Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath = "/categories";
+    String localVarPath = "/categories/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -111,15 +107,25 @@ public class DefaultApi {
       localVarHeaderParams.putAll(headers);
     }
     return apiClient.buildCall(
-        localVarPath,
-        "GET",
+        "_superusers/auth-with-password",
+        "POST",
         localVarQueryParams,
         localVarCollectionQueryParams,
-        localVarPostBody,
+        "{\"identity\": \"kotbymo@gamil.com\", \"password\":\"supersecret\"}",
         localVarHeaderParams,
         localVarFormParams,
         localVarAuthNames,
         progressRequestListener);
+    // return apiClient.buildCall(
+    //     localVarPath,
+    //     "GET",
+    //     localVarQueryParams,
+    //     localVarCollectionQueryParams,
+    //     localVarPostBody,
+    //     localVarHeaderParams,
+    //     localVarFormParams,
+    //     localVarAuthNames,
+    //     progressRequestListener);
   }
 
   @SuppressWarnings("rawtypes")
@@ -208,7 +214,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/categories/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/categories/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -352,7 +358,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/categories/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/categories/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -501,7 +507,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/categories/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/categories/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -654,7 +660,7 @@ public class DefaultApi {
     Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath = "/categories";
+    String localVarPath = "/categories/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -797,7 +803,7 @@ public class DefaultApi {
     Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath = "/products";
+    String localVarPath = "/products/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -934,7 +940,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/products/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/products/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1078,7 +1084,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/products/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/products/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1227,7 +1233,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/products/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/products/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1379,7 +1385,7 @@ public class DefaultApi {
     Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath = "/products";
+    String localVarPath = "/products/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1522,7 +1528,7 @@ public class DefaultApi {
     Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath = "/sales";
+    String localVarPath = "/sales/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1659,7 +1665,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/sales/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/sales/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1802,7 +1808,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/sales/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/sales/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -1949,7 +1955,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/sales/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/sales/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2099,7 +2105,7 @@ public class DefaultApi {
     Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath = "/sales";
+    String localVarPath = "/sales/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2240,7 +2246,7 @@ public class DefaultApi {
     Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath = "/users";
+    String localVarPath = "/users/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2377,7 +2383,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/users/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/users/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2520,7 +2526,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/users/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/users/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2667,7 +2673,7 @@ public class DefaultApi {
 
     // create path and map variables
     String localVarPath =
-        "/users/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
+        "/users/records/{id}".replaceAll("\\{" + "id" + "\\}", apiClient.escapeString(id.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2817,7 +2823,7 @@ public class DefaultApi {
     Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath = "/users";
+    String localVarPath = "/users/records";
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();

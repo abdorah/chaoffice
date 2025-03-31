@@ -19,6 +19,6 @@ public class ChaOfficeApplication extends Application {
   }
 
   public static void main(String[] args) {
-    launch(args);
+    ChaOfficeApplication.launch(args);
   }
 }

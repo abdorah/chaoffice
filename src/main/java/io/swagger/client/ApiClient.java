@@ -12,10 +12,6 @@
 
 package io.swagger.client;
 
-import io.swagger.client.auth.ApiKeyAuth;
-import io.swagger.client.auth.Authentication;
-import io.swagger.client.auth.HttpBasicAuth;
-import io.swagger.client.auth.OAuth;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,21 +32,50 @@ import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.net.ssl.*;
-import okhttp3.*;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+
+import org.jetbrains.annotations.NotNull;
+
+import io.swagger.client.auth.ApiKeyAuth;
+import io.swagger.client.auth.Authentication;
+import io.swagger.client.auth.HttpBasicAuth;
+import io.swagger.client.auth.OAuth;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.internal.http.HttpMethod;
 import okhttp3.logging.HttpLoggingInterceptor;
-import okio.*;
-import org.jetbrains.annotations.NotNull;
+import okio.BufferedSink;
+import okio.Okio;
 
 public class ApiClient {
 
-  private String basePath = "/api";
+  private String basePath = "http://127.0.0.1:8090/api/collections";
   private boolean debugging = false;
   private Map<String, String> defaultHeaderMap = new HashMap<String, String>();
   private String tempFolderPath = null;
@@ -864,8 +889,7 @@ public class ApiClient {
     call.enqueue(
         new Callback() {
           @Override
-          public void onResponse(@NotNull Call call, @NotNull Response response)
-              throws IOException {
+          public void onResponse(@NotNull Call call, @NotNull Response response){
             T result;
             try {
               result = (T) handleResponse(response, returnType);
@@ -1044,7 +1068,7 @@ public class ApiClient {
     url.append(basePath).append(path);
 
     if (queryParams != null && !queryParams.isEmpty()) {
-      // support (constant) query string in `path`, e.g. "/posts?draft=1"
+      // support (constant) query string in `path`, e.g. "/posts/records?draft=1"
       String prefix = path.contains("?") ? "&" : "?";
       for (Pair param : queryParams) {
         if (param.getValue() != null) {

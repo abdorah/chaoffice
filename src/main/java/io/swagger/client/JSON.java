@@ -12,15 +12,11 @@
 
 package io.swagger.client;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.TypeAdapter;
+import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import io.gsonfire.GsonFireBuilder;
-import io.swagger.client.model.*;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Type;

@@ -12,9 +12,9 @@
 
 package io.swagger.client;
 
+import javax.annotation.processing.Generated;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.processing.Generated;
 
 @Generated(
     value = "io.swagger.codegen.v3.generators.java.JavaClientCodegen",

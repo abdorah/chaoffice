@@ -6,7 +6,7 @@
   "description": "API definition for the ChaOffice project, a distributed platform for data and communication management in small and medium-sized enterprises (SMEs)."
 "servers":
   -
-    "url": "/api"
+    "url": "/api/records"
 "components":
   "schemas":
     "Superuser":
@@ -295,7 +295,7 @@
           "type": "string"
           "description": "Site the zone belongs to."
 "paths":
-  "/users":
+  "/users/records":
     "get":
       "summary": "Retrieve a list of users"
       "responses":
@@ -453,7 +453,7 @@
                     "readOnly": true
         "400":
           "description": "Bad request"
-  "/users/{id}":
+  "/users/records/{id}":
     "get":
       "summary": "Retrieve a single user by ID"
       "parameters":
@@ -644,7 +644,7 @@
           "description": "User deleted successfully"
         "404":
           "description": "User not found"
-  "/products":
+  "/products/records":
     "get":
       "summary": "Get all products"
       "responses":
@@ -751,7 +751,7 @@
                     "description": "ID of the category the product belongs to."
         "400":
           "description": "Bad request"
-  "/products/{id}":
+  "/products/records/{id}":
     "get":
       "summary": "Get a product by ID"
       "parameters":
@@ -891,7 +891,7 @@
           "description": "Product deleted successfully"
         "404":
           "description": "Product not found"
-  "/categories":
+  "/categories/records":
     "get":
       "summary": "Get all categories"
       "responses":
@@ -944,7 +944,7 @@
                     "description": "Name of the category."
         "400":
           "description": "Bad request"
-  "/categories/{id}":
+  "/categories/records/{id}":
     "get":
       "summary": "Get a category by ID"
       "parameters":
@@ -1030,7 +1030,7 @@
           "description": "Category deleted successfully"
         "404":
           "description": "Category not found"
-  "/sales":
+  "/sales/records":
     "get":
       "summary": "Get all sales"
       "responses":
@@ -1116,7 +1116,7 @@
                     "description": "Zone where the sale occurred."
         "400":
           "description": "Bad request"
-  "/sales/{id}":
+  "/sales/records/{id}":
     "get":
       "summary": "Get a sale by ID"
       "parameters":

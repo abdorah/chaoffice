@@ -13,9 +13,10 @@
 package io.swagger.client.auth;
 
 import io.swagger.client.Pair;
+import okhttp3.Credentials;
+
 import java.util.List;
 import java.util.Map;
-import okhttp3.Credentials;
 
 public class HttpBasicAuth implements Authentication {
   private String username;
