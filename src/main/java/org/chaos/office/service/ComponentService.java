@@ -1,5 +1,7 @@
 package org.chaos.office.service;
 
+import java.util.Objects;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -9,9 +11,6 @@ import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-
-import java.util.Objects;
-import java.util.function.Consumer;
 
 public class ComponentService {
   private static Stage primaryStage;
@@ -27,12 +26,12 @@ public class ComponentService {
   public static void switchScene(Scene scene) {
     if (primaryStage != null) {
       primaryStage.setScene(scene);
-      // primaryStage
-      //     .getScene()
-      //     .getStylesheets()
-      //     .add(
-      //         Objects.requireNonNull(ComponentService.class.getResource("/style/records/main.css"))
-      //             .toExternalForm());
+      primaryStage
+          .getScene()
+          .getStylesheets()
+          .add(
+              Objects.requireNonNull(ComponentService.class.getResource("/style/main.css"))
+                  .toExternalForm());
       primaryStage.show();
     } else {
       throw new IllegalStateException("Primary stage is not set.");
