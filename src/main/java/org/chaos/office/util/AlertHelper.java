@@ -1,0 +1,126 @@
+package org.chaos.office.util;
+
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+
+/**
+ * AlertHelper utility class for displaying consistent alerts and dialogs throughout the application.
+ * Provides standardized methods for showing error messages, information messages, and confirmation dialogs.
+ * 
+ * <p>This class is responsible for:
+ * <ul>
+ *   <li>Displaying error alerts with consistent styling</li>
+ *   <li>Displaying information alerts</li>
+ *   <li>Displaying confirmation dialogs and capturing user response</li>
+ *   <li>Applying Material Design 3 styling to all alerts</li>
+ * </ul>
+ * 
+ * <p>Requirements: 15.1, 15.5
+ */
+public class AlertHelper {
+    private static final Logger logger = LoggerFactory.getLogger(AlertHelper.class);
+    
+    // CSS class for Material Design 3 styling
+    private static final String ALERT_STYLE_CLASS = "material-alert";
+    
+    /**
+     * Private constructor to prevent instantiation.
+     * This is a utility class with static methods only.
+     */
+    private AlertHelper() {
+        // Utility class - no instantiation
+    }
+    
+    /**
+     * Displays an error alert dialog with the specified title and message.
+     * The alert is modal and blocks until the user dismisses it.
+     * 
+     * @param title the title of the error dialog
+     * @param message the error message to display
+     */
+    public static void showError(String title, String message) {
+        logger.error("Showing error alert - Title: {}, Message: {}", title, message);
+        
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null); // Material Design 3 style - no header
+        alert.setContentText(message);
+        
+        // Apply consistent styling
+        applyAlertStyling(alert);
+        
+        alert.showAndWait();
+    }
+    
+    /**
+     * Displays an information alert dialog with the specified title and message.
+     * The alert is modal and blocks until the user dismisses it.
+     * 
+     * @param title the title of the information dialog
+     * @param message the information message to display
+     */
+    public static void showInfo(String title, String message) {
+        logger.info("Showing info alert - Title: {}, Message: {}", title, message);
+        
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null); // Material Design 3 style - no header
+        alert.setContentText(message);
+        
+        // Apply consistent styling
+        applyAlertStyling(alert);
+        
+        alert.showAndWait();
+    }
+    
+    /**
+     * Displays a confirmation dialog with the specified title and message.
+     * The dialog presents OK and Cancel buttons to the user.
+     * 
+     * @param title the title of the confirmation dialog
+     * @param message the confirmation message to display
+     * @return true if the user clicked OK, false if the user clicked Cancel or closed the dialog
+     */
+    public static boolean showConfirmation(String title, String message) {
+        logger.info("Showing confirmation alert - Title: {}, Message: {}", title, message);
+        
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null); // Material Design 3 style - no header
+        alert.setContentText(message);
+        
+        // Apply consistent styling
+        applyAlertStyling(alert);
+        
+        Optional<ButtonType> result = alert.showAndWait();
+        boolean confirmed = result.isPresent() && result.get() == ButtonType.OK;
+        
+        logger.info("Confirmation result: {}", confirmed ? "OK" : "Cancel");
+        
+        return confirmed;
+    }
+    
+    /**
+     * Applies consistent Material Design 3 styling to an alert dialog.
+     * This method adds CSS classes and configures the alert appearance.
+     * 
+     * @param alert the alert to style
+     */
+    private static void applyAlertStyling(Alert alert) {
+        // Add CSS class for Material Design 3 styling
+        alert.getDialogPane().getStyleClass().add(ALERT_STYLE_CLASS);
+        
+        // Apply the main stylesheet if available
+        try {
+            String stylesheet = AlertHelper.class.getResource("/css/main.css").toExternalForm();
+            alert.getDialogPane().getStylesheets().add(stylesheet);
+        } catch (Exception e) {
+            // Stylesheet not found or not yet created - continue without styling
+            logger.debug("Could not load stylesheet for alert: {}", e.getMessage());
+        }
+    }
+}

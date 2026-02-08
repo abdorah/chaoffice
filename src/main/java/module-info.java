@@ -1,6 +1,7 @@
 module org.chaos.office {
   requires java.desktop;
-  requires java.sql;
+  requires transitive java.sql;
+  requires java.prefs;
   requires transitive javafx.controls;
   requires javafx.fxml;
   requires javafx.web;
@@ -17,4 +18,5 @@ module org.chaos.office {
 
   exports org.chaos.office;
   exports org.chaos.office.model;
+  exports org.chaos.office.util;
 }
