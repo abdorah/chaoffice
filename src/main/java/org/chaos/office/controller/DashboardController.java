@@ -21,8 +21,8 @@ public class DashboardController extends Scene {
         this.stage = stage;
         this.dashboardView = (DashboardView) getRoot();
         
-        // Apply stylesheet
-        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
+        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         setupEventHandlers();
         showWelcomeMessage();
@@ -88,12 +88,5 @@ public class DashboardController extends Scene {
         welcomeLabel.getStyleClass().add("label-title");
         dashboardView.getContentPane().getChildren().clear();
         dashboardView.getContentPane().getChildren().add(welcomeLabel);
-    }
-    
-    private void showPlaceholder(String section) {
-        Label placeholder = new Label(section + " - Coming Soon");
-        placeholder.getStyleClass().add("label-headline");
-        dashboardView.getContentPane().getChildren().clear();
-        dashboardView.getContentPane().getChildren().add(placeholder);
     }
 }

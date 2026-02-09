@@ -42,7 +42,7 @@ public class DashboardView extends BorderPane {
         
         // Initialize components
         userLabel = (Label) header.getChildren().get(1);
-        logoutButton = (Button) header.getChildren().get(2);
+        logoutButton = (Button) header.getChildren().get(3);
         partsButton = (Button) navigation.getChildren().get(0);
         categoriesButton = (Button) navigation.getChildren().get(1);
         billingButton = (Button) navigation.getChildren().get(2);

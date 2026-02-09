@@ -5,6 +5,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import org.chaos.office.util.LocaleManager;
 
+import java.util.Locale;
+
 /**
  * LoginView - Pure Java UI for login screen
  * Requirements: 1.2, 1.3, 3.1, 9.1
@@ -42,7 +44,17 @@ public class LoginView extends VBox {
         Label languageLabel = new Label(LocaleManager.getString("login.language"));
         languageComboBox = new ComboBox<>();
         languageComboBox.getItems().addAll("English", "Français", "العربية");
-        languageComboBox.setValue("English");
+        
+        // Set current language based on locale
+        Locale currentLocale = LocaleManager.getCurrentLocale();
+        if (currentLocale.getLanguage().equals("fr")) {
+            languageComboBox.setValue("Français");
+        } else if (currentLocale.getLanguage().equals("ar")) {
+            languageComboBox.setValue("العربية");
+        } else {
+            languageComboBox.setValue("English");
+        }
+        
         languageComboBox.setPrefWidth(300);
         
         // Login button

@@ -2,7 +2,6 @@ package org.chaos.office.controller;
 
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.chaos.office.model.User;
 import org.chaos.office.service.AuthenticationService;
 import org.chaos.office.util.AlertHelper;
 import org.chaos.office.util.LocaleManager;
@@ -27,8 +26,8 @@ public class SignInController extends Scene {
         this.loginView = (LoginView) getRoot();
         this.authService = new AuthenticationService();
         
-        // Apply stylesheet
-        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
+        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         setupEventHandlers();
     }
@@ -68,17 +67,20 @@ public class SignInController extends Scene {
     
     private void handleLanguageChange() {
         String selected = loginView.getLanguageComboBox().getValue();
+        if (selected == null) {
+            return;
+        }
+        
         Locale locale;
         
-        switch (selected) {
-            case "Français":
-                locale = Locale.FRENCH;
-                break;
-            case "العربية":
-                locale = new Locale("ar");
-                break;
-            default:
-                locale = new Locale("en", "US");
+        // Match language selection to locale
+        if (selected.equals("Français") || selected.startsWith("Fr")) {
+            locale = Locale.FRENCH;
+        } else if (selected.equals("العربية") || selected.contains("العربية")) {
+            locale = new Locale("ar");
+        } else {
+            // Default to English for "English" or any other value
+            locale = new Locale("en", "US");
         }
         
         LocaleManager.setLocale(locale);

@@ -30,8 +30,8 @@ public class SalesAnalyticsController extends Scene {
         this.view = (SalesAnalyticsView) getRoot();
         this.salesService = new SalesService();
         
-        // Apply stylesheet
-        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
+        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         // Load initial data
         loadSalesData();

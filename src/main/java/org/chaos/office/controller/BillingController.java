@@ -39,8 +39,8 @@ public class BillingController extends Scene {
         this.billService = new BillService();
         this.commands = FXCollections.observableArrayList();
         
-        // Apply stylesheet
-        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
+        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         // Bind table to commands list
         view.getCommandsTable().setItems(commands);

@@ -114,10 +114,10 @@ public class AlertHelper {
         // Add CSS class for Material Design 3 styling
         alert.getDialogPane().getStyleClass().add(ALERT_STYLE_CLASS);
         
-        // Apply the main stylesheet if available
+        // Apply the main stylesheet if available - COMMENTED OUT TO USE DEFAULT THEME
         try {
-            String stylesheet = AlertHelper.class.getResource("/css/main.css").toExternalForm();
-            alert.getDialogPane().getStylesheets().add(stylesheet);
+            // String stylesheet = AlertHelper.class.getResource("/css/main.css").toExternalForm();
+            // alert.getDialogPane().getStylesheets().add(stylesheet);
         } catch (Exception e) {
             // Stylesheet not found or not yet created - continue without styling
             logger.debug("Could not load stylesheet for alert: {}", e.getMessage());

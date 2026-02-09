@@ -34,8 +34,8 @@ public class CategoryManagementController extends Scene {
         this.view = (CategoryManagementView) getRoot();
         this.categoryService = new CategoryService();
         
-        // Apply stylesheet
-        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
+        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         // Load categories
         loadCategories();
