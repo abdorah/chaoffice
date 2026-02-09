@@ -130,4 +130,23 @@ public class DashboardView extends BorderPane {
     public Button getSettingsButton() {
         return settingsButton;
     }
+    
+    public void refreshLanguage() {
+        // Update header
+        Label titleLabel = (Label) ((HBox) getTop()).getChildren().get(0);
+        titleLabel.setText(LocaleManager.getString("dashboard.title"));
+        
+        String userName = SessionManager.getInstance().getCurrentUser() != null ?
+            SessionManager.getInstance().getCurrentUser().getFirstName() : "User";
+        userLabel.setText(LocaleManager.getString("dashboard.welcome").replace("{0}", userName));
+        logoutButton.setText(LocaleManager.getString("dashboard.logout"));
+        
+        // Update navigation buttons
+        partsButton.setText(LocaleManager.getString("dashboard.menu.parts"));
+        categoriesButton.setText(LocaleManager.getString("dashboard.menu.categories"));
+        billingButton.setText(LocaleManager.getString("dashboard.menu.billing"));
+        billsButton.setText(LocaleManager.getString("dashboard.menu.bills"));
+        analyticsButton.setText(LocaleManager.getString("dashboard.menu.analytics"));
+        settingsButton.setText(LocaleManager.getString("dashboard.menu.settings"));
+    }
 }

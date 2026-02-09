@@ -235,14 +235,45 @@
     -fx-background-radius: -fx-radius-lg;
     -fx-padding: -fx-spacing-md;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 2);
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+    -fx-border-radius: -fx-radius-lg;
 }
 
 .card:hover {
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 8, 0, 0, 4);
+    -fx-background-color: derive(-fx-surface, -3%);
+    -fx-border-color: -fx-outline-variant;
+}
+
+.card-selected {
+    -fx-background-color: -fx-primary-container;
+    -fx-border-color: -fx-primary;
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(gaussian, rgba(103, 80, 164, 0.3), 8, 0, 0, 4);
+}
+
+.card-selected:hover {
+    -fx-background-color: derive(-fx-primary-container, -5%);
+    -fx-border-color: -fx-primary;
 }
 
 .card-elevated {
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0, 0, 4);
+}
+
+/* Card Title */
+.card-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-on-surface;
+}
+
+/* Card Description */
+.card-description {
+    -fx-font-size: 14px;
+    -fx-text-fill: -fx-on-surface-variant;
 }
 
 /* ===== ComboBox ===== */

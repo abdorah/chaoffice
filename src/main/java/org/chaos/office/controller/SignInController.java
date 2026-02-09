@@ -26,8 +26,8 @@ public class SignInController extends Scene {
         this.loginView = (LoginView) getRoot();
         this.authService = new AuthenticationService();
         
-        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
-        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet
+        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         setupEventHandlers();
     }

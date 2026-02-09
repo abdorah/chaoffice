@@ -1,8 +1,8 @@
 package org.chaos.office.controller;
 
 import javafx.scene.Parent;
+import javafx.stage.Stage;
 import org.chaos.office.util.AlertHelper;
-import org.chaos.office.util.DatabaseConnection;
 import org.chaos.office.util.LocaleManager;
 import org.chaos.office.view.SettingsView;
 
@@ -15,8 +15,14 @@ import java.util.Locale;
 public class SettingsController {
     
     private final SettingsView view;
+    private final Stage stage;
     
     public SettingsController() {
+        this(null);
+    }
+    
+    public SettingsController(Stage stage) {
+        this.stage = stage;
         this.view = new SettingsView();
         
         loadSettings();
@@ -58,6 +64,12 @@ public class SettingsController {
         }
         
         LocaleManager.setLocale(locale);
+        
+        // Refresh the entire dashboard if we have access to stage
+        if (stage != null) {
+            DashboardController newDashboard = new DashboardController(stage);
+            stage.setScene(newDashboard);
+        }
         
         AlertHelper.showInfo(
             LocaleManager.getString("settings.success.title"),

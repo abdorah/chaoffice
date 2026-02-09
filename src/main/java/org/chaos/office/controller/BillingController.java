@@ -2,7 +2,7 @@ package org.chaos.office.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.chaos.office.model.Bill;
@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Controller for billing/sales transactions.
  */
-public class BillingController extends Scene {
+public class BillingController {
     
     private static final Logger logger = LoggerFactory.getLogger(BillingController.class);
     private final BillingView view;
@@ -33,14 +33,13 @@ public class BillingController extends Scene {
     private final ObservableList<Command> commands;
     
     public BillingController(Stage stage) {
-        super(new BillingView(), 1200, 800);
-        this.view = (BillingView) getRoot();
+        this.view = new BillingView();
         this.partService = new PartService();
         this.billService = new BillService();
         this.commands = FXCollections.observableArrayList();
         
-        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
-        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet
+        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         // Bind table to commands list
         view.getCommandsTable().setItems(commands);
@@ -51,6 +50,10 @@ public class BillingController extends Scene {
         // Set up event handlers
         view.getAddPartButton().setOnAction(e -> handleAddPart());
         view.getCompleteSaleButton().setOnAction(e -> handleCompleteSale());
+    }
+    
+    public Parent getView() {
+        return view;
     }
     
     /**

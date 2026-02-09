@@ -14,6 +14,7 @@ import org.chaos.office.util.LocaleManager;
 import org.chaos.office.util.ValidationHelper;
 import org.chaos.office.view.PartsInventoryView;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 /**
@@ -37,6 +38,7 @@ public class PartsInventoryController {
     
     private void setupEventHandlers() {
         view.getSearchField().textProperty().addListener((obs, old, newVal) -> handleSearch(newVal));
+        view.getCategoryFilter().setOnAction(e -> handleCategoryFilter());
         view.getAddButton().setOnAction(e -> handleAdd());
         view.getEditButton().setOnAction(e -> handleEdit());
         view.getDeleteButton().setOnAction(e -> handleDelete());
@@ -45,6 +47,37 @@ public class PartsInventoryController {
     private void loadParts() {
         var parts = partService.getAllParts();
         view.getPartsTable().setItems(FXCollections.observableArrayList(parts));
+        
+        // Load categories into filter dropdown
+        loadCategories();
+    }
+    
+    private void loadCategories() {
+        var categories = categoryService.getAllCategories();
+        var categoryNames = new ArrayList<String>();
+        categoryNames.add("All Categories"); // Add default option
+        for (Category category : categories) {
+            categoryNames.add(category.getName());
+        }
+        view.getCategoryFilter().setItems(FXCollections.observableArrayList(categoryNames));
+        view.getCategoryFilter().setValue("All Categories");
+    }
+    
+    private void handleCategoryFilter() {
+        String selected = view.getCategoryFilter().getValue();
+        if (selected == null || selected.equals("All Categories")) {
+            loadParts();
+        } else {
+            // Find category by name
+            var categories = categoryService.getAllCategories();
+            for (Category category : categories) {
+                if (category.getName().equals(selected)) {
+                    var parts = partService.filterByCategory(category.getId());
+                    view.getPartsTable().setItems(FXCollections.observableArrayList(parts));
+                    break;
+                }
+            }
+        }
     }
     
     private void handleSearch(String query) {

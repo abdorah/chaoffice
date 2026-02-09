@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS makers (
 -- Stores part categories with optional icon images
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT,
     image BLOB
 );
@@ -84,3 +84,82 @@ INSERT OR IGNORE INTO categories (name, description) VALUES ('Suspension', 'Susp
 INSERT OR IGNORE INTO categories (name, description) VALUES ('Brakes', 'Brake system components');
 INSERT OR IGNORE INTO categories (name, description) VALUES ('Cooling System', 'Cooling and heating components');
 INSERT OR IGNORE INTO categories (name, description) VALUES ('Electrical', 'Electrical system components');
+
+-- Insert sample parts
+-- Engine parts
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Oil Filter', m.id, 'High-quality oil filter for engine protection', 15.99, 50, c.id
+FROM makers m, categories c
+WHERE m.name = 'Bosch' AND c.name = 'Engine'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Oil Filter');
+
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Air Filter', m.id, 'Premium air filter for optimal engine performance', 22.50, 40, c.id
+FROM makers m, categories c
+WHERE m.name = 'Denso' AND c.name = 'Engine'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Air Filter');
+
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Spark Plug Set', m.id, 'Set of 4 high-performance spark plugs', 45.00, 30, c.id
+FROM makers m, categories c
+WHERE m.name = 'ACDelco' AND c.name = 'Engine'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Spark Plug Set');
+
+-- Brake parts
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Brake Pads Front', m.id, 'Premium ceramic brake pads for front wheels', 89.99, 25, c.id
+FROM makers m, categories c
+WHERE m.name = 'Brembo' AND c.name = 'Brakes'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Brake Pads Front');
+
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Brake Pads Rear', m.id, 'Premium ceramic brake pads for rear wheels', 79.99, 25, c.id
+FROM makers m, categories c
+WHERE m.name = 'Brembo' AND c.name = 'Brakes'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Brake Pads Rear');
+
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Brake Disc Front', m.id, 'High-performance brake disc for front wheels', 125.00, 20, c.id
+FROM makers m, categories c
+WHERE m.name = 'Brembo' AND c.name = 'Brakes'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Brake Disc Front');
+
+-- Suspension parts
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Shock Absorber Front', m.id, 'Heavy-duty shock absorber for front suspension', 150.00, 15, c.id
+FROM makers m, categories c
+WHERE m.name = 'Michelin' AND c.name = 'Suspension'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Shock Absorber Front');
+
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Shock Absorber Rear', m.id, 'Heavy-duty shock absorber for rear suspension', 140.00, 15, c.id
+FROM makers m, categories c
+WHERE m.name = 'Michelin' AND c.name = 'Suspension'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Shock Absorber Rear');
+
+-- Cooling System parts
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Radiator', m.id, 'High-efficiency aluminum radiator', 250.00, 10, c.id
+FROM makers m, categories c
+WHERE m.name = 'Denso' AND c.name = 'Cooling System'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Radiator');
+
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Water Pump', m.id, 'Durable water pump for cooling system', 95.00, 20, c.id
+FROM makers m, categories c
+WHERE m.name = 'Bosch' AND c.name = 'Cooling System'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Water Pump');
+
+-- Electrical parts
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Battery', m.id, '12V high-capacity car battery', 180.00, 12, c.id
+FROM makers m, categories c
+WHERE m.name = 'ACDelco' AND c.name = 'Electrical'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Battery');
+
+INSERT OR IGNORE INTO parts (name, maker_id, description, price, quantity, catid)
+SELECT 'Alternator', m.id, 'High-output alternator for electrical system', 320.00, 8, c.id
+FROM makers m, categories c
+WHERE m.name = 'Bosch' AND c.name = 'Electrical'
+AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Alternator');
+

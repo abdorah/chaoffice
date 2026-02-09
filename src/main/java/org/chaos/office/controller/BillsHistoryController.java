@@ -1,7 +1,7 @@
 package org.chaos.office.controller;
 
 import javafx.collections.FXCollections;
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Controller for bills history.
  */
-public class BillsHistoryController extends Scene {
+public class BillsHistoryController {
     
     private static final Logger logger = LoggerFactory.getLogger(BillsHistoryController.class);
     private final BillsHistoryView view;
@@ -32,14 +32,13 @@ public class BillsHistoryController extends Scene {
     private final Stage stage;
     
     public BillsHistoryController(Stage stage) {
-        super(new BillsHistoryView(), 1200, 800);
         this.stage = stage;
-        this.view = (BillsHistoryView) getRoot();
+        this.view = new BillsHistoryView();
         this.billService = new BillService();
         this.reportService = new ReportService();
         
-        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
-        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet
+        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         // Load initial bills
         loadBills();
@@ -48,6 +47,10 @@ public class BillsHistoryController extends Scene {
         view.getFilterButton().setOnAction(e -> loadBills());
         view.getViewDetailsButton().setOnAction(e -> handleViewDetails());
         view.getGeneratePdfButton().setOnAction(e -> handleGeneratePdf());
+    }
+    
+    public Parent getView() {
+        return view;
     }
     
     /**

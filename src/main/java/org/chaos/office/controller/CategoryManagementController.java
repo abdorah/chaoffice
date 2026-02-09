@@ -1,6 +1,6 @@
 package org.chaos.office.controller;
 
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Controller for category management.
  */
-public class CategoryManagementController extends Scene {
+public class CategoryManagementController {
     
     private static final Logger logger = LoggerFactory.getLogger(CategoryManagementController.class);
     private final CategoryManagementView view;
@@ -29,13 +29,12 @@ public class CategoryManagementController extends Scene {
     private final Stage stage;
     
     public CategoryManagementController(Stage stage) {
-        super(new CategoryManagementView(), 1200, 800);
         this.stage = stage;
-        this.view = (CategoryManagementView) getRoot();
+        this.view = new CategoryManagementView();
         this.categoryService = new CategoryService();
         
-        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
-        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet
+        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         // Load categories
         loadCategories();
@@ -44,6 +43,10 @@ public class CategoryManagementController extends Scene {
         view.getAddButton().setOnAction(e -> handleAdd());
         view.getEditButton().setOnAction(e -> handleEdit());
         view.getDeleteButton().setOnAction(e -> handleDelete());
+    }
+    
+    public Parent getView() {
+        return view;
     }
     
     /**

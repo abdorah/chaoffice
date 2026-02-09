@@ -1,6 +1,6 @@
 package org.chaos.office.controller;
 
-import javafx.scene.Scene;
+import javafx.scene.Parent;
 import javafx.scene.chart.XYChart;
 import javafx.stage.Stage;
 import org.chaos.office.service.SalesService;
@@ -18,7 +18,7 @@ import java.util.TreeMap;
 /**
  * Controller for sales analytics.
  */
-public class SalesAnalyticsController extends Scene {
+public class SalesAnalyticsController {
     
     private static final Logger logger = LoggerFactory.getLogger(SalesAnalyticsController.class);
     private final SalesAnalyticsView view;
@@ -26,18 +26,21 @@ public class SalesAnalyticsController extends Scene {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd");
     
     public SalesAnalyticsController(Stage stage) {
-        super(new SalesAnalyticsView(), 1200, 800);
-        this.view = (SalesAnalyticsView) getRoot();
+        this.view = new SalesAnalyticsView();
         this.salesService = new SalesService();
         
-        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
-        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet
+        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         // Load initial data
         loadSalesData();
         
         // Set up event handlers
         view.getRefreshButton().setOnAction(e -> loadSalesData());
+    }
+    
+    public Parent getView() {
+        return view;
     }
     
     /**

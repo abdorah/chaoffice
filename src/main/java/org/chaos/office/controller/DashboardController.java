@@ -1,9 +1,7 @@
 package org.chaos.office.controller;
 
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.stage.Stage;
-import org.chaos.office.util.LocaleManager;
 import org.chaos.office.util.SessionManager;
 import org.chaos.office.view.DashboardView;
 
@@ -21,11 +19,10 @@ public class DashboardController extends Scene {
         this.stage = stage;
         this.dashboardView = (DashboardView) getRoot();
         
-        // Apply stylesheet - COMMENTED OUT TO USE DEFAULT THEME
-        // getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply stylesheet
+        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
         
         setupEventHandlers();
-        showWelcomeMessage();
     }
     
     private void setupEventHandlers() {
@@ -39,6 +36,9 @@ public class DashboardController extends Scene {
         dashboardView.getBillsButton().setOnAction(e -> showBillsHistory());
         dashboardView.getAnalyticsButton().setOnAction(e -> showSalesAnalytics());
         dashboardView.getSettingsButton().setOnAction(e -> showSettings());
+        
+        // Show Parts Inventory by default
+        showPartsInventory();
     }
     
     private void handleLogout() {
@@ -56,37 +56,39 @@ public class DashboardController extends Scene {
     private void showCategories() {
         CategoryManagementController controller = new CategoryManagementController(stage);
         dashboardView.getContentPane().getChildren().clear();
-        dashboardView.getContentPane().getChildren().add(controller.getRoot());
+        dashboardView.getContentPane().getChildren().add(controller.getView());
     }
     
     private void showBilling() {
         BillingController controller = new BillingController(stage);
         dashboardView.getContentPane().getChildren().clear();
-        dashboardView.getContentPane().getChildren().add(controller.getRoot());
+        dashboardView.getContentPane().getChildren().add(controller.getView());
     }
     
     private void showBillsHistory() {
         BillsHistoryController controller = new BillsHistoryController(stage);
         dashboardView.getContentPane().getChildren().clear();
-        dashboardView.getContentPane().getChildren().add(controller.getRoot());
+        dashboardView.getContentPane().getChildren().add(controller.getView());
     }
     
     private void showSalesAnalytics() {
         SalesAnalyticsController controller = new SalesAnalyticsController(stage);
         dashboardView.getContentPane().getChildren().clear();
-        dashboardView.getContentPane().getChildren().add(controller.getRoot());
+        dashboardView.getContentPane().getChildren().add(controller.getView());
     }
     
     private void showSettings() {
-        SettingsController controller = new SettingsController();
+        SettingsController controller = new SettingsController(stage);
         dashboardView.getContentPane().getChildren().clear();
         dashboardView.getContentPane().getChildren().add(controller.getView());
     }
     
-    private void showWelcomeMessage() {
-        Label welcomeLabel = new Label(LocaleManager.getString("app.welcome"));
-        welcomeLabel.getStyleClass().add("label-title");
-        dashboardView.getContentPane().getChildren().clear();
-        dashboardView.getContentPane().getChildren().add(welcomeLabel);
+    public void refreshUI() {
+        // Refresh the dashboard view with updated language
+        dashboardView.refreshLanguage();
+        
+        // Refresh the current content view
+        // Re-trigger the current view to reload with new language
+        showPartsInventory();
     }
 }

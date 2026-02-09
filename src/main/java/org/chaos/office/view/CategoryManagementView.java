@@ -88,8 +88,11 @@ public class CategoryManagementView extends BorderPane {
                 imageView.setImage(image);
             } catch (Exception e) {
                 // Use placeholder if image fails to load
-                imageView.setImage(null);
+                setPlaceholderIcon(imageView);
             }
+        } else {
+            // No image - use placeholder
+            setPlaceholderIcon(imageView);
         }
         
         // Name
@@ -160,5 +163,32 @@ public class CategoryManagementView extends BorderPane {
         categoryCardsPane.getChildren().forEach(node -> {
             node.getStyleClass().remove("card-selected");
         });
+    }
+    
+    /**
+     * Sets a placeholder icon for categories without images.
+     */
+    private void setPlaceholderIcon(ImageView imageView) {
+        // Create a simple colored rectangle as placeholder
+        javafx.scene.canvas.Canvas canvas = new javafx.scene.canvas.Canvas(150, 150);
+        javafx.scene.canvas.GraphicsContext gc = canvas.getGraphicsContext2D();
+        
+        // Draw a light gray background
+        gc.setFill(javafx.scene.paint.Color.rgb(240, 240, 240));
+        gc.fillRect(0, 0, 150, 150);
+        
+        // Draw a folder icon using simple shapes
+        gc.setFill(javafx.scene.paint.Color.rgb(100, 100, 100));
+        
+        // Folder tab
+        gc.fillRoundRect(30, 50, 40, 15, 5, 5);
+        
+        // Folder body
+        gc.fillRoundRect(25, 60, 100, 60, 10, 10);
+        
+        // Convert canvas to image
+        javafx.scene.image.WritableImage writableImage = new javafx.scene.image.WritableImage(150, 150);
+        canvas.snapshot(null, writableImage);
+        imageView.setImage(writableImage);
     }
 }
