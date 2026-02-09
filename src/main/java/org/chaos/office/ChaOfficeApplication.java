@@ -2,38 +2,49 @@ package org.chaos.office;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import org.chaos.office.controller.GreetingController;
-import org.chaos.office.service.ComponentService;
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
-import javafx.scene.web.WebView;
-import javafx.stage.Stage;
+import org.chaos.office.controller.SignInController;
+import org.chaos.office.service.DatabaseService;
+import org.chaos.office.util.DatabaseConnection;
+import org.chaos.office.util.LocaleManager;
 
+import java.util.Locale;
+
+/**
+ * ChaOfficeApplication - Main application entry point
+ * Requirements: 9.5, 10.3, 10.4
+ */
 public class ChaOfficeApplication extends Application {
+    
     @Override
     public void start(Stage primaryStage) {
-        // Création d'une WebView
-        WebView webView = new WebView();
-
-        // Chargement de l'URL de l'interface utilisateur de Pocketbase
-        // Remplace 'http://localhost:8090/_/' par l'URL de ton instance Pocketbase
-        webView.getEngine().load("http://localhost:8090/_/");
-
-        // Création d'un conteneur pour la WebView
-        StackPane root = new StackPane(webView);
-
-        // Création de la scène
-        Scene scene = new Scene(root, 800, 600); // Largeur et hauteur de la fenêtre
-
-        // Configuration du titre de la fenêtre
-        primaryStage.setTitle("Pocketbase UI dans JavaFX");
-
-        // Ajout de la scène à la fenêtre
-        primaryStage.setScene(scene);
-
-        // Affichage de la fenêtre
-        primaryStage.show();
+        try {
+            // Initialize database
+            DatabaseService databaseService = new DatabaseService();
+            databaseService.initializeDatabase();
+            
+            // Load saved language preference
+            LocaleManager.setLocale(new Locale("en", "US"));
+            
+            // Set up primary stage
+            primaryStage.setTitle(LocaleManager.getString("app.title"));
+            primaryStage.setWidth(1200);
+            primaryStage.setHeight(800);
+            
+            // Create and show login scene
+            SignInController loginController = new SignInController(primaryStage);
+            primaryStage.setScene(loginController);
+            
+            // Handle window close
+            primaryStage.setOnCloseRequest(e -> {
+                DatabaseConnection.getInstance().closeConnection();
+            });
+            
+            primaryStage.show();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Failed to start application: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {

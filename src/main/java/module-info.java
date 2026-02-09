@@ -19,4 +19,5 @@ module org.chaos.office {
   exports org.chaos.office;
   exports org.chaos.office.model;
   exports org.chaos.office.util;
+  exports org.chaos.office.service;
 }

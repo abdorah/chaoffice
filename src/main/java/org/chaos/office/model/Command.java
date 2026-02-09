@@ -1,9 +1,6 @@
 package org.chaos.office.model;
 
-import javafx.beans.property.FloatProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleFloatProperty;
-import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.*;
 
 /**
  * Command model representing a line item within a bill.
@@ -15,6 +12,7 @@ public class Command {
     private final IntegerProperty partId;
     private final IntegerProperty quantity;
     private final FloatProperty priceConsidered;
+    private final StringProperty partName;
 
     /**
      * Default constructor initializing all properties.
@@ -24,6 +22,7 @@ public class Command {
         this.partId = new SimpleIntegerProperty();
         this.quantity = new SimpleIntegerProperty();
         this.priceConsidered = new SimpleFloatProperty();
+        this.partName = new SimpleStringProperty();
     }
 
     /**
@@ -39,6 +38,7 @@ public class Command {
         this.partId = new SimpleIntegerProperty(partId);
         this.quantity = new SimpleIntegerProperty(quantity);
         this.priceConsidered = new SimpleFloatProperty(priceConsidered);
+        this.partName = new SimpleStringProperty();
     }
 
     // BillId property methods
@@ -93,6 +93,19 @@ public class Command {
         return priceConsidered;
     }
 
+    // PartName property methods
+    public String getPartName() {
+        return partName.get();
+    }
+
+    public void setPartName(String partName) {
+        this.partName.set(partName);
+    }
+
+    public StringProperty partNameProperty() {
+        return partName;
+    }
+
     @Override
     public String toString() {
         return "Command{" +
@@ -100,6 +113,7 @@ public class Command {
                 ", partId=" + getPartId() +
                 ", quantity=" + getQuantity() +
                 ", priceConsidered=" + getPriceConsidered() +
+                ", partName='" + getPartName() + '\'' +
                 '}';
     }
 }

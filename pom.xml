@@ -118,6 +118,7 @@
                     <argLine>
                         --add-opens org.chaos.office/org.chaos.office.model=ALL-UNNAMED
                         --add-opens org.chaos.office/org.chaos.office.util=ALL-UNNAMED
+                        --add-opens org.chaos.office/org.chaos.office.service=ALL-UNNAMED
                     </argLine>
                 </configuration>
             </plugin>
