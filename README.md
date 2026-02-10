@@ -1,148 +1,408 @@
-# ChaOffice Project Overview
+# ChaOffice - Parts Inventory Management System
 
 ## Introduction
 
-ChaOffice is an ambitious desktop-first application suite designed to integrate multiple powerful tools into a single, intuitive interface. The project aims to streamline workflows for developers, analysts, and researchers by providing graphical user interfaces for command-line tools and data processing utilities.
+ChaOffice is a comprehensive desktop application for managing parts inventory, sales, and reporting. Built with JavaFX, it provides an intuitive interface for tracking inventory, processing sales transactions, generating reports, and managing business operations.
 
-## Project Vision
+## Features
 
-ChaOffice addresses the fragmentation of powerful yet disparate command-line utilities by presenting them in a cohesive, graphical, and user-friendly environment. The suite focuses on functionality over feature bloat, prioritizing ease of use and integration with existing workflows.
-
-### Key Goals
-
-1. **Integration**: Combine multiple tools (git, jq, sqlite3, Excel, markdown, PDF reporting, mailing, etc.) into one platform.
-2. **Usability**: Deliver a desktop-first, intuitive interface for technical and non-technical users.
-3. **Efficiency**: Enhance productivity by reducing the learning curve and automating workflows.
-4. **Scalability**: Design a flexible architecture that supports future enhancements like cloud synchronization and AI-powered features.
-
-## Core Components
-
-1. **k-track**: Version control system based on git
-2. **k-analysis**: JSON data querying tool powered by jq
-3. **k-search**: SQL database management using sqlite3
-4. **k-document**: Document generation and conversion using pandoc
-5. **File Management**: Handling various file types, including Excel
-6. **Reporting**: Markdown and PDF report generation
-7. **Communication**: Email integration
+- **Multi-language Support**: English, Arabic (العربية), and French (Français)
+- **Inventory Management**: Track parts, categories, and stock levels
+- **Sales & Billing**: Create bills with optional client information, discounts, and multiple payment methods
+- **Reports & Analytics**: Generate sales and inventory reports in PDF, CSV, and Excel formats
+- **User Management**: Secure authentication and user roles
+- **Database**: SQLite-based local storage
 
 ## Technology Stack
 
-- JavaFx with jlink and jpackge for native desktop development
-- JDBC for local database management
-- Apache POI for Excel file handling
-- LibrePDF for PDF file handling
-- Apache Camel for integration and workflow management
-- Material Design 3 for UI/UX
-- JGit for Git functionalities
-- Pandoc for document generation and conversion
+- **JavaFX 22.0.2**: Modern desktop UI framework
+- **Java 17**: Core programming language
+- **SQLite 3.44.1**: Embedded database
+- **Apache POI 5.2.5**: Excel file handling
+- **OpenPDF 2.0.2**: PDF generation
+- **SLF4J 2.0.9**: Logging framework
+- **JUnit 5**: Testing framework
 
-## Architecture and Design
+---
 
-### Modular Architecture
+## 🚀 Quick Start
 
-- Each tool (k-track, k-analysis, etc.) is developed as a separate module
-- Shared core components for UI, settings, and data management
-- Apache Camel as the central integration framework
+### Prerequisites
+- Java 17 or higher
+- Maven 3.6+
+
+### Run the Application (Development)
+```bash
+mvn javafx:run
+```
+
+---
+
+## 📦 Building for Distribution
+
+### Option 1: Fat JAR (Recommended - Easiest)
+
+**Best for**: Quick distribution, technical users
+
+```bash
+mvn clean package
+```
+
+**Output**: `target/chaoffice-1.0.0.jar` (~50-80 MB)
+
+**Run**:
+```bash
+java -jar target/chaoffice-1.0.0.jar
+```
+
+**Requirements**: Java 17+ on target machine
+
+---
+
+### Option 2: Standalone Application with jpackage (Best for End Users)
+
+**Best for**: Professional distribution, no Java required
+
+**Step 1: Build the JAR**
+```bash
+mvn clean package
+```
+
+**Step 2: Create Standalone Package**
+
+**Windows:**
+```bash
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type app-image --app-version 1.0.0 --vendor "ChaOffice" --description "Parts Inventory Management System"
+```
+
+**Linux:**
+```bash
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type app-image --app-version 1.0.0 --vendor "ChaOffice" --description "Parts Inventory Management System"
+```
+
+**Mac:**
+```bash
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type app-image --app-version 1.0.0 --vendor "ChaOffice" --description "Parts Inventory Management System"
+```
+
+**Output**: `ChaOffice/` folder with standalone application
+
+**Run**:
+- Windows: `ChaOffice\ChaOffice.exe`
+- Linux/Mac: `./ChaOffice/bin/ChaOffice`
+
+**Requirements**: None! Everything included
+
+---
+
+### Option 3: Native Installers
+
+**Windows Installer (.msi):**
+```bash
+mvn clean package
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type msi --win-menu --win-shortcut --app-version 1.0.0
+```
+
+**Linux Package (.deb):**
+```bash
+mvn clean package
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type deb --app-version 1.0.0
+```
+
+**Mac Installer (.dmg):**
+```bash
+mvn clean package
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type dmg --app-version 1.0.0
+```
+
+---
+
+### Option 4: Automated Build Scripts
+
+**Windows:**
+```bash
+build-release.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x build-release.sh
+./build-release.sh
+```
+
+These scripts automatically:
+1. Clean previous builds
+2. Run all tests
+3. Create fat JAR
+4. Create standalone application with jpackage
+5. Package everything as ZIP for distribution
+
+---
+
+## ⚠️ Known Issue: jlink Hash Mismatch
+
+If you encounter this error when trying `mvn javafx:jlink`:
+```
+Error: Hash of javafx.base differs to expected hash recorded in java.base
+```
+
+**This is a known JavaFX module compatibility issue.** Use one of these alternatives instead:
+
+### Solution 1: Use Fat JAR (Easiest)
+```bash
+mvn clean package
+```
+
+### Solution 2: Use jpackage (Recommended)
+```bash
+mvn clean package
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type app-image
+```
+
+### Solution 3: Match JavaFX Version to JDK
+
+Check your JDK version:
+```bash
+java -version
+```
+
+Update `pom.xml` to match:
+- JDK 17 → `<javafx.version>17.0.2</javafx.version>`
+- JDK 21 → `<javafx.version>21.0.1</javafx.version>`
+
+**See `JLINK_ISSUE_SOLUTIONS.md` for detailed information.**
+
+---
+
+## 📁 Build Output
+
+After building, you'll find:
+
+```
+target/
+├── chaoffice-1.0.0.jar              # Fat JAR (ready to run)
+└── ChaOffice-1.0.0-windows.zip      # Distribution package
+
+ChaOffice/                            # Standalone application (if jpackage used)
+├── bin/
+│   ├── ChaOffice.exe                # Windows launcher
+│   └── ChaOffice                    # Linux/Mac launcher
+└── lib/                             # Application libraries
+```
+
+---
+
+## 🧪 Testing
+
+### Run All Tests
+```bash
+mvn test
+```
+
+### Run Specific Test
+```bash
+mvn test -Dtest=BillServiceTest
+```
+
+### Skip Tests
+```bash
+mvn clean package -DskipTests
+```
+
+---
+
+## 📊 Build Comparison
+
+| Method | Output | Size | Java Required? | Best For |
+|--------|--------|------|----------------|----------|
+| Fat JAR | Single .jar file | ~50-80 MB | Yes (17+) | Quick distribution |
+| jpackage | Standalone app | ~100-150 MB | No | End users |
+| Installer | Native installer | ~100-200 MB | No | Enterprise deployment |
+
+---
+
+## 🎯 Recommended Build Strategy
+
+### For Development/Testing:
+```bash
+mvn javafx:run
+```
+
+### For Beta Testing:
+```bash
+mvn clean package
+# Share: target/chaoffice-1.0.0.jar
+```
+
+### For Production Release:
+```bash
+./build-release.sh  # or .bat on Windows
+# Share: target/ChaOffice-1.0.0-windows.zip
+```
+
+### For Enterprise Deployment:
+```bash
+mvn clean package
+jpackage --input target --name "ChaOffice" --main-jar chaoffice-1.0.0.jar --main-class org.chaos.office.ChaOfficeApplication --type msi --win-menu --win-shortcut
+# Share: ChaOffice-1.0.0.msi
+```
+
+---
+
+## 📚 Documentation
+
+- **PACKAGING_GUIDE.md** - Comprehensive packaging guide
+- **QUICK_START_PACKAGING.md** - Quick reference for building
+- **JLINK_ISSUE_SOLUTIONS.md** - Solutions for jlink errors
+- **INSTALLATION_GUIDE.md** - End-user installation instructions
+- **LOCALIZATION_UPDATES.md** - Multi-language support details
+- **CHANGES_OPTIONAL_CLIENT_FIELDS.md** - Optional fields feature
+
+---
+
+## 🔧 System Requirements
+
+### Development:
+- Java 17 or higher
+- Maven 3.6+
+- Windows 10+, Linux, or macOS
+
+### End Users (JAR):
+- Java 17 or higher
+
+### End Users (Standalone):
+- No requirements! Everything included
+- Windows 10+, Linux (Ubuntu 20.04+), or macOS 10.14+
+
+---
+
+## 🌍 Multi-Language Support
+
+The application supports three languages:
+- **English** (Default)
+- **Arabic** (العربية) - with RTL support
+- **French** (Français)
+
+Language can be changed in Settings.
+
+---
+
+## ✨ Recent Updates (v1.0.0)
+
+- ✅ Optional client name and phone fields in billing
+- ✅ Complete Arabic and French translations
+- ✅ Enhanced reports with multiple export formats (PDF, CSV, Excel)
+- ✅ Improved inventory management
+- ✅ Sales analytics and reporting
+- ✅ Multi-language support
+
+---
+
+## 🆘 Troubleshooting
+
+### Build Fails
+```bash
+mvn clean
+mvn compile
+mvn package
+```
+
+### Tests Fail
+```bash
+mvn clean package -DskipTests
+```
+
+### "Module not found" Error
+Use `mvn javafx:run` instead of `java -jar`
+
+### Can't Run JAR
+Ensure Java 17+ is installed:
+```bash
+java -version
+```
+
+### jlink Hash Mismatch
+See **JLINK_ISSUE_SOLUTIONS.md** or use fat JAR/jpackage instead
+
+---
+
+## 📞 Support
+
+For issues, questions, or feature requests:
+- Check documentation in project root
+- Review FAQ and troubleshooting guides
+- Submit issues on the project repository
+
+---
+
+## 📝 Version Information
+
+**Current Version**: 1.0.0  
+**Release Date**: February 2026  
+**Java Version**: 17  
+**JavaFX Version**: 22.0.2  
+
+---
+
+## 🏆 Key Features
+
+### Inventory Management
+- Track parts with categories and makers
+- Real-time stock level monitoring
+- Low stock alerts
+- Image support for parts
+
+### Sales & Billing
+- Create bills with optional client information
+- Multiple discount types (percentage, fixed amount)
+- Multiple payment methods (cash, card, check)
+- Editable prices per transaction
+- Stock validation
+
+### Reports & Analytics
+- Sales reports with date ranges
+- Inventory reports with stock thresholds
+- Top selling parts analysis
+- Payment method breakdown
+- Export to PDF, CSV, and Excel
 
 ### User Interface
-
-- Material Design 3 for a modern, consistent look across all modules
-- Adaptive layouts for different screen sizes
+- Modern, intuitive design
 - Dark mode support
+- Responsive layouts
+- Multi-language interface
 
-### Data Flow
+---
 
-- Apache Camel routes for data processing and tool integration
-- Event-driven architecture for real-time updates
+## 🔐 Security
 
-### Persistence
+- Secure user authentication
+- Encrypted password storage
+- Session management
+- Audit logging for transactions
 
-- SQLDelight for local data storage
-- File-based storage for version control (git) and document management
+---
 
-## Key Features and Functionalities
+## 📄 License
 
-1. **Unified Dashboard**: Overview of recent activities and quick access to tools
-2. **Version Control (k-track)**: Git repository management with visual tools
-3. **Data Analysis (k-analysis)**: Visual jq query builder and JSON visualization
-4. **Database Management (k-search)**: Visual SQL query builder and data import/export
-5. **Document Processing (k-document)**: Markdown editor, template management, and batch conversion
-6. **File Management**: Central file browser with Excel support
-7. **Reporting**: Customizable report builder with scheduling
-8. **Communication**: Email client integration
-9. **Workflow Automation**: Drag-and-drop workflow designer using Apache Camel
+[Your License Here]
 
-## Integration and Workflow
+---
 
-- Apache Camel routes to connect different tools and data sources
-- Workflow designer for creating custom data processing pipelines
-- Extensibility through plugins or scripting support
+## 🙏 Credits
 
-## User Experience Improvements
+Developed by [Your Name/Organization]
 
-- Onboarding tutorials and tooltips for new users
-- Customizable shortcuts and macros for power users
-- Consistent terminology and UI patterns across all modules
+---
 
-## Performance Optimization
+## 🚀 Getting Started
 
-- Asynchronous processing for long-running tasks
-- Caching mechanisms for frequently accessed data
-- Lazy loading of module components
+1. **Clone the repository**
+2. **Build the application**: `mvn clean package`
+3. **Run it**: `java -jar target/chaoffice-1.0.0.jar`
+4. **Default login**: username: `admin`, password: `admin`
+5. **Change password** after first login!
 
-## Security Considerations
+---
 
-- Encryption for sensitive data
-- Secure handling of git credentials
-- Audit logging for all operations
-
-## Testing and Quality Assurance
-
-- Comprehensive unit and integration testing suite
-- Automated UI testing using Compose UI testing tools
-- Performance benchmarking for critical operations
-
-## Documentation and Support
-
-- In-app documentation and help system
-- Online knowledge base and user forums
-- Regular webinars and tutorial videos
-
-## Deployment and Updates
-
-- Automated build and release process
-- In-app update mechanism
-- Modular updates to allow partial upgrades
-
-## Potential Enhancements
-
-- Cloud synchronization for settings and non-sensitive data
-- Mobile companion app for viewing reports and notifications
-- AI-assisted data analysis and query suggestions
-- Integration with popular cloud services (GitHub, Bitbucket, etc.)
-
-## Drawbacks and Mitigation Strategies
-
-1. **Complexity**: Implement progressive disclosure of features and customizable UIs
-2. **Performance overhead**: Optimize Kotlin/JVM performance and implement efficient data handling
-3. **Dependency management**: Regular updates and compatibility checks for all dependencies
-4. **Learning curve**: Interactive tutorials and community-driven knowledge base
-
-## Development Roadmap
-
-1. **Phase 1** (3 months): Core functionality (k-track, k-analysis, k-document)
-2. **Phase 2** (2 months): Workflow automation with Apache Camel integration
-3. **Phase 3** (2 months): Advanced tools (k-search, email integration)
-4. **Phase 4** (1 month): UI/UX polishing, onboarding flows, and customization features
-5. **Phase 5** (2 months): Beta testing, feedback incorporation, and performance optimizations
-
-## Success Metrics
-
-- User adoption rate and active user growth
-- User engagement metrics (daily active users, session duration)
-- Community contributions (plugins, templates, bug reports)
-- Performance benchmarks against individual tools
-
-## Conclusion
-
-ChaOffice has the potential to revolutionize how technical professionals interact with command-line tools and manage complex workflows. By providing a unified, intuitive interface for a variety of powerful utilities, it can significantly boost productivity and reduce the learning curve for essential development and analysis tasks. The modular architecture and use of modern technologies like Kotlin Multiplatform and Apache Camel provide a solid foundation for growth and adaptation to user needs. However, careful attention must be paid to performance optimization, user onboarding, and maintaining the right balance between simplicity and power to ensure the project's success.
+**Happy Inventory Managing!** 🎉
