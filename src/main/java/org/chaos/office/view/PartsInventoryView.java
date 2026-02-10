@@ -69,29 +69,35 @@ public class PartsInventoryView extends BorderPane {
     private TableView<Part> createPartsTable() {
         TableView<Part> table = new TableView<>();
         
+        // Set column resize policy to fill available width
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        
         TableColumn<Part, Integer> idCol = new TableColumn<>(LocaleManager.getString("parts.id"));
         idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-        idCol.setPrefWidth(50);
+        idCol.setMinWidth(50);
+        idCol.setMaxWidth(80);
         
         TableColumn<Part, String> nameCol = new TableColumn<>(LocaleManager.getString("parts.name"));
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
-        nameCol.setPrefWidth(150);
+        nameCol.setMinWidth(150);
         
         TableColumn<Part, String> makerCol = new TableColumn<>(LocaleManager.getString("parts.maker"));
         makerCol.setCellValueFactory(new PropertyValueFactory<>("maker"));
-        makerCol.setPrefWidth(120);
+        makerCol.setMinWidth(120);
         
         TableColumn<Part, String> descCol = new TableColumn<>(LocaleManager.getString("parts.description"));
         descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
-        descCol.setPrefWidth(200);
+        descCol.setMinWidth(200);
         
         TableColumn<Part, Float> priceCol = new TableColumn<>(LocaleManager.getString("parts.price"));
         priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
-        priceCol.setPrefWidth(80);
+        priceCol.setMinWidth(80);
+        priceCol.setMaxWidth(120);
         
         TableColumn<Part, Integer> qtyCol = new TableColumn<>(LocaleManager.getString("parts.quantity"));
         qtyCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
-        qtyCol.setPrefWidth(80);
+        qtyCol.setMinWidth(80);
+        qtyCol.setMaxWidth(120);
         
         table.getColumns().addAll(idCol, nameCol, makerCol, descCol, priceCol, qtyCol);
         return table;

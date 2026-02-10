@@ -91,6 +91,10 @@ public class BillingView extends BorderPane {
         partSearchComponent = new PartSearchComponent();
         partSearchComponent.setPrefHeight(180);
         
+        // Make part search component fill available horizontal space
+        HBox.setHgrow(partSearchComponent, Priority.ALWAYS);
+        partSearchComponent.setMaxWidth(Double.MAX_VALUE);
+        
         // Quantity controls for adding parts
         HBox quantityBox = new HBox(10);
         quantityBox.setAlignment(Pos.CENTER_LEFT);

@@ -31,6 +31,10 @@ public class ChaOfficeApplication extends Application {
             primaryStage.setWidth(1200);
             primaryStage.setHeight(800);
             
+            // Set minimum window size to ensure usability
+            primaryStage.setMinWidth(1024);
+            primaryStage.setMinHeight(768);
+            
             // Create and show login scene
             SignInController loginController = new SignInController(primaryStage);
             primaryStage.setScene(loginController);

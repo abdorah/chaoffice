@@ -127,12 +127,13 @@ public class PartSearchComponent extends VBox {
         Label categoryLabel = new Label("Category:");
         categoryLabel.setMinWidth(70);
         
-        // Configure search field to grow
+        // Configure search field to grow horizontally
         HBox.setHgrow(searchField, Priority.ALWAYS);
         searchField.setMaxWidth(Double.MAX_VALUE);
         
         // Configure category filter
         categoryFilter.setMinWidth(200);
+        categoryFilter.setPrefWidth(250);
         
         // Add controls to container
         searchControls.getChildren().addAll(
@@ -140,7 +141,7 @@ public class PartSearchComponent extends VBox {
             categoryLabel, categoryFilter
         );
         
-        // Configure results view
+        // Configure results view to fill available space
         resultsView.setMinHeight(300);
         resultsView.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(resultsView, Priority.ALWAYS);
@@ -149,6 +150,9 @@ public class PartSearchComponent extends VBox {
         this.getChildren().addAll(searchControls, resultsView);
         this.setSpacing(5);
         this.setPadding(new Insets(5));
+        
+        // Make this component fill available horizontal space
+        this.setMaxWidth(Double.MAX_VALUE);
         
         // Apply styling
         this.getStyleClass().add("part-search-component");

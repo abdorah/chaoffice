@@ -162,6 +162,7 @@
     -fx-border-width: 1px;
     -fx-border-radius: 4px;
     -fx-background-radius: 4px;
+    -fx-max-width: Infinity;
 }
 
 .search-controls {
@@ -171,6 +172,11 @@
 
 .part-results-list {
     -fx-background-color: white;
+    -fx-max-width: Infinity;
+}
+
+.part-results-list .list-cell {
+    -fx-max-width: Infinity;
 }
 
 /* ===== Part Cell ===== */
