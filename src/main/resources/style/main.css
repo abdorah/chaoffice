@@ -125,14 +125,27 @@
 .table-view .table-cell {
     -fx-padding: 8px;
     -fx-border-color: #F0F0F0;
+    -fx-text-fill: #333333;
+}
+
+.table-row-cell {
+    -fx-background-color: white;
 }
 
 .table-row-cell:selected {
-    -fx-background-color: #E3F2FD;
+    -fx-background-color: #2196F3;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
 }
 
 .table-row-cell:hover {
     -fx-background-color: #F5F5F5;
+}
+
+.table-row-cell:hover .table-cell {
+    -fx-text-fill: #333333;
 }
 
 /* ===== Part Search Component ===== */
@@ -205,9 +218,79 @@
     -fx-background-radius: 3px;
 }
 
+.combo-box .list-cell {
+    -fx-text-fill: #333333;
+    -fx-background-color: white;
+}
+
+.combo-box .list-cell:filled:selected {
+    -fx-background-color: #E3F2FD;
+    -fx-text-fill: #1976D2;
+}
+
+.combo-box .list-cell:filled:hover {
+    -fx-background-color: #F5F5F5;
+    -fx-text-fill: #333333;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-color: #CCCCCC;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-text-fill: #333333;
+    -fx-background-color: white;
+}
+
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: #2196F3;
+    -fx-text-fill: white;
+}
+
+.combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: #E3F2FD;
+    -fx-text-fill: #1976D2;
+}
+
 .combo-box:focused {
     -fx-border-color: #2196F3;
     -fx-border-width: 2px;
+}
+
+/* ===== Date Picker ===== */
+.date-picker {
+    -fx-background-color: white;
+    -fx-border-color: #CCCCCC;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.date-picker .text-field {
+    -fx-text-fill: #333333;
+}
+
+.date-picker:focused {
+    -fx-border-color: #2196F3;
+    -fx-border-width: 2px;
+}
+
+.date-picker-popup {
+    -fx-background-color: white;
+}
+
+.date-picker-popup .day-cell {
+    -fx-text-fill: #333333;
+}
+
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #E3F2FD;
+}
+
+.date-picker-popup .selected {
+    -fx-background-color: #2196F3;
+    -fx-text-fill: white;
 }
 
 /* ===== Spinner ===== */

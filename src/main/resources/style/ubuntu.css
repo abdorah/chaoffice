@@ -120,19 +120,33 @@
     -fx-background-color: #f5f5f5;
     -fx-font-weight: bold;
     -fx-border-color: #d0d0d0;
+    -fx-text-fill: #2c2c2c;
 }
 
 .table-view .table-cell {
     -fx-padding: 8px;
     -fx-border-color: #f0f0f0;
+    -fx-text-fill: #2c2c2c;
+}
+
+.table-row-cell {
+    -fx-background-color: white;
 }
 
 .table-row-cell:selected {
-    -fx-background-color: #fce4d6;
+    -fx-background-color: #e95420;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
 }
 
 .table-row-cell:hover {
     -fx-background-color: #f8f8f8;
+}
+
+.table-row-cell:hover .table-cell {
+    -fx-text-fill: #2c2c2c;
 }
 
 /* ===== Part Search Component ===== */
@@ -205,9 +219,79 @@
     -fx-background-radius: 3px;
 }
 
+.combo-box .list-cell {
+    -fx-text-fill: #2c2c2c;
+    -fx-background-color: white;
+}
+
+.combo-box .list-cell:filled:selected {
+    -fx-background-color: #fce4d6;
+    -fx-text-fill: #dd4814;
+}
+
+.combo-box .list-cell:filled:hover {
+    -fx-background-color: #f8f8f8;
+    -fx-text-fill: #2c2c2c;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-color: #d0d0d0;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-text-fill: #2c2c2c;
+    -fx-background-color: white;
+}
+
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: #e95420;
+    -fx-text-fill: white;
+}
+
+.combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: #fce4d6;
+    -fx-text-fill: #dd4814;
+}
+
 .combo-box:focused {
     -fx-border-color: #e95420;
     -fx-border-width: 2px;
+}
+
+/* ===== Date Picker ===== */
+.date-picker {
+    -fx-background-color: white;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.date-picker .text-field {
+    -fx-text-fill: #2c2c2c;
+}
+
+.date-picker:focused {
+    -fx-border-color: #e95420;
+    -fx-border-width: 2px;
+}
+
+.date-picker-popup {
+    -fx-background-color: white;
+}
+
+.date-picker-popup .day-cell {
+    -fx-text-fill: #2c2c2c;
+}
+
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #fce4d6;
+}
+
+.date-picker-popup .selected {
+    -fx-background-color: #e95420;
+    -fx-text-fill: white;
 }
 
 /* ===== Spinner ===== */

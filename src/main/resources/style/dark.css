@@ -142,8 +142,16 @@
     -fx-background-color: #0d7377;
 }
 
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
+}
+
 .table-row-cell:hover {
     -fx-background-color: #3d3d3d;
+}
+
+.table-row-cell:hover .table-cell {
+    -fx-text-fill: #e0e0e0;
 }
 
 /* ===== Part Search Component ===== */
@@ -222,11 +230,77 @@
 
 .combo-box .list-cell {
     -fx-text-fill: #e0e0e0;
+    -fx-background-color: #3d3d3d;
+}
+
+.combo-box .list-cell:filled:selected {
+    -fx-background-color: #0d7377;
+    -fx-text-fill: white;
+}
+
+.combo-box .list-cell:filled:hover {
+    -fx-background-color: #4d4d4d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #3d3d3d;
+    -fx-border-color: #555555;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-text-fill: #e0e0e0;
+    -fx-background-color: #3d3d3d;
+}
+
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: #0d7377;
+    -fx-text-fill: white;
+}
+
+.combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: #4d4d4d;
+    -fx-text-fill: #e0e0e0;
 }
 
 .combo-box:focused {
     -fx-border-color: #0d7377;
     -fx-border-width: 2px;
+}
+
+/* ===== Date Picker ===== */
+.date-picker {
+    -fx-background-color: #3d3d3d;
+    -fx-border-color: #555555;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.date-picker .text-field {
+    -fx-text-fill: #e0e0e0;
+}
+
+.date-picker:focused {
+    -fx-border-color: #0d7377;
+    -fx-border-width: 2px;
+}
+
+.date-picker-popup {
+    -fx-background-color: #2d2d2d;
+}
+
+.date-picker-popup .day-cell {
+    -fx-text-fill: #e0e0e0;
+}
+
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #4d4d4d;
+}
+
+.date-picker-popup .selected {
+    -fx-background-color: #0d7377;
+    -fx-text-fill: white;
 }
 
 /* ===== Spinner ===== */
