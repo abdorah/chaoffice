@@ -233,10 +233,13 @@ public class BillingView extends BorderPane {
         completeSaleButton = new Button(LocaleManager.getString("billing.complete"));
         completeSaleButton.getStyleClass().add("success-button");
         completeSaleButton.setPrefWidth(200);
+        completeSaleButton.setPrefHeight(40);
+        completeSaleButton.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         
         HBox bottomBox = new HBox(20, totalsBox, completeSaleButton);
         bottomBox.setPadding(new Insets(20));
         bottomBox.setAlignment(Pos.CENTER_RIGHT);
+        bottomBox.setMinHeight(100);
         setBottom(bottomBox);
         
         // Setup discount type change listener to enable/disable value field
