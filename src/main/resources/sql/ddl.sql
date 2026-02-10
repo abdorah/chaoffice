@@ -45,12 +45,17 @@ CREATE TABLE IF NOT EXISTS parts (
 
 -- Bills table
 -- Stores sales transactions with client information
+-- Includes POS system features: discounts, payment methods, and subtotal tracking
 CREATE TABLE IF NOT EXISTS bills (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     totalprice REAL NOT NULL CHECK (totalprice >= 0),
     clientname TEXT NOT NULL,
     clientphone TEXT NOT NULL,
-    date TEXT NOT NULL
+    date TEXT NOT NULL,
+    subtotal REAL DEFAULT 0.0 CHECK (subtotal >= 0),
+    discount_type TEXT DEFAULT 'none' CHECK (discount_type IN ('none', 'percentage', 'fixed')),
+    discount_value REAL DEFAULT 0.0 CHECK (discount_value >= 0),
+    payment_method TEXT DEFAULT 'cash' CHECK (payment_method IN ('cash', 'card', 'check'))
 );
 
 -- Commands table (bill line items)
@@ -163,3 +168,9 @@ FROM makers m, categories c
 WHERE m.name = 'Bosch' AND c.name = 'Electrical'
 AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Alternator');
 
+
+-- Create indexes for search optimization
+-- These indexes improve performance for part search queries
+CREATE INDEX IF NOT EXISTS idx_parts_name ON parts(name);
+CREATE INDEX IF NOT EXISTS idx_parts_catid ON parts(catid);
+CREATE INDEX IF NOT EXISTS idx_makers_name ON makers(name);
