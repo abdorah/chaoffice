@@ -15,9 +15,15 @@ module org.chaos.office {
       javafx.base;
   opens org.chaos.office.model to
       javafx.base;
+  opens org.chaos.office.reports.models to
+      javafx.base;
+  opens org.chaos.office.reports.services;
+  opens org.chaos.office.service;
 
   exports org.chaos.office;
   exports org.chaos.office.model;
   exports org.chaos.office.util;
   exports org.chaos.office.service;
+  exports org.chaos.office.reports.models;
+  exports org.chaos.office.reports.services;
 }

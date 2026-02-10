@@ -21,6 +21,7 @@ public class DashboardView extends BorderPane {
     private final Button billingButton;
     private final Button billsButton;
     private final Button analyticsButton;
+    private final Button reportsButton;
     private final Button settingsButton;
     private final StackPane contentPane;
     
@@ -48,7 +49,8 @@ public class DashboardView extends BorderPane {
         billingButton = (Button) navigation.getChildren().get(2);
         billsButton = (Button) navigation.getChildren().get(3);
         analyticsButton = (Button) navigation.getChildren().get(4);
-        settingsButton = (Button) navigation.getChildren().get(5);
+        reportsButton = (Button) navigation.getChildren().get(5);
+        settingsButton = (Button) navigation.getChildren().get(6);
     }
     
     private HBox createHeader() {
@@ -85,9 +87,10 @@ public class DashboardView extends BorderPane {
         Button billingBtn = createNavButton(LocaleManager.getString("dashboard.menu.billing"));
         Button billsBtn = createNavButton(LocaleManager.getString("dashboard.menu.bills"));
         Button analyticsBtn = createNavButton(LocaleManager.getString("dashboard.menu.analytics"));
+        Button reportsBtn = createNavButton("Reports");
         Button settingsBtn = createNavButton(LocaleManager.getString("dashboard.menu.settings"));
         
-        nav.getChildren().addAll(partsBtn, categoriesBtn, billingBtn, billsBtn, analyticsBtn, settingsBtn);
+        nav.getChildren().addAll(partsBtn, categoriesBtn, billingBtn, billsBtn, analyticsBtn, reportsBtn, settingsBtn);
         return nav;
     }
     
@@ -127,6 +130,10 @@ public class DashboardView extends BorderPane {
         return analyticsButton;
     }
     
+    public Button getReportsButton() {
+        return reportsButton;
+    }
+    
     public Button getSettingsButton() {
         return settingsButton;
     }
@@ -147,6 +154,7 @@ public class DashboardView extends BorderPane {
         billingButton.setText(LocaleManager.getString("dashboard.menu.billing"));
         billsButton.setText(LocaleManager.getString("dashboard.menu.bills"));
         analyticsButton.setText(LocaleManager.getString("dashboard.menu.analytics"));
+        reportsButton.setText("Reports");
         settingsButton.setText(LocaleManager.getString("dashboard.menu.settings"));
     }
 }

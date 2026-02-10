@@ -120,6 +120,7 @@
                         --add-opens org.chaos.office/org.chaos.office.util=ALL-UNNAMED
                         --add-opens org.chaos.office/org.chaos.office.service=ALL-UNNAMED
                         --add-opens org.chaos.office/org.chaos.office.view=ALL-UNNAMED
+                        --add-opens org.chaos.office/org.chaos.office.reports.models=ALL-UNNAMED
                     </argLine>
                 </configuration>
             </plugin>

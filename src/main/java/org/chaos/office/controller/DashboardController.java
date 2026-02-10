@@ -36,6 +36,7 @@ public class DashboardController extends Scene {
         dashboardView.getBillingButton().setOnAction(e -> showBilling());
         dashboardView.getBillsButton().setOnAction(e -> showBillsHistory());
         dashboardView.getAnalyticsButton().setOnAction(e -> showSalesAnalytics());
+        dashboardView.getReportsButton().setOnAction(e -> showReports());
         dashboardView.getSettingsButton().setOnAction(e -> showSettings());
         
         // Show Parts Inventory by default
@@ -77,6 +78,12 @@ public class DashboardController extends Scene {
     
     private void showSalesAnalytics() {
         SalesAnalyticsController controller = new SalesAnalyticsController(stage);
+        dashboardView.getContentPane().getChildren().clear();
+        dashboardView.getContentPane().getChildren().add(controller.getView());
+    }
+    
+    private void showReports() {
+        ReportsController controller = new ReportsController(stage);
         dashboardView.getContentPane().getChildren().clear();
         dashboardView.getContentPane().getChildren().add(controller.getView());
     }
