@@ -3,15 +3,16 @@ package org.chaos.office.controller;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Parent;
+import javafx.scene.control.TableColumn;
 import javafx.stage.Stage;
-import javafx.util.StringConverter;
 import org.chaos.office.model.Bill;
 import org.chaos.office.model.Command;
 import org.chaos.office.model.Part;
 import org.chaos.office.service.BillService;
 import org.chaos.office.service.PartService;
 import org.chaos.office.util.AlertHelper;
-import org.chaos.office.util.LocaleManager;
+import org.chaos.office.util.ToastNotification;
+import org.chaos.office.util.TooltipHelper;
 import org.chaos.office.util.ValidationHelper;
 import org.chaos.office.view.BillingView;
 import org.slf4j.Logger;
@@ -19,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Controller for billing/sales transactions.
@@ -44,12 +44,25 @@ public class BillingController {
         // Bind table to commands list
         view.getCommandsTable().setItems(commands);
         
-        // Load parts into selector
-        loadParts();
+        // Set up part selection callback
+        view.getPartSearchComponent().setOnPartSelected(this::handlePartSelected);
         
         // Set up event handlers
         view.getAddPartButton().setOnAction(e -> handleAddPart());
         view.getCompleteSaleButton().setOnAction(e -> handleCompleteSale());
+        
+        // Set up price edit handler on the price column
+        @SuppressWarnings("unchecked")
+        TableColumn<Command, Float> priceColumn = (TableColumn<Command, Float>) view.getCommandsTable().getColumns().get(2);
+        priceColumn.setOnEditCommit(this::handlePriceEdit);
+        
+        // Set up discount change listeners
+        view.getDiscountTypeGroup().selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            updateTotals();
+        });
+        view.getDiscountValueField().textProperty().addListener((obs, oldVal, newVal) -> {
+            updateTotals();
+        });
     }
     
     public Parent getView() {
@@ -57,42 +70,33 @@ public class BillingController {
     }
     
     /**
-     * Loads all parts into the part selector.
+     * Handles part selection from the search component.
      */
-    private void loadParts() {
-        List<Part> parts = partService.getAllParts();
-        view.getPartSelector().setItems(FXCollections.observableArrayList(parts));
-        
-        // Set custom string converter to display part name
-        view.getPartSelector().setConverter(new StringConverter<Part>() {
-            @Override
-            public String toString(Part part) {
-                if (part == null) {
-                    return null;
-                }
-                return String.format("%s - $%.2f (Stock: %d)", 
-                    part.getName(), part.getPrice(), part.getQuantity());
-            }
-            
-            @Override
-            public Part fromString(String string) {
-                return null;
-            }
-        });
-        
-        logger.info("Loaded {} parts into selector", parts.size());
+    private void handlePartSelected(Part part) {
+        // This is called when a part is clicked in the search component
+        // The actual adding is done by handleAddPart button
+        logger.info("Part selected from search: {}", part.getName());
     }
     
     /**
      * Handles adding a part to the bill.
+     * Validates stock availability and provides detailed error feedback.
      */
     private void handleAddPart() {
-        Part selectedPart = view.getPartSelector().getValue();
+        Part selectedPart = view.getPartSearchComponent().getResultsView().getSelectionModel().getSelectedItem();
         if (selectedPart == null) {
+            ToastNotification.showWarning("Please select a part from the search results");
+            return;
+        }
+        
+        // Check for zero-stock parts first (Requirement 12.5)
+        if (selectedPart.getQuantity() <= 0) {
             AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                "Please select a part"
+                "Out of Stock",
+                String.format("The part '%s' is currently out of stock and cannot be added to the bill.", 
+                    selectedPart.getName())
             );
+            logger.warn("Attempted to add zero-stock part: {}", selectedPart.getName());
             return;
         }
         
@@ -100,19 +104,19 @@ public class BillingController {
         
         // Validate quantity
         if (quantity <= 0) {
-            AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                "Quantity must be positive"
-            );
+            ToastNotification.showError("Quantity must be positive");
             return;
         }
         
+        // Check for insufficient stock (Requirement 9.2)
         if (quantity > selectedPart.getQuantity()) {
             AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                String.format(LocaleManager.getString("billing.error.insufficient"), 
-                    selectedPart.getName())
+                "Insufficient Stock",
+                String.format("Cannot add %d units of '%s'.\n\nAvailable stock: %d units\n\nPlease reduce the quantity or select a different part.", 
+                    quantity, selectedPart.getName(), selectedPart.getQuantity())
             );
+            logger.warn("Insufficient stock for part {}: requested {}, available {}", 
+                       selectedPart.getName(), quantity, selectedPart.getQuantity());
             return;
         }
         
@@ -124,10 +128,12 @@ public class BillingController {
                 int newQuantity = cmd.getQuantity() + quantity;
                 if (newQuantity > selectedPart.getQuantity()) {
                     AlertHelper.showError(
-                        LocaleManager.getString("error.title"),
-                        String.format(LocaleManager.getString("billing.error.insufficient"), 
-                            selectedPart.getName())
+                        "Insufficient Stock",
+                        String.format("Cannot add %d more units of '%s'.\n\nCurrent quantity in bill: %d\nRequested total: %d\nAvailable stock: %d\n\nPlease reduce the quantity.", 
+                            quantity, selectedPart.getName(), cmd.getQuantity(), newQuantity, selectedPart.getQuantity())
                     );
+                    logger.warn("Insufficient stock for part {}: current {}, requested {}, available {}", 
+                               selectedPart.getName(), cmd.getQuantity(), newQuantity, selectedPart.getQuantity());
                     return;
                 }
                 cmd.setQuantity(newQuantity);
@@ -148,98 +154,322 @@ public class BillingController {
         
         // Refresh table and update total
         view.getCommandsTable().refresh();
-        updateTotal();
+        updateTotals();
         
         // Reset quantity spinner
         view.getQuantitySpinner().getValueFactory().setValue(1);
+        
+        // Show success feedback
+        ToastNotification.showSuccess(String.format("Added %d × %s to bill", quantity, selectedPart.getName()));
         
         logger.info("Added part {} with quantity {} to bill", selectedPart.getName(), quantity);
     }
     
     /**
-     * Updates the total price display.
+     * Handles price editing in the commands table.
+     * Validates price input and provides visual error feedback.
      */
-    private void updateTotal() {
-        float total = 0;
-        for (Command cmd : commands) {
-            total += cmd.getQuantity() * cmd.getPriceConsidered();
+    private void handlePriceEdit(javafx.scene.control.TableColumn.CellEditEvent<Command, Float> event) {
+        Command command = event.getRowValue();
+        Float newPrice = event.getNewValue();
+        
+        // Validate price (Requirement 1.4)
+        if (newPrice == null || newPrice <= 0) {
+            AlertHelper.showError(
+                "Invalid Price",
+                String.format("Price must be greater than zero.\n\nPlease enter a valid positive number for '%s'.", 
+                    command.getPartName())
+            );
+            logger.warn("Invalid price edit attempted for {}: {}", command.getPartName(), newPrice);
+            
+            // Revert to old value
+            view.getCommandsTable().refresh();
+            return;
         }
-        view.updateTotal(total);
+        
+        // Check for unreasonably high prices (warning, not blocking)
+        if (newPrice > 100000) {
+            boolean confirmed = AlertHelper.showConfirmation(
+                "Confirm High Price",
+                String.format("The price $%.2f for '%s' is unusually high.\n\nDo you want to continue?", 
+                    newPrice, command.getPartName())
+            );
+            
+            if (!confirmed) {
+                view.getCommandsTable().refresh();
+                return;
+            }
+        }
+        
+        // Update price
+        float oldPrice = command.getPriceConsidered();
+        command.setPriceConsidered(newPrice);
+        
+        // Refresh table and update totals
+        view.getCommandsTable().refresh();
+        updateTotals();
+        
+        // Show success feedback
+        ToastNotification.showSuccess(String.format("Updated price for %s: $%.2f → $%.2f", 
+            command.getPartName(), oldPrice, newPrice));
+        
+        logger.info("Updated price for {} from ${} to ${}", command.getPartName(), oldPrice, newPrice);
+    }
+    
+    /**
+     * Updates the total price display with discount calculation.
+     * Provides real-time validation feedback with visual error indicators.
+     */
+    private void updateTotals() {
+        // Calculate subtotal
+        float subtotal = 0;
+        for (Command cmd : commands) {
+            subtotal += cmd.getQuantity() * cmd.getPriceConsidered();
+        }
+        
+        // Calculate discount
+        float discountAmount = 0;
+        String discountType = view.getSelectedDiscountType();
+        boolean hasDiscountError = false;
+        
+        if (!discountType.equals("none")) {
+            String discountValueText = view.getDiscountValueField().getText().trim();
+            if (!discountValueText.isEmpty()) {
+                try {
+                    float discountValue = Float.parseFloat(discountValueText);
+                    
+                    if (discountType.equals("percentage")) {
+                        // Validate percentage discount (Requirement 2.2)
+                        if (discountValue < 0 || discountValue > 100) {
+                            TooltipHelper.showError(view.getDiscountValueField(), 
+                                "Percentage must be between 0 and 100");
+                            hasDiscountError = true;
+                        } else {
+                            TooltipHelper.clearError(view.getDiscountValueField());
+                            discountAmount = subtotal * (discountValue / 100);
+                        }
+                    } else if (discountType.equals("fixed")) {
+                        // Validate fixed discount (Requirement 2.4)
+                        if (discountValue < 0) {
+                            TooltipHelper.showError(view.getDiscountValueField(), 
+                                "Discount cannot be negative");
+                            hasDiscountError = true;
+                        } else if (discountValue > subtotal) {
+                            TooltipHelper.showError(view.getDiscountValueField(), 
+                                String.format("Discount cannot exceed subtotal of $%.2f", subtotal));
+                            hasDiscountError = true;
+                        } else {
+                            TooltipHelper.clearError(view.getDiscountValueField());
+                            discountAmount = discountValue;
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    // Invalid number format
+                    TooltipHelper.showError(view.getDiscountValueField(), 
+                        "Please enter a valid number");
+                    hasDiscountError = true;
+                }
+            } else {
+                // Clear error if field is empty
+                TooltipHelper.clearError(view.getDiscountValueField());
+            }
+        } else {
+            // Clear error when discount type is "none"
+            TooltipHelper.clearError(view.getDiscountValueField());
+        }
+        
+        // Calculate final total
+        float finalTotal = subtotal - discountAmount;
+        
+        // Update display
+        view.updateTotals(subtotal, discountAmount, finalTotal);
+        
+        // Disable complete sale button if there are errors
+        view.getCompleteSaleButton().setDisable(hasDiscountError || commands.isEmpty());
     }
     
     /**
      * Handles completing the sale.
+     * Validates all inputs, checks stock availability, and provides comprehensive error feedback.
      */
     private void handleCompleteSale() {
+        // Clear any previous error styling
+        TooltipHelper.clearError(view.getClientNameField());
+        TooltipHelper.clearError(view.getClientPhoneField());
+        
         // Validate client information
         String clientName = view.getClientNameField().getText().trim();
         String clientPhone = view.getClientPhoneField().getText().trim();
         
+        boolean hasValidationErrors = false;
+        
         if (!ValidationHelper.isNotEmpty(clientName)) {
-            AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                "Client name is required"
-            );
-            return;
+            TooltipHelper.showError(view.getClientNameField(), "Client name is required");
+            hasValidationErrors = true;
         }
         
         if (!ValidationHelper.isNotEmpty(clientPhone)) {
+            TooltipHelper.showError(view.getClientPhoneField(), "Client phone is required");
+            hasValidationErrors = true;
+        }
+        
+        if (hasValidationErrors) {
             AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                "Client phone is required"
+                "Missing Information",
+                "Please fill in all required fields:\n• Client name\n• Client phone"
             );
             return;
         }
         
         if (commands.isEmpty()) {
             AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                "Please add at least one part to the bill"
+                "Empty Bill",
+                "Please add at least one part to the bill before completing the sale."
             );
             return;
         }
         
-        // Calculate total
-        float total = 0;
+        // Calculate subtotal
+        float subtotal = 0;
         for (Command cmd : commands) {
-            total += cmd.getQuantity() * cmd.getPriceConsidered();
+            subtotal += cmd.getQuantity() * cmd.getPriceConsidered();
         }
         
-        // Create bill
+        // Get discount information
+        String discountType = view.getSelectedDiscountType();
+        float discountValue = 0;
+        float discountAmount = 0;
+        
+        if (!discountType.equals("none")) {
+            String discountValueText = view.getDiscountValueField().getText().trim();
+            if (!discountValueText.isEmpty()) {
+                try {
+                    discountValue = Float.parseFloat(discountValueText);
+                    
+                    // Validate discount (Requirement 2.2, 2.4)
+                    if (discountType.equals("percentage")) {
+                        if (discountValue < 0 || discountValue > 100) {
+                            TooltipHelper.showError(view.getDiscountValueField(), 
+                                "Percentage must be between 0 and 100");
+                            AlertHelper.showError(
+                                "Invalid Discount",
+                                "Percentage discount must be between 0 and 100.\n\nPlease correct the discount value."
+                            );
+                            return;
+                        }
+                        discountAmount = subtotal * (discountValue / 100);
+                    } else if (discountType.equals("fixed")) {
+                        if (discountValue < 0 || discountValue > subtotal) {
+                            TooltipHelper.showError(view.getDiscountValueField(), 
+                                String.format("Discount cannot exceed subtotal of $%.2f", subtotal));
+                            AlertHelper.showError(
+                                "Invalid Discount",
+                                String.format("Fixed discount cannot exceed the subtotal of $%.2f.\n\nPlease reduce the discount amount.", subtotal)
+                            );
+                            return;
+                        }
+                        discountAmount = discountValue;
+                    }
+                } catch (NumberFormatException e) {
+                    TooltipHelper.showError(view.getDiscountValueField(), "Please enter a valid number");
+                    AlertHelper.showError(
+                        "Invalid Discount",
+                        "Please enter a valid number for the discount value."
+                    );
+                    return;
+                }
+            }
+        }
+        
+        // Calculate final total
+        float finalTotal = subtotal - discountAmount;
+        
+        // Get payment method
+        String paymentMethod = view.getSelectedPaymentMethod();
+        
+        // Create bill with POS fields
         Bill bill = new Bill();
         bill.setClientName(clientName);
         bill.setClientPhone(clientPhone);
-        bill.setTotalPrice(total);
+        bill.setSubtotal(subtotal);
+        bill.setDiscountType(discountType);
+        bill.setDiscountValue(discountValue);
+        bill.setTotalPrice(finalTotal);
+        bill.setPaymentMethod(paymentMethod);
         bill.setDate(LocalDate.now());
         
-        // Save bill
+        // Save bill with comprehensive error handling
         try {
             billService.saveBill(bill, new ArrayList<>(commands));
             
+            // Show success notification
+            ToastNotification.showSuccess(
+                String.format("Sale completed successfully! Total: $%.2f", finalTotal)
+            );
+            
             AlertHelper.showInfo(
-                LocaleManager.getString("billing.success.title"),
-                LocaleManager.getString("billing.success.message")
+                "Sale Completed",
+                String.format("Bill created successfully for %s.\n\nTotal: $%.2f\nPayment: %s", 
+                    clientName, finalTotal, paymentMethod)
             );
             
             // Clear form
             view.clearForm();
             commands.clear();
             
-            // Reload parts to update stock quantities
-            loadParts();
+            // Clear any error styling
+            TooltipHelper.clearError(view.getClientNameField());
+            TooltipHelper.clearError(view.getClientPhoneField());
+            TooltipHelper.clearError(view.getDiscountValueField());
             
-            logger.info("Completed sale for client {} with total ${}", clientName, total);
+            // Refresh part search to update stock quantities
+            view.getPartSearchComponent().refresh();
+            
+            logger.info("Completed sale for client {} with total ${} (discount: {}, payment: {})", 
+                clientName, finalTotal, discountType, paymentMethod);
+                
         } catch (IllegalArgumentException e) {
-            logger.error("Error completing sale", e);
+            // Business logic errors (e.g., insufficient stock - Requirement 9.3, 9.4)
+            logger.error("Validation error completing sale", e);
+            
             AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                e.getMessage()
+                "Cannot Complete Sale",
+                String.format("The sale could not be completed:\n\n%s\n\nPlease review the items and try again.", 
+                    e.getMessage())
             );
-        } catch (Exception e) {
+            
+            // Refresh part search to show updated stock
+            view.getPartSearchComponent().refresh();
+            
+        } catch (RuntimeException e) {
+            // Database and other runtime errors - provide user-friendly message
             logger.error("Error completing sale", e);
+            
+            String userMessage = "An error occurred while saving the bill.\n\n";
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "";
+            
+            if (errorMsg.contains("UNIQUE constraint") || errorMsg.contains("unique constraint")) {
+                userMessage += "This appears to be a duplicate entry. Please try again.";
+            } else if (errorMsg.contains("NOT NULL constraint") || errorMsg.contains("not null")) {
+                userMessage += "Some required information is missing. Please check all fields.";
+            } else if (errorMsg.contains("CHECK constraint") || errorMsg.contains("check constraint")) {
+                userMessage += "Invalid data detected. Please verify discount and payment method values.";
+            } else if (errorMsg.contains("database") || errorMsg.contains("Database")) {
+                userMessage += "Database error: " + errorMsg + "\n\nPlease try again or contact support if the problem persists.";
+            } else {
+                userMessage += "Error: " + errorMsg + "\n\nPlease try again or contact support if the problem persists.";
+            }
+            
+            AlertHelper.showError("Error Saving Bill", userMessage);
+            
+        } catch (Exception e) {
+            // Unexpected errors
+            logger.error("Unexpected error completing sale", e);
+            
             AlertHelper.showError(
-                LocaleManager.getString("error.title"),
-                LocaleManager.getString("error.save")
+                "Unexpected Error",
+                String.format("An unexpected error occurred:\n\n%s\n\nThe bill was not saved. Please try again or contact support.", 
+                    e.getMessage())
             );
         }
     }

@@ -31,6 +31,13 @@ class PartServiceTest {
         // Initialize database
         DatabaseConnection.getInstance().initializeDatabase();
         
+        // Clean up any existing test data first
+        try {
+            cleanupTestData();
+        } catch (SQLException e) {
+            // Ignore cleanup errors on first run
+        }
+        
         // Create test category
         testCategory = createTestCategory("Test Category", "Test Description");
     }
@@ -291,6 +298,23 @@ class PartServiceTest {
     }
     
     private Category createTestCategory(String name, String description) throws SQLException {
+        // First check if category already exists
+        String checkSql = "SELECT id FROM categories WHERE name = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setString(1, name);
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    Category category = new Category();
+                    category.setId(rs.getInt("id"));
+                    category.setName(name);
+                    category.setDescription(description);
+                    return category;
+                }
+            }
+        }
+        
+        // If not exists, create it
         String sql = "INSERT INTO categories (name, description) VALUES (?, ?)";
         
         try (Connection conn = DatabaseConnection.getInstance().getConnection();

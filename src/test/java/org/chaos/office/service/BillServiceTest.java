@@ -32,6 +32,13 @@ class BillServiceTest {
         billService = new BillService();
         DatabaseConnection.getInstance().initializeDatabase();
         
+        // Clean up any existing test data first
+        try {
+            cleanupTestData();
+        } catch (SQLException e) {
+            // Ignore cleanup errors on first run
+        }
+        
         // Create test data
         testCategoryId = createTestCategory("Test Category");
         testMakerId = createTestMaker("Test Maker");
@@ -271,6 +278,21 @@ class BillServiceTest {
     // Helper methods
     
     private int createTestCategory(String name) {
+        // First check if category already exists
+        String checkSql = "SELECT id FROM categories WHERE name = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setString(1, name);
+            try (var rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        
+        // If not exists, create it
         String sql = "INSERT INTO categories (name, description) VALUES (?, ?)";
         
         try (Connection conn = DatabaseConnection.getInstance().getConnection();

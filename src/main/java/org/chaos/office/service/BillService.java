@@ -40,7 +40,7 @@ public class BillService {
      */
     public List<Bill> getAllBills() {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT id, totalprice, clientname, clientphone, date FROM bills";
+        String sql = "SELECT id, totalprice, clientname, clientphone, date, subtotal, discount_type, discount_value, payment_method FROM bills";
         
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              Statement stmt = conn.createStatement();
@@ -66,7 +66,7 @@ public class BillService {
      * @return Optional containing the bill if found, empty otherwise
      */
     public Optional<Bill> getBillById(int id) {
-        String sql = "SELECT id, totalprice, clientname, clientphone, date FROM bills WHERE id = ?";
+        String sql = "SELECT id, totalprice, clientname, clientphone, date, subtotal, discount_type, discount_value, payment_method FROM bills WHERE id = ?";
         
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -94,7 +94,7 @@ public class BillService {
      * 
      * @param bill the bill to save
      * @param commands the list of commands (line items) for the bill
-     * @throws IllegalArgumentException if inventory is insufficient for any part
+     * @throws IllegalArgumentException if inventory is insufficient for any part or if discount/payment method values are invalid
      * @throws RuntimeException if the save operation fails
      */
     public void saveBill(Bill bill, List<Command> commands) {
@@ -104,6 +104,9 @@ public class BillService {
             conn = DatabaseConnection.getInstance().getConnection();
             conn.setAutoCommit(false);
             
+            // Validate discount and payment method values before save
+            validateDiscountAndPaymentMethod(bill);
+            
             // Validate inventory availability for all parts
             for (Command command : commands) {
                 if (!hasInventory(conn, command.getPartId(), command.getQuantity())) {
@@ -112,8 +115,8 @@ public class BillService {
                 }
             }
             
-            // Insert the bill
-            String billSql = "INSERT INTO bills (totalprice, clientname, clientphone, date) VALUES (?, ?, ?, ?)";
+            // Insert the bill with new POS properties
+            String billSql = "INSERT INTO bills (totalprice, clientname, clientphone, date, subtotal, discount_type, discount_value, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             int billId;
             
             try (PreparedStatement stmt = conn.prepareStatement(billSql)) {
@@ -121,6 +124,10 @@ public class BillService {
                 stmt.setString(2, bill.getClientName());
                 stmt.setString(3, bill.getClientPhone());
                 stmt.setString(4, bill.getDate().toString());
+                stmt.setFloat(5, bill.getSubtotal());
+                stmt.setString(6, bill.getDiscountType());
+                stmt.setFloat(7, bill.getDiscountValue());
+                stmt.setString(8, bill.getPaymentMethod());
                 stmt.executeUpdate();
                 
                 try (PreparedStatement idStmt = conn.prepareStatement("SELECT last_insert_rowid()");
@@ -179,6 +186,44 @@ public class BillService {
     }
     
     /**
+     * Validates discount and payment method values before saving.
+     * 
+     * @param bill the bill to validate
+     * @throws IllegalArgumentException if discount or payment method values are invalid
+     */
+    private void validateDiscountAndPaymentMethod(Bill bill) {
+        // Validate discount_type
+        String discountType = bill.getDiscountType();
+        if (!"none".equals(discountType) && !"percentage".equals(discountType) && !"fixed".equals(discountType)) {
+            throw new IllegalArgumentException("Invalid discount_type: " + discountType + 
+                ". Must be 'none', 'percentage', or 'fixed'.");
+        }
+        
+        // Validate discount_value based on type
+        float discountValue = bill.getDiscountValue();
+        if ("percentage".equals(discountType)) {
+            if (discountValue < 0 || discountValue > 100) {
+                throw new IllegalArgumentException("Percentage discount must be between 0 and 100. Got: " + discountValue);
+            }
+        } else if ("fixed".equals(discountType)) {
+            if (discountValue < 0) {
+                throw new IllegalArgumentException("Fixed discount cannot be negative. Got: " + discountValue);
+            }
+            if (discountValue > bill.getSubtotal()) {
+                throw new IllegalArgumentException("Fixed discount (" + discountValue + 
+                    ") cannot exceed subtotal (" + bill.getSubtotal() + ")");
+            }
+        }
+        
+        // Validate payment_method
+        String paymentMethod = bill.getPaymentMethod();
+        if (!"cash".equals(paymentMethod) && !"card".equals(paymentMethod) && !"check".equals(paymentMethod)) {
+            throw new IllegalArgumentException("Invalid payment_method: " + paymentMethod + 
+                ". Must be 'cash', 'card', or 'check'.");
+        }
+    }
+    
+    /**
      * Retrieves all commands for a specific bill.
      * 
      * @param billId the bill ID
@@ -217,7 +262,7 @@ public class BillService {
      */
     public List<Bill> filterByDateRange(LocalDate start, LocalDate end) {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT id, totalprice, clientname, clientphone, date FROM bills WHERE date >= ? AND date <= ?";
+        String sql = "SELECT id, totalprice, clientname, clientphone, date, subtotal, discount_type, discount_value, payment_method FROM bills WHERE date >= ? AND date <= ?";
         
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -268,6 +313,7 @@ public class BillService {
     
     /**
      * Maps a ResultSet row to a Bill object.
+     * Handles NULL values gracefully for backwards compatibility with existing bills.
      * 
      * @param rs the ResultSet
      * @return the Bill object
@@ -280,6 +326,45 @@ public class BillService {
         bill.setClientName(rs.getString("clientname"));
         bill.setClientPhone(rs.getString("clientphone"));
         bill.setDate(LocalDate.parse(rs.getString("date")));
+        
+        // Handle new POS columns with NULL safety for backwards compatibility
+        try {
+            // Subtotal - default to 0.0 if NULL or column doesn't exist
+            float subtotal = rs.getFloat("subtotal");
+            if (rs.wasNull()) {
+                subtotal = 0.0f;
+            }
+            bill.setSubtotal(subtotal);
+            
+            // Discount type - default to "none" if NULL or column doesn't exist
+            String discountType = rs.getString("discount_type");
+            if (discountType == null) {
+                discountType = "none";
+            }
+            bill.setDiscountType(discountType);
+            
+            // Discount value - default to 0.0 if NULL or column doesn't exist
+            float discountValue = rs.getFloat("discount_value");
+            if (rs.wasNull()) {
+                discountValue = 0.0f;
+            }
+            bill.setDiscountValue(discountValue);
+            
+            // Payment method - default to "cash" if NULL or column doesn't exist
+            String paymentMethod = rs.getString("payment_method");
+            if (paymentMethod == null) {
+                paymentMethod = "cash";
+            }
+            bill.setPaymentMethod(paymentMethod);
+            
+        } catch (SQLException e) {
+            // If columns don't exist (old schema), use default values
+            logger.debug("POS columns not found in result set, using default values", e);
+            bill.setSubtotal(0.0f);
+            bill.setDiscountType("none");
+            bill.setDiscountValue(0.0f);
+            bill.setPaymentMethod("cash");
+        }
         
         return bill;
     }
