@@ -26,9 +26,6 @@ public class SignInController extends Scene {
         this.loginView = (LoginView) getRoot();
         this.authService = new AuthenticationService();
         
-        // Apply stylesheet
-        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
-        
         setupEventHandlers();
     }
     
@@ -88,5 +85,8 @@ public class SignInController extends Scene {
         // Refresh view
         SignInController newController = new SignInController(stage);
         stage.setScene(newController);
+        
+        // Apply current theme to the new scene
+        org.chaos.office.util.ThemeManager.applyCurrentTheme(newController);
     }
 }

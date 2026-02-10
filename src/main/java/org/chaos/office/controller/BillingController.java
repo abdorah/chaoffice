@@ -38,9 +38,6 @@ public class BillingController {
         this.billService = new BillService();
         this.commands = FXCollections.observableArrayList();
         
-        // Apply stylesheet
-        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
-        
         // Bind table to commands list
         view.getCommandsTable().setItems(commands);
         

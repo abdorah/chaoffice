@@ -33,9 +33,6 @@ public class CategoryManagementController {
         this.view = new CategoryManagementView();
         this.categoryService = new CategoryService();
         
-        // Apply stylesheet
-        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
-        
         // Load categories
         loadCategories();
         

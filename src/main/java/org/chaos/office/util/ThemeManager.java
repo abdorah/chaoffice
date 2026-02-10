@@ -91,21 +91,17 @@ public class ThemeManager {
         // Remove all existing stylesheets
         scene.getStylesheets().clear();
         
-        // Apply new theme if not "none"
-        if (!"none".equals(themeId)) {
-            String cssPath = getThemePath(themeId);
-            if (cssPath != null) {
-                scene.getStylesheets().add(cssPath);
-                LOGGER.info("Applied theme: " + themeId);
-            } else {
-                LOGGER.warning("Theme not found: " + themeId + ", using default");
-                String defaultPath = getThemePath(DEFAULT_THEME);
-                if (defaultPath != null) {
-                    scene.getStylesheets().add(defaultPath);
-                }
-            }
+        // Apply new theme
+        String cssPath = getThemePath(themeId);
+        if (cssPath != null) {
+            scene.getStylesheets().add(cssPath);
+            LOGGER.info("Applied theme: " + themeId);
         } else {
-            LOGGER.info("Applied no theme (using JavaFX defaults)");
+            LOGGER.warning("Theme not found: " + themeId + ", using default");
+            String defaultPath = getThemePath(DEFAULT_THEME);
+            if (defaultPath != null) {
+                scene.getStylesheets().add(defaultPath);
+            }
         }
         
         currentTheme = themeId;

@@ -29,9 +29,6 @@ public class SalesAnalyticsController {
         this.view = new SalesAnalyticsView();
         this.salesService = new SalesService();
         
-        // Apply stylesheet
-        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
-        
         // Load initial data
         loadSalesData();
         

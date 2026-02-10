@@ -1,2 +1,11 @@
 /* ChaOffice Point of Sale System - No Theme (Empty) */
 /* This theme provides no styling, using JavaFX defaults */
+
+/* ===== Category Cards ===== */
+/* Minimal styling for selected category cards */
+.card-selected {
+    -fx-border-color: #afcbe9;
+    -fx-border-width: 3px;
+    -fx-border-radius: 5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(33,150,243,0.3), 10, 0, 0, 3);
+}

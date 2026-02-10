@@ -382,3 +382,39 @@
 .progress-indicator {
     -fx-progress-color: #e95420;
 }
+
+/* ===== Category Cards ===== */
+.card {
+    -fx-background-color: white;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+    -fx-cursor: hand;
+}
+
+.card:hover {
+    -fx-border-color: #b0b0b0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 3);
+}
+
+.card-selected {
+    -fx-border-color: #e95420;
+    -fx-border-width: 3px;
+    -fx-background-color: #fce4d6;
+    -fx-effect: dropshadow(three-pass-box, rgba(233,84,32,0.3), 10, 0, 0, 3);
+}
+
+.card-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c2c2c;
+    -fx-text-alignment: center;
+}
+
+.card-description {
+    -fx-font-size: 12px;
+    -fx-text-fill: #5e5e5e;
+    -fx-text-alignment: center;
+}

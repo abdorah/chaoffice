@@ -37,9 +37,6 @@ public class BillsHistoryController {
         this.billService = new BillService();
         this.reportService = new ReportService();
         
-        // Apply stylesheet
-        view.getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
-        
         // Load initial bills
         loadBills();
         
