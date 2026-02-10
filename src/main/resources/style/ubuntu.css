@@ -1,10 +1,10 @@
-/* ChaOffice Point of Sale System - Main Stylesheet */
+/* ChaOffice Point of Sale System - Ubuntu Theme */
 
 /* ===== General Styles ===== */
 .root {
-    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-family: "Ubuntu", "Segoe UI", "Arial", sans-serif;
     -fx-font-size: 13px;
-    -fx-background-color: #f5f5f5;
+    -fx-background-color: #f0f0f0;
 }
 
 /* ===== Content Pane ===== */
@@ -17,24 +17,24 @@
 .title-label {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
-    -fx-text-fill: #333333;
+    -fx-text-fill: #2c2c2c;
 }
 
 .label-headline {
     -fx-font-size: 18px;
     -fx-font-weight: bold;
-    -fx-text-fill: #333333;
+    -fx-text-fill: #2c2c2c;
 }
 
 .label-subtitle {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-text-fill: #555555;
+    -fx-text-fill: #5e5e5e;
 }
 
 /* ===== Buttons ===== */
 .button {
-    -fx-background-color: #2196F3;
+    -fx-background-color: #e95420;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-padding: 8px 16px;
@@ -43,22 +43,22 @@
 }
 
 .button:hover {
-    -fx-background-color: #1976D2;
+    -fx-background-color: #dd4814;
 }
 
 .button:pressed {
-    -fx-background-color: #0D47A1;
+    -fx-background-color: #c73e0f;
 }
 
 .button:disabled {
-    -fx-background-color: #BDBDBD;
-    -fx-text-fill: #757575;
+    -fx-background-color: #d0d0d0;
+    -fx-text-fill: #888888;
     -fx-opacity: 0.6;
 }
 
 /* Primary Button */
 .primary-button {
-    -fx-background-color: #2196F3;
+    -fx-background-color: #e95420;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-padding: 8px 16px;
@@ -66,12 +66,12 @@
 }
 
 .primary-button:hover {
-    -fx-background-color: #1976D2;
+    -fx-background-color: #dd4814;
 }
 
 /* Success Button (Complete Sale) */
 .success-button {
-    -fx-background-color: #4CAF50;
+    -fx-background-color: #38b44a;
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-padding: 12px 24px;
@@ -81,23 +81,23 @@
 }
 
 .success-button:hover {
-    -fx-background-color: #45a049;
+    -fx-background-color: #2d9a3d;
 }
 
 .success-button:pressed {
-    -fx-background-color: #388E3C;
+    -fx-background-color: #228030;
 }
 
 .success-button:disabled {
-    -fx-background-color: #BDBDBD;
-    -fx-text-fill: #757575;
+    -fx-background-color: #d0d0d0;
+    -fx-text-fill: #888888;
     -fx-opacity: 0.6;
 }
 
 /* ===== Text Fields ===== */
 .text-field {
     -fx-background-color: white;
-    -fx-border-color: #CCCCCC;
+    -fx-border-color: #d0d0d0;
     -fx-border-width: 1px;
     -fx-border-radius: 3px;
     -fx-background-radius: 3px;
@@ -105,47 +105,47 @@
 }
 
 .text-field:focused {
-    -fx-border-color: #2196F3;
+    -fx-border-color: #e95420;
     -fx-border-width: 2px;
 }
 
 /* ===== Tables ===== */
 .table-view {
     -fx-background-color: white;
-    -fx-border-color: #E0E0E0;
+    -fx-border-color: #d0d0d0;
     -fx-border-width: 1px;
 }
 
 .table-view .column-header {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: #f5f5f5;
     -fx-font-weight: bold;
-    -fx-border-color: #E0E0E0;
+    -fx-border-color: #d0d0d0;
 }
 
 .table-view .table-cell {
     -fx-padding: 8px;
-    -fx-border-color: #F0F0F0;
+    -fx-border-color: #f0f0f0;
 }
 
 .table-row-cell:selected {
-    -fx-background-color: #E3F2FD;
+    -fx-background-color: #fce4d6;
 }
 
 .table-row-cell:hover {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: #f8f8f8;
 }
 
 /* ===== Part Search Component ===== */
 .part-search-component {
     -fx-background-color: white;
-    -fx-border-color: #E0E0E0;
+    -fx-border-color: #d0d0d0;
     -fx-border-width: 1px;
     -fx-border-radius: 4px;
     -fx-background-radius: 4px;
 }
 
 .search-controls {
-    -fx-background-color: #FAFAFA;
+    -fx-background-color: #fafafa;
     -fx-padding: 10px;
 }
 
@@ -157,12 +157,12 @@
 .part-cell {
     -fx-padding: 8px;
     -fx-background-color: white;
-    -fx-border-color: #F0F0F0;
+    -fx-border-color: #f0f0f0;
     -fx-border-width: 0 0 1px 0;
 }
 
 .part-cell:hover {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: #f8f8f8;
     -fx-cursor: hand;
 }
 
@@ -181,14 +181,14 @@
 
 .radio-button .radio {
     -fx-background-color: white;
-    -fx-border-color: #CCCCCC;
+    -fx-border-color: #d0d0d0;
     -fx-border-width: 2px;
     -fx-border-radius: 10px;
 }
 
 .radio-button:selected .radio {
-    -fx-background-color: #2196F3;
-    -fx-border-color: #2196F3;
+    -fx-background-color: #e95420;
+    -fx-border-color: #e95420;
 }
 
 .radio-button .dot {
@@ -199,21 +199,21 @@
 /* ===== Combo Box ===== */
 .combo-box {
     -fx-background-color: white;
-    -fx-border-color: #CCCCCC;
+    -fx-border-color: #d0d0d0;
     -fx-border-width: 1px;
     -fx-border-radius: 3px;
     -fx-background-radius: 3px;
 }
 
 .combo-box:focused {
-    -fx-border-color: #2196F3;
+    -fx-border-color: #e95420;
     -fx-border-width: 2px;
 }
 
 /* ===== Spinner ===== */
 .spinner {
     -fx-background-color: white;
-    -fx-border-color: #CCCCCC;
+    -fx-border-color: #d0d0d0;
     -fx-border-width: 1px;
     -fx-border-radius: 3px;
 }
@@ -224,21 +224,21 @@
 
 /* ===== Separator ===== */
 .separator {
-    -fx-background-color: #E0E0E0;
+    -fx-background-color: #d0d0d0;
 }
 
 /* ===== Scroll Bar ===== */
 .scroll-bar {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: #f5f5f5;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: #BDBDBD;
+    -fx-background-color: #c0c0c0;
     -fx-background-radius: 4px;
 }
 
 .scroll-bar .thumb:hover {
-    -fx-background-color: #9E9E9E;
+    -fx-background-color: #a0a0a0;
 }
 
 /* ===== Scroll Pane ===== */
@@ -262,7 +262,7 @@
 /* ===== List View ===== */
 .list-view {
     -fx-background-color: white;
-    -fx-border-color: #E0E0E0;
+    -fx-border-color: #d0d0d0;
     -fx-border-width: 1px;
 }
 
@@ -272,22 +272,22 @@
 }
 
 .list-cell:filled:hover {
-    -fx-background-color: #F5F5F5;
+    -fx-background-color: #f8f8f8;
 }
 
 .list-cell:filled:selected {
-    -fx-background-color: #E3F2FD;
+    -fx-background-color: #fce4d6;
 }
 
 /* ===== Error Styling ===== */
 .error {
-    -fx-border-color: #F44336;
+    -fx-border-color: #df382c;
     -fx-border-width: 2px;
 }
 
 /* ===== Tooltips ===== */
 .tooltip {
-    -fx-background-color: #333333;
+    -fx-background-color: #2c2c2c;
     -fx-text-fill: white;
     -fx-font-size: 12px;
     -fx-padding: 8px;
@@ -296,5 +296,5 @@
 
 /* ===== Progress Indicator ===== */
 .progress-indicator {
-    -fx-progress-color: #2196F3;
+    -fx-progress-color: #e95420;
 }

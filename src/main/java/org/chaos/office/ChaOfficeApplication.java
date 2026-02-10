@@ -6,6 +6,7 @@ import org.chaos.office.controller.SignInController;
 import org.chaos.office.service.DatabaseService;
 import org.chaos.office.util.DatabaseConnection;
 import org.chaos.office.util.LocaleManager;
+import org.chaos.office.util.ThemeManager;
 
 import java.util.Locale;
 
@@ -33,6 +34,9 @@ public class ChaOfficeApplication extends Application {
             // Create and show login scene
             SignInController loginController = new SignInController(primaryStage);
             primaryStage.setScene(loginController);
+            
+            // Apply saved theme
+            ThemeManager.applyCurrentTheme(primaryStage.getScene());
             
             // Handle window close
             primaryStage.setOnCloseRequest(e -> {

@@ -60,8 +60,8 @@ public class BillingView extends BorderPane {
         
         GridPane clientGrid = new GridPane();
         clientGrid.setHgap(10);
-        clientGrid.setVgap(10);
-        clientGrid.setPadding(new Insets(20));
+        clientGrid.setVgap(8);
+        clientGrid.setPadding(new Insets(10));
         
         Label clientNameLabel = new Label(LocaleManager.getString("billing.client.name"));
         clientNameField = new TextField();
@@ -76,20 +76,20 @@ public class BillingView extends BorderPane {
         clientGrid.add(clientPhoneLabel, 2, 0);
         clientGrid.add(clientPhoneField, 3, 0);
         
-        VBox topBox = new VBox(10, titleLabel, clientGrid);
-        topBox.setPadding(new Insets(20));
+        VBox topBox = new VBox(8, titleLabel, clientGrid);
+        topBox.setPadding(new Insets(10));
         setTop(topBox);
         
         // Center: Main content area with part search, commands table, and controls
-        VBox centerBox = new VBox(15);
-        centerBox.setPadding(new Insets(20));
+        VBox centerBox = new VBox(10);
+        centerBox.setPadding(new Insets(10));
         
         // Part Search Component
         Label searchLabel = new Label("Search and Select Parts");
         searchLabel.getStyleClass().add("label-subtitle");
         
         partSearchComponent = new PartSearchComponent();
-        partSearchComponent.setPrefHeight(250);
+        partSearchComponent.setPrefHeight(180);
         
         // Quantity controls for adding parts
         HBox quantityBox = new HBox(10);
@@ -108,7 +108,7 @@ public class BillingView extends BorderPane {
         // Commands table with editable price column
         commandsTable = new TableView<>();
         commandsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        commandsTable.setMinHeight(200);
+        commandsTable.setPrefHeight(180);
         
         TableColumn<Command, String> partNameCol = new TableColumn<>("Part Name");
         partNameCol.setCellValueFactory(new PropertyValueFactory<>("partName"));
@@ -204,8 +204,14 @@ public class BillingView extends BorderPane {
             paymentBox
         );
         
-        VBox.setVgrow(commandsTable, Priority.ALWAYS);
-        setCenter(centerBox);
+        // Wrap center content in ScrollPane to handle overflow
+        ScrollPane scrollPane = new ScrollPane(centerBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("edge-to-edge");
+        
+        setCenter(scrollPane);
         
         // Bottom: Enhanced total display and complete sale button
         VBox totalsBox = new VBox(5);
@@ -234,12 +240,10 @@ public class BillingView extends BorderPane {
         completeSaleButton.getStyleClass().add("success-button");
         completeSaleButton.setPrefWidth(200);
         completeSaleButton.setPrefHeight(40);
-        completeSaleButton.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         
         HBox bottomBox = new HBox(20, totalsBox, completeSaleButton);
-        bottomBox.setPadding(new Insets(20));
+        bottomBox.setPadding(new Insets(15));
         bottomBox.setAlignment(Pos.CENTER_RIGHT);
-        bottomBox.setMinHeight(100);
         setBottom(bottomBox);
         
         // Setup discount type change listener to enable/disable value field

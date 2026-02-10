@@ -12,6 +12,7 @@ import org.chaos.office.util.LocaleManager;
 public class SettingsView extends VBox {
     
     private final ComboBox<String> languageComboBox;
+    private final ComboBox<String> themeComboBox;
     private final TextField databasePathField;
     private final Button saveButton;
     
@@ -30,6 +31,13 @@ public class SettingsView extends VBox {
         languageComboBox.setValue("English");
         languageComboBox.setPrefWidth(300);
         
+        // Theme selection
+        Label themeLabel = new Label("Theme");
+        themeComboBox = new ComboBox<>();
+        themeComboBox.getItems().addAll("Main Theme", "Dark Theme", "Ubuntu Theme", "No Theme");
+        themeComboBox.setValue("Main Theme");
+        themeComboBox.setPrefWidth(300);
+        
         // Database path (read-only)
         Label dbLabel = new Label(LocaleManager.getString("settings.database"));
         databasePathField = new TextField();
@@ -42,12 +50,14 @@ public class SettingsView extends VBox {
         getChildren().addAll(
             titleLabel,
             languageLabel, languageComboBox,
+            themeLabel, themeComboBox,
             dbLabel, databasePathField,
             saveButton
         );
     }
     
     public ComboBox<String> getLanguageComboBox() { return languageComboBox; }
+    public ComboBox<String> getThemeComboBox() { return themeComboBox; }
     public TextField getDatabasePathField() { return databasePathField; }
     public Button getSaveButton() { return saveButton; }
 }

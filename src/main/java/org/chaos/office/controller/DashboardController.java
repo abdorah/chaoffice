@@ -3,6 +3,7 @@ package org.chaos.office.controller;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.chaos.office.util.SessionManager;
+import org.chaos.office.util.ThemeManager;
 import org.chaos.office.view.DashboardView;
 
 /**
@@ -19,8 +20,8 @@ public class DashboardController extends Scene {
         this.stage = stage;
         this.dashboardView = (DashboardView) getRoot();
         
-        // Apply stylesheet
-        getStylesheets().add(getClass().getResource("/style/main.css").toExternalForm());
+        // Apply current theme
+        ThemeManager.applyCurrentTheme(this);
         
         setupEventHandlers();
     }
@@ -45,6 +46,9 @@ public class DashboardController extends Scene {
         SessionManager.getInstance().clearSession();
         SignInController loginController = new SignInController(stage);
         stage.setScene(loginController);
+        
+        // Apply theme to login scene
+        ThemeManager.applyCurrentTheme(loginController);
     }
     
     private void showPartsInventory() {
