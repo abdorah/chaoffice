@@ -65,11 +65,11 @@ public class BillingView extends BorderPane {
         
         Label clientNameLabel = new Label(LocaleManager.getString("billing.client.name"));
         clientNameField = new TextField();
-        clientNameField.setPromptText(LocaleManager.getString("billing.client.name"));
+        clientNameField.setPromptText(LocaleManager.getString("billing.client.name") + " " + LocaleManager.getString("common.optional"));
         
         Label clientPhoneLabel = new Label(LocaleManager.getString("billing.client.phone"));
         clientPhoneField = new TextField();
-        clientPhoneField.setPromptText(LocaleManager.getString("billing.client.phone"));
+        clientPhoneField.setPromptText(LocaleManager.getString("billing.client.phone") + " " + LocaleManager.getString("common.optional"));
         
         clientGrid.add(clientNameLabel, 0, 0);
         clientGrid.add(clientNameField, 1, 0);

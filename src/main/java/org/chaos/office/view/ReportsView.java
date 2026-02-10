@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import org.chaos.office.util.LocaleManager;
 
 import java.time.LocalDate;
 
@@ -32,16 +33,19 @@ public class ReportsView extends VBox {
         setPadding(new Insets(16));
         
         // Title
-        Label titleLabel = new Label("Reports");
+        Label titleLabel = new Label(LocaleManager.getString("reports.title"));
         titleLabel.getStyleClass().add("label-headline");
         
         // Report type selection
         HBox reportTypeBox = new HBox(10);
         reportTypeBox.setAlignment(Pos.CENTER_LEFT);
-        Label reportTypeLabel = new Label("Report Type:");
+        Label reportTypeLabel = new Label(LocaleManager.getString("reports.type") + ":");
         reportTypeComboBox = new ComboBox<>();
-        reportTypeComboBox.getItems().addAll("Sales Report", "Inventory Report");
-        reportTypeComboBox.setValue("Sales Report");
+        reportTypeComboBox.getItems().addAll(
+            LocaleManager.getString("reports.type.sales"), 
+            LocaleManager.getString("reports.type.inventory")
+        );
+        reportTypeComboBox.setValue(LocaleManager.getString("reports.type.sales"));
         reportTypeComboBox.setPrefWidth(200);
         reportTypeBox.getChildren().addAll(reportTypeLabel, reportTypeComboBox);
         
@@ -50,7 +54,7 @@ public class ReportsView extends VBox {
         dateRangeControls.setPadding(new Insets(10));
         dateRangeControls.getStyleClass().add("card");
         
-        Label dateRangeLabel = new Label("Date Range:");
+        Label dateRangeLabel = new Label(LocaleManager.getString("reports.date.start") + " - " + LocaleManager.getString("reports.date.end") + ":");
         dateRangeLabel.getStyleClass().add("label-title");
         
         HBox datePresetBox = new HBox(10);
@@ -64,10 +68,10 @@ public class ReportsView extends VBox {
         
         HBox datePickersBox = new HBox(10);
         datePickersBox.setAlignment(Pos.CENTER_LEFT);
-        Label startLabel = new Label("Start Date:");
+        Label startLabel = new Label(LocaleManager.getString("reports.date.start") + ":");
         startDatePicker = new DatePicker(LocalDate.now().withDayOfMonth(1));
         startDatePicker.setPrefWidth(150);
-        Label endLabel = new Label("End Date:");
+        Label endLabel = new Label(LocaleManager.getString("reports.date.end") + ":");
         endDatePicker = new DatePicker(LocalDate.now());
         endDatePicker.setPrefWidth(150);
         datePickersBox.getChildren().addAll(startLabel, startDatePicker, endLabel, endDatePicker);
@@ -81,12 +85,12 @@ public class ReportsView extends VBox {
         stockThresholdControls.setVisible(false);
         stockThresholdControls.setManaged(false);
         
-        Label thresholdLabel = new Label("Stock Threshold:");
+        Label thresholdLabel = new Label(LocaleManager.getString("reports.stock.threshold") + ":");
         thresholdLabel.getStyleClass().add("label-title");
         
         HBox thresholdBox = new HBox(10);
         thresholdBox.setAlignment(Pos.CENTER_LEFT);
-        Label thresholdDescLabel = new Label("Low stock alert threshold (units):");
+        Label thresholdDescLabel = new Label(LocaleManager.getString("reports.stock.threshold") + " (units):");
         stockThresholdField = new TextField("10");
         stockThresholdField.setPrefWidth(100);
         thresholdBox.getChildren().addAll(thresholdDescLabel, stockThresholdField);
@@ -97,22 +101,22 @@ public class ReportsView extends VBox {
         HBox actionButtonsBox = new HBox(10);
         actionButtonsBox.setAlignment(Pos.CENTER_LEFT);
         
-        previewButton = new Button("Generate Preview");
+        previewButton = new Button(LocaleManager.getString("reports.preview"));
         previewButton.getStyleClass().add("button-primary");
         
-        exportPDFButton = new Button("Export PDF");
+        exportPDFButton = new Button(LocaleManager.getString("reports.export.pdf"));
         exportPDFButton.setDisable(true);
         
-        exportCSVButton = new Button("Export CSV");
+        exportCSVButton = new Button(LocaleManager.getString("reports.export.csv"));
         exportCSVButton.setDisable(true);
         
-        exportExcelButton = new Button("Export Excel");
+        exportExcelButton = new Button(LocaleManager.getString("reports.export.excel"));
         exportExcelButton.setDisable(true);
         
         actionButtonsBox.getChildren().addAll(previewButton, exportPDFButton, exportCSVButton, exportExcelButton);
         
         // Preview container
-        Label previewLabel = new Label("Preview:");
+        Label previewLabel = new Label(LocaleManager.getString("reports.preview") + ":");
         previewLabel.getStyleClass().add("label-title");
         
         previewContainer = new VBox(10);

@@ -297,29 +297,11 @@ public class BillingController {
         TooltipHelper.clearError(view.getClientNameField());
         TooltipHelper.clearError(view.getClientPhoneField());
         
-        // Validate client information
+        // Get client information (now optional)
         String clientName = view.getClientNameField().getText().trim();
         String clientPhone = view.getClientPhoneField().getText().trim();
         
-        boolean hasValidationErrors = false;
-        
-        if (!ValidationHelper.isNotEmpty(clientName)) {
-            TooltipHelper.showError(view.getClientNameField(), "Client name is required");
-            hasValidationErrors = true;
-        }
-        
-        if (!ValidationHelper.isNotEmpty(clientPhone)) {
-            TooltipHelper.showError(view.getClientPhoneField(), "Client phone is required");
-            hasValidationErrors = true;
-        }
-        
-        if (hasValidationErrors) {
-            AlertHelper.showError(
-                "Missing Information",
-                "Please fill in all required fields:\n• Client name\n• Client phone"
-            );
-            return;
-        }
+        // Client name and phone are now optional - no validation needed
         
         if (commands.isEmpty()) {
             AlertHelper.showError(

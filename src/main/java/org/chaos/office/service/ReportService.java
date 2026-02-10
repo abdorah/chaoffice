@@ -60,8 +60,22 @@ public class ReportService {
             
             document.add(new Paragraph("Bill ID: " + bill.getId(), valueFont));
             document.add(new Paragraph("Date: " + bill.getDate().toString(), valueFont));
-            document.add(new Paragraph("Client Name: " + bill.getClientName(), valueFont));
-            document.add(new Paragraph("Client Phone: " + bill.getClientPhone(), valueFont));
+            
+            // Client name and phone are optional - keep their space even if empty
+            String clientName = bill.getClientName();
+            if (clientName == null || clientName.trim().isEmpty()) {
+                document.add(new Paragraph("Client Name: ", valueFont));
+            } else {
+                document.add(new Paragraph("Client Name: " + clientName, valueFont));
+            }
+            
+            String clientPhone = bill.getClientPhone();
+            if (clientPhone == null || clientPhone.trim().isEmpty()) {
+                document.add(new Paragraph("Client Phone: ", valueFont));
+            } else {
+                document.add(new Paragraph("Client Phone: " + clientPhone, valueFont));
+            }
+            
             document.add(new Paragraph(" "));
             
             // Items table

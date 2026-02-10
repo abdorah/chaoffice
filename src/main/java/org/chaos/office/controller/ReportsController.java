@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import org.chaos.office.reports.models.*;
 import org.chaos.office.reports.services.ReportService;
 import org.chaos.office.util.AlertHelper;
+import org.chaos.office.util.LocaleManager;
 import org.chaos.office.view.ReportsView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,13 +67,15 @@ public class ReportsController {
     
     private void onReportTypeChanged() {
         String reportType = view.getReportTypeComboBox().getValue();
+        String salesReportType = LocaleManager.getString("reports.type.sales");
+        String inventoryReportType = LocaleManager.getString("reports.type.inventory");
         
-        if ("Sales Report".equals(reportType)) {
+        if (salesReportType.equals(reportType)) {
             view.getDateRangeControls().setVisible(true);
             view.getDateRangeControls().setManaged(true);
             view.getStockThresholdControls().setVisible(false);
             view.getStockThresholdControls().setManaged(false);
-        } else if ("Inventory Report".equals(reportType)) {
+        } else if (inventoryReportType.equals(reportType)) {
             view.getDateRangeControls().setVisible(false);
             view.getDateRangeControls().setManaged(false);
             view.getStockThresholdControls().setVisible(true);
@@ -114,13 +117,15 @@ public class ReportsController {
         
         try {
             String reportType = view.getReportTypeComboBox().getValue();
+            String salesReportType = LocaleManager.getString("reports.type.sales");
+            String inventoryReportType = LocaleManager.getString("reports.type.inventory");
             
-            if ("Sales Report".equals(reportType)) {
+            if (salesReportType.equals(reportType)) {
                 LocalDate startDate = view.getStartDatePicker().getValue();
                 LocalDate endDate = view.getEndDatePicker().getValue();
                 currentReportData = reportService.generateSalesReport(startDate, endDate);
                 displaySalesPreview((SalesReportData) currentReportData);
-            } else if ("Inventory Report".equals(reportType)) {
+            } else if (inventoryReportType.equals(reportType)) {
                 int threshold = Integer.parseInt(view.getStockThresholdField().getText());
                 currentReportData = reportService.generateInventoryReport(threshold);
                 displayInventoryPreview((InventoryReportData) currentReportData);
@@ -139,8 +144,10 @@ public class ReportsController {
     
     private boolean validateInputs() {
         String reportType = view.getReportTypeComboBox().getValue();
+        String salesReportType = LocaleManager.getString("reports.type.sales");
+        String inventoryReportType = LocaleManager.getString("reports.type.inventory");
         
-        if ("Sales Report".equals(reportType)) {
+        if (salesReportType.equals(reportType)) {
             LocalDate startDate = view.getStartDatePicker().getValue();
             LocalDate endDate = view.getEndDatePicker().getValue();
             
@@ -153,7 +160,7 @@ public class ReportsController {
                 AlertHelper.showError("Validation Error", "Invalid Date Range: Start date cannot be after end date.");
                 return false;
             }
-        } else if ("Inventory Report".equals(reportType)) {
+        } else if (inventoryReportType.equals(reportType)) {
             try {
                 int threshold = Integer.parseInt(view.getStockThresholdField().getText());
                 if (threshold < 0) {
