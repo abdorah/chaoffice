@@ -4,7 +4,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import org.chaos.office.util.LocaleManager;
 
 import java.time.LocalDate;
 
@@ -22,6 +21,7 @@ public class ReportsView extends VBox {
     private final Button previewButton;
     private final Button exportPDFButton;
     private final Button exportCSVButton;
+    private final Button exportExcelButton;
     private final ScrollPane previewScrollPane;
     private final VBox previewContainer;
     private final VBox dateRangeControls;
@@ -106,7 +106,10 @@ public class ReportsView extends VBox {
         exportCSVButton = new Button("Export CSV");
         exportCSVButton.setDisable(true);
         
-        actionButtonsBox.getChildren().addAll(previewButton, exportPDFButton, exportCSVButton);
+        exportExcelButton = new Button("Export Excel");
+        exportExcelButton.setDisable(true);
+        
+        actionButtonsBox.getChildren().addAll(previewButton, exportPDFButton, exportCSVButton, exportExcelButton);
         
         // Preview container
         Label previewLabel = new Label("Preview:");
@@ -141,6 +144,7 @@ public class ReportsView extends VBox {
     public Button getPreviewButton() { return previewButton; }
     public Button getExportPDFButton() { return exportPDFButton; }
     public Button getExportCSVButton() { return exportCSVButton; }
+    public Button getExportExcelButton() { return exportExcelButton; }
     public VBox getPreviewContainer() { return previewContainer; }
     public VBox getDateRangeControls() { return dateRangeControls; }
     public VBox getStockThresholdControls() { return stockThresholdControls; }

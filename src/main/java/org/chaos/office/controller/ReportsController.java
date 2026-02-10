@@ -56,6 +56,7 @@ public class ReportsController {
         // Export button handlers
         view.getExportPDFButton().setOnAction(e -> onExportPDFClicked());
         view.getExportCSVButton().setOnAction(e -> onExportCSVClicked());
+        view.getExportExcelButton().setOnAction(e -> onExportExcelClicked());
         
         // Parameter change handlers to clear preview
         view.getStartDatePicker().setOnAction(e -> clearPreview());
@@ -128,6 +129,7 @@ public class ReportsController {
             // Enable export buttons
             view.getExportPDFButton().setDisable(false);
             view.getExportCSVButton().setDisable(false);
+            view.getExportExcelButton().setDisable(false);
             
         } catch (Exception e) {
             logger.error("Error generating report preview", e);
@@ -313,6 +315,7 @@ public class ReportsController {
         view.getPreviewContainer().getChildren().clear();
         view.getExportPDFButton().setDisable(true);
         view.getExportCSVButton().setDisable(true);
+        view.getExportExcelButton().setDisable(true);
         currentReportData = null;
     }
     
@@ -362,6 +365,31 @@ public class ReportsController {
             } catch (IOException e) {
                 logger.error("Error exporting CSV", e);
                 AlertHelper.showError("Export Error", "Failed to export CSV: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void onExportExcelClicked() {
+        if (currentReportData == null) {
+            AlertHelper.showError("Error", "No Report: Please generate a preview first.");
+            return;
+        }
+        
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Excel Report");
+        fileChooser.setInitialFileName(reportService.generateExcelFilename(currentReportData.getReportTitle()));
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+        );
+        
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                reportService.exportToExcel(currentReportData, file.getAbsolutePath());
+                AlertHelper.showInfo("Success", "Report exported successfully to:\n" + file.getAbsolutePath());
+            } catch (IOException e) {
+                logger.error("Error exporting Excel", e);
+                AlertHelper.showError("Export Error", "Failed to export Excel: " + e.getMessage());
             }
         }
     }

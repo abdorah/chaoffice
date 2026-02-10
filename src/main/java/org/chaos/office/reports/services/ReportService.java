@@ -23,6 +23,7 @@ public class ReportService {
     private final InventoryReportGenerator inventoryReportGenerator;
     private final PDFExporter pdfExporter;
     private final CSVExporter csvExporter;
+    private final ExcelExporter excelExporter;
     
     /**
      * Default constructor initializes all dependencies.
@@ -35,6 +36,7 @@ public class ReportService {
         this.inventoryReportGenerator = new InventoryReportGenerator(partService);
         this.pdfExporter = new PDFExporter();
         this.csvExporter = new CSVExporter();
+        this.excelExporter = new ExcelExporter();
     }
     
     /**
@@ -48,6 +50,7 @@ public class ReportService {
         this.inventoryReportGenerator = inventoryReportGenerator;
         this.pdfExporter = pdfExporter;
         this.csvExporter = csvExporter;
+        this.excelExporter = new ExcelExporter();
     }
     
     /**
@@ -140,5 +143,33 @@ public class ReportService {
      */
     public String generateCSVFilename(String reportType) {
         return csvExporter.generateFilename(reportType);
+    }
+    
+    /**
+     * Exports report data to an Excel file.
+     * 
+     * @param reportData The report data to export
+     * @param filePath The destination file path
+     * @throws IOException if file writing fails
+     */
+    public void exportToExcel(ReportData reportData, String filePath) throws IOException {
+        try {
+            logger.info("Exporting report to Excel: {}", filePath);
+            excelExporter.export(reportData, filePath);
+            logger.info("Excel export completed successfully: {}", filePath);
+        } catch (IOException e) {
+            logger.error("Failed to export Excel to: {}", filePath, e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Generates a suggested filename for Excel export.
+     * 
+     * @param reportType The type of report (e.g., "Sales Report")
+     * @return Suggested filename with timestamp
+     */
+    public String generateExcelFilename(String reportType) {
+        return excelExporter.generateFilename(reportType);
     }
 }

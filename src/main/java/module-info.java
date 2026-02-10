@@ -8,6 +8,8 @@ module org.chaos.office {
   requires transitive org.slf4j;
   requires org.xerial.sqlitejdbc;
   requires com.github.librepdf.openpdf;
+  requires org.apache.poi.poi;
+  requires org.apache.poi.ooxml;
 
   opens org.chaos.office to
       javafx.fxml;

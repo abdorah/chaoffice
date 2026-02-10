@@ -107,6 +107,7 @@ public class AlertHelper {
     /**
      * Applies consistent Material Design 3 styling to an alert dialog.
      * This method adds CSS classes and configures the alert appearance.
+     * Uses the current application theme from ThemeManager.
      * 
      * @param alert the alert to style
      */
@@ -114,13 +115,24 @@ public class AlertHelper {
         // Add CSS class for Material Design 3 styling
         alert.getDialogPane().getStyleClass().add(ALERT_STYLE_CLASS);
         
-        // Apply the main stylesheet if available - COMMENTED OUT TO USE DEFAULT THEME
-        try {
-            String stylesheet = AlertHelper.class.getResource("/style/main.css").toExternalForm();
-            alert.getDialogPane().getStylesheets().add(stylesheet);
-        } catch (Exception e) {
-            // Stylesheet not found or not yet created - continue without styling
-            logger.debug("Could not load stylesheet for alert: {}", e.getMessage());
+        // Apply the current theme stylesheet
+        String currentTheme = ThemeManager.getCurrentTheme();
+        if (!"none".equals(currentTheme)) {
+            try {
+                String stylesheet = AlertHelper.class.getResource("/style/" + currentTheme + ".css").toExternalForm();
+                alert.getDialogPane().getStylesheets().add(stylesheet);
+                logger.debug("Applied theme '{}' to alert dialog", currentTheme);
+            } catch (Exception e) {
+                // Stylesheet not found - try default theme
+                try {
+                    String defaultStylesheet = AlertHelper.class.getResource("/style/main.css").toExternalForm();
+                    alert.getDialogPane().getStylesheets().add(defaultStylesheet);
+                    logger.debug("Applied default theme to alert dialog");
+                } catch (Exception ex) {
+                    // No stylesheet available - continue without styling
+                    logger.debug("Could not load stylesheet for alert: {}", ex.getMessage());
+                }
+            }
         }
     }
 }
