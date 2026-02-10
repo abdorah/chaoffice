@@ -21,6 +21,7 @@ module org.chaos.office {
       javafx.base;
   opens org.chaos.office.reports.services;
   opens org.chaos.office.service;
+  opens org.chaos.office.controller;
 
   exports org.chaos.office;
   exports org.chaos.office.model;
