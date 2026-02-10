@@ -148,6 +148,13 @@
     -fx-text-fill: #333333;
 }
 
+/* Make tables fill available space */
+.table-view {
+    -fx-pref-height: -1;
+    -fx-max-height: Infinity;
+}
+
+
 /* ===== Part Search Component ===== */
 .part-search-component {
     -fx-background-color: white;
@@ -417,3 +424,33 @@
     -fx-text-fill: #666666;
     -fx-text-alignment: center;
 }
+
+/* ===== Dialogs ===== */
+.dialog-pane {
+    -fx-background-color: white;
+    -fx-padding: 20px;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #F5F5F5;
+    -fx-padding: 15px;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.dialog-pane .content {
+    -fx-padding: 20px;
+}
+
+.dialog-pane .button-bar {
+    -fx-padding: 10px 0 0 0;
+}
+
+.dialog-pane .button-bar .button {
+    -fx-min-width: 80px;
+}
+

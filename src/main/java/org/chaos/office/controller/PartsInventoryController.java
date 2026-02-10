@@ -10,6 +10,7 @@ import org.chaos.office.model.Part;
 import org.chaos.office.service.CategoryService;
 import org.chaos.office.service.PartService;
 import org.chaos.office.util.AlertHelper;
+import org.chaos.office.util.DialogHelper;
 import org.chaos.office.util.LocaleManager;
 import org.chaos.office.util.ValidationHelper;
 import org.chaos.office.view.PartsInventoryView;
@@ -113,6 +114,9 @@ public class PartsInventoryController {
         dialog.setHeaderText(existingPart == null ? 
             "Add New Part" : 
             "Edit Part");
+        
+        // Apply current theme to dialog
+        DialogHelper.applyTheme(dialog);
         
         // Set button types
         ButtonType saveButtonType = new ButtonType(

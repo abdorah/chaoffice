@@ -11,6 +11,7 @@ import org.chaos.office.model.Command;
 import org.chaos.office.service.BillService;
 import org.chaos.office.service.ReportService;
 import org.chaos.office.util.AlertHelper;
+import org.chaos.office.util.DialogHelper;
 import org.chaos.office.util.LocaleManager;
 import org.chaos.office.view.BillsHistoryView;
 import org.slf4j.Logger;
@@ -98,6 +99,9 @@ public class BillsHistoryController {
             selectedBill.getClientName(),
             selectedBill.getClientPhone(),
             selectedBill.getDate()));
+        
+        // Apply current theme to dialog
+        DialogHelper.applyTheme(dialog);
         
         // Create table for commands
         TableView<Command> commandsTable = new TableView<>();

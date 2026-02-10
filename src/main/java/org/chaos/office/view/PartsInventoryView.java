@@ -27,8 +27,9 @@ public class PartsInventoryView extends BorderPane {
         HBox topBar = createTopBar();
         setTop(topBar);
         
-        // Center table
+        // Center table - make it grow to fill available space
         partsTable = createPartsTable();
+        VBox.setVgrow(partsTable, Priority.ALWAYS);
         setCenter(partsTable);
         
         // Bottom buttons

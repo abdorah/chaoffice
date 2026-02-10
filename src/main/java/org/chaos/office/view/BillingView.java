@@ -136,6 +136,11 @@ public class BillingView extends BorderPane {
         commandsTable.getColumns().addAll(partNameCol, quantityCol, priceCol, subtotalCol);
         commandsTable.setEditable(true);
         
+        // Make commands table grow to fill available vertical space
+        VBox.setVgrow(commandsTable, Priority.ALWAYS);
+        commandsTable.setMinHeight(180);
+        commandsTable.setMaxHeight(Double.MAX_VALUE);
+        
         // Discount controls section
         Label discountLabel = new Label("Discount");
         discountLabel.getStyleClass().add("label-subtitle");

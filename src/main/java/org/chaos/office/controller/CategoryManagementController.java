@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import org.chaos.office.model.Category;
 import org.chaos.office.service.CategoryService;
 import org.chaos.office.util.AlertHelper;
+import org.chaos.office.util.DialogHelper;
 import org.chaos.office.util.ImageHelper;
 import org.chaos.office.util.LocaleManager;
 import org.chaos.office.view.CategoryManagementView;
@@ -163,6 +164,9 @@ public class CategoryManagementController {
         dialog.setTitle(existing == null ? 
             LocaleManager.getString("category.add") : 
             LocaleManager.getString("category.edit"));
+        
+        // Apply current theme to dialog
+        DialogHelper.applyTheme(dialog);
         
         // Create form
         GridPane grid = new GridPane();

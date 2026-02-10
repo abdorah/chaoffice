@@ -83,6 +83,9 @@ public class BillsHistoryView extends BorderPane {
         
         billsTable.getColumns().addAll(idCol, clientNameCol, clientPhoneCol, totalCol, dateCol);
         
+        // Make table grow to fill available space
+        VBox.setVgrow(billsTable, Priority.ALWAYS);
+        
         VBox centerBox = new VBox(billsTable);
         centerBox.setPadding(new Insets(20));
         setCenter(centerBox);
