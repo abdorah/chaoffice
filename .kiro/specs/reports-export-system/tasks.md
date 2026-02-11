@@ -124,7 +124,7 @@ This implementation plan breaks down the Reports Export System into incremental 
 - [x] 4. Checkpoint - Ensure report generation tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [~] 5. Implement PDF export functionality
+- [ ] 5. Implement PDF export functionality
   - [x] 5.1 Set up PDF library dependency
     - Add Apache PDFBox or iText dependency to project
     - Configure library for PDF generation
@@ -173,7 +173,7 @@ This implementation plan breaks down the Reports Export System into incremental 
     - Test error handling for file write failures
     - _Requirements: 7.1, 7.6_
 
-- [~] 6. Implement CSV export functionality
+- [ ] 6. Implement CSV export functionality
   - [x] 6.1 Create CSVExporter class
     - Implement `export(ReportData reportData, String filePath)` method
     - Implement `generateFilename(String reportType)` with timestamp format
@@ -213,7 +213,7 @@ This implementation plan breaks down the Reports Export System into incremental 
     - Test error handling for file write failures
     - _Requirements: 8.1, 8.6_
 
-- [~] 7. Implement ReportService orchestration
+- [ ] 7. Implement ReportService orchestration
   - [x] 7.1 Create ReportService class
     - Implement `generateSalesReport()` method delegating to SalesReportGenerator
     - Implement `generateInventoryReport()` method delegating to InventoryReportGenerator
@@ -247,7 +247,7 @@ This implementation plan breaks down the Reports Export System into incremental 
 - [x] 8. Checkpoint - Ensure export functionality tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [~] 9. Implement Reports UI
+- [ ] 9. Implement Reports UI
   - [x] 9.1 Create ReportsView.fxml layout
     - Design layout with report type selection (ComboBox)
     - Add date range controls (DatePickers, preset ComboBox)
@@ -313,7 +313,7 @@ This implementation plan breaks down the Reports Export System into incremental 
     - Test error handling
     - _Requirements: 6.1, 6.2, 6.3, 6.5, 9.1, 9.4, 9.5, 10.4, 10.5, 12.1, 12.4_
 
-- [~] 10. Integrate Reports module with Dashboard
+- [ ] 10. Integrate Reports module with Dashboard
   - [x] 10.1 Add Reports navigation button to DashboardView
     - Add "Reports" button to dashboard navigation
     - _Requirements: 10.1_
@@ -334,7 +334,7 @@ This implementation plan breaks down the Reports Export System into incremental 
     - **Property 19: Invalid date range rejection**
     - **Validates: Requirements 6.4, 6.5**
 
-- [~] 12. Final integration and testing
+- [ ] 12. Final integration and testing
   - [x] 12.1 End-to-end integration testing
     - Test complete flow: select report type → configure parameters → preview → export PDF
     - Test complete flow: select report type → configure parameters → preview → export CSV

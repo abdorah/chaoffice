@@ -1,9 +1,13 @@
 package org.chaos.office;
 
 import javafx.application.Application;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import org.chaos.office.controller.SignInController;
+import org.chaos.office.service.BrandingService;
 import org.chaos.office.service.DatabaseService;
+import org.chaos.office.service.SettingsService;
+import org.chaos.office.util.CurrencyFormatter;
 import org.chaos.office.util.DatabaseConnection;
 import org.chaos.office.util.LocaleManager;
 import org.chaos.office.util.ThemeManager;
@@ -23,11 +27,25 @@ public class ChaOfficeApplication extends Application {
             DatabaseService databaseService = new DatabaseService();
             databaseService.initializeDatabase();
             
+            // Initialize settings service and currency formatter
+            SettingsService settingsService = new SettingsService();
+            CurrencyFormatter.initialize(settingsService);
+            
+            // Initialize branding service
+            BrandingService brandingService = new BrandingService();
+            
             // Load saved language preference
             LocaleManager.setLocale(new Locale("en", "US"));
             
-            // Set up primary stage
-            primaryStage.setTitle(LocaleManager.getString("app.title"));
+            // Set up primary stage with branding
+            primaryStage.setTitle(brandingService.getApplicationTitle());
+            
+            // Set application logo if available
+            Image logo = brandingService.getApplicationLogo();
+            if (logo != null) {
+                primaryStage.getIcons().add(logo);
+            }
+            
             primaryStage.setWidth(1200);
             primaryStage.setHeight(800);
             

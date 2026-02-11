@@ -7,6 +7,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import org.chaos.office.util.CurrencyFormatter;
 import org.chaos.office.util.LocaleManager;
 
 import java.time.LocalDate;
@@ -52,7 +53,7 @@ public class SalesAnalyticsView extends BorderPane {
         xAxis.setLabel("Date");
         
         NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel("Sales ($)");
+        yAxis.setLabel("Sales (" + CurrencyFormatter.getSymbol() + ")");
         
         salesChart = new LineChart<>(xAxis, yAxis);
         salesChart.setTitle(LocaleManager.getString("analytics.chart.title"));
@@ -71,7 +72,7 @@ public class SalesAnalyticsView extends BorderPane {
         Label statsTitle = new Label("Summary");
         statsTitle.getStyleClass().add("label-subtitle");
         
-        totalRevenueLabel = new Label(LocaleManager.getString("analytics.revenue") + ": $0.00");
+        totalRevenueLabel = new Label(LocaleManager.getString("analytics.revenue") + ": " + CurrencyFormatter.format(0));
         totalRevenueLabel.getStyleClass().add("label-headline");
         totalRevenueLabel.setWrapText(true);
         
@@ -119,8 +120,8 @@ public class SalesAnalyticsView extends BorderPane {
     }
     
     public void updateStatistics(double totalRevenue, int transactionCount) {
-        totalRevenueLabel.setText(String.format("%s: $%.2f", 
-            LocaleManager.getString("analytics.revenue"), totalRevenue));
+        totalRevenueLabel.setText(String.format("%s: %s", 
+            LocaleManager.getString("analytics.revenue"), CurrencyFormatter.format((float) totalRevenue)));
         transactionCountLabel.setText(String.format("%s: %d", 
             LocaleManager.getString("analytics.transactions"), transactionCount));
     }

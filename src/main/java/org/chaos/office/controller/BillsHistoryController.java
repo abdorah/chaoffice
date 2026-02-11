@@ -57,6 +57,7 @@ public class BillsHistoryController {
     private void loadBills() {
         LocalDate startDate = view.getStartDatePicker().getValue();
         LocalDate endDate = view.getEndDatePicker().getValue();
+        LocalDate today = LocalDate.now();
         
         if (startDate == null || endDate == null) {
             AlertHelper.showError(
@@ -66,6 +67,7 @@ public class BillsHistoryController {
             return;
         }
         
+        // Validation: start date must be <= end date
         if (startDate.isAfter(endDate)) {
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
@@ -74,10 +76,21 @@ public class BillsHistoryController {
             return;
         }
         
-        List<Bill> bills = billService.filterByDateRange(startDate, endDate);
+        // If start date is in the future, return empty list
+        if (startDate.isAfter(today)) {
+            view.getBillsTable().setItems(FXCollections.observableArrayList());
+            logger.info("Start date is in the future, showing no bills");
+            return;
+        }
+        
+        // If end date is in the future, cap it at today's date
+        LocalDate effectiveEndDate = endDate.isAfter(today) ? today : endDate;
+        
+        // Query database with validated dates
+        List<Bill> bills = billService.filterByDateRange(startDate, effectiveEndDate);
         view.getBillsTable().setItems(FXCollections.observableArrayList(bills));
         
-        logger.info("Loaded {} bills between {} and {}", bills.size(), startDate, endDate);
+        logger.info("Loaded {} bills between {} and {}", bills.size(), startDate, effectiveEndDate);
     }
     
     /**

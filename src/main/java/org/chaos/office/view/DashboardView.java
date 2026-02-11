@@ -87,7 +87,7 @@ public class DashboardView extends BorderPane {
         Button billingBtn = createNavButton(LocaleManager.getString("dashboard.menu.billing"));
         Button billsBtn = createNavButton(LocaleManager.getString("dashboard.menu.bills"));
         Button analyticsBtn = createNavButton(LocaleManager.getString("dashboard.menu.analytics"));
-        Button reportsBtn = createNavButton("Reports");
+        Button reportsBtn = createNavButton(LocaleManager.getString("reports.title"));
         Button settingsBtn = createNavButton(LocaleManager.getString("dashboard.menu.settings"));
         
         nav.getChildren().addAll(partsBtn, categoriesBtn, billingBtn, billsBtn, analyticsBtn, reportsBtn, settingsBtn);
@@ -154,7 +154,7 @@ public class DashboardView extends BorderPane {
         billingButton.setText(LocaleManager.getString("dashboard.menu.billing"));
         billsButton.setText(LocaleManager.getString("dashboard.menu.bills"));
         analyticsButton.setText(LocaleManager.getString("dashboard.menu.analytics"));
-        reportsButton.setText("Reports");
+        reportsButton.setText(LocaleManager.getString("reports.title"));
         settingsButton.setText(LocaleManager.getString("dashboard.menu.settings"));
     }
 }

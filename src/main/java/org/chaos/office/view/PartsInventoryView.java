@@ -5,6 +5,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import org.chaos.office.model.Part;
+import org.chaos.office.util.CurrencyFormatter;
 import org.chaos.office.util.LocaleManager;
 
 /**
@@ -99,6 +100,18 @@ public class PartsInventoryView extends BorderPane {
         priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
         priceCol.setMinWidth(80);
         priceCol.setMaxWidth(120);
+        // Use CurrencyFormatter to format price with configured currency symbol
+        priceCol.setCellFactory(column -> new TableCell<Part, Float>() {
+            @Override
+            protected void updateItem(Float price, boolean empty) {
+                super.updateItem(price, empty);
+                if (empty || price == null) {
+                    setText(null);
+                } else {
+                    setText(CurrencyFormatter.format(price));
+                }
+            }
+        });
         
         TableColumn<Part, Integer> qtyCol = new TableColumn<>(LocaleManager.getString("parts.quantity"));
         qtyCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));

@@ -6,6 +6,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import org.chaos.office.model.Bill;
+import org.chaos.office.util.CurrencyFormatter;
 import org.chaos.office.util.LocaleManager;
 
 import java.time.LocalDate;
@@ -72,7 +73,7 @@ public class BillsHistoryView extends BorderPane {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(String.format("$%.2f", item));
+                    setText(CurrencyFormatter.format(item));
                 }
             }
         });

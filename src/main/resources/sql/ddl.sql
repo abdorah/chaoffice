@@ -169,6 +169,25 @@ WHERE m.name = 'Bosch' AND c.name = 'Electrical'
 AND NOT EXISTS (SELECT 1 FROM parts WHERE name = 'Alternator');
 
 
+-- Branding settings table
+-- Stores optional store name and logo for application customization
+-- Single row table (id must always be 1)
+CREATE TABLE IF NOT EXISTS branding_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    store_name TEXT,
+    logo_image BLOB,
+    logo_format TEXT
+);
+
+-- Currency settings table
+-- Stores currency symbol and acronym for price display customization
+-- Single row table (id must always be 1)
+CREATE TABLE IF NOT EXISTS currency_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    symbol TEXT NOT NULL DEFAULT '$',
+    acronym TEXT NOT NULL DEFAULT 'USD'
+);
+
 -- Create indexes for search optimization
 -- These indexes improve performance for part search queries
 CREATE INDEX IF NOT EXISTS idx_parts_name ON parts(name);

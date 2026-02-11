@@ -1,6 +1,8 @@
 package org.chaos.office.reports.services;
 
 import org.chaos.office.reports.models.*;
+import org.chaos.office.util.CurrencyFormatter;
+import org.chaos.office.util.LocaleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,10 @@ import java.util.Map;
 
 /**
  * Exports report data to CSV format for spreadsheet analysis.
+ * Uses LocaleManager for internationalized column headers and labels.
+ * Uses CurrencyFormatter for currency values.
+ * 
+ * Requirements: 5.5, 7.2
  */
 public class CSVExporter {
     private static final Logger logger = LoggerFactory.getLogger(CSVExporter.class);
@@ -49,38 +55,41 @@ public class CSVExporter {
     
     /**
      * Writes sales report data to CSV format.
+     * Uses LocaleManager for internationalized labels and CurrencyFormatter for prices.
      */
     private void writeSalesCSV(SalesReportData data, PrintWriter writer) {
         // Header section
-        writer.println("Report Type,Sales Report");
-        writer.println("Date Range," + data.getStartDate() + " to " + data.getEndDate());
-        writer.println("Generated On," + data.getGeneratedAt().format(DISPLAY_FORMATTER));
+        writer.println(LocaleManager.getString("report.type") + "," + LocaleManager.getString("report.sales.title"));
+        writer.println(LocaleManager.getString("report.period") + "," + data.getStartDate() + " to " + data.getEndDate());
+        writer.println(LocaleManager.getString("report.generated.on") + "," + data.getGeneratedAt().format(DISPLAY_FORMATTER));
         writer.println();
         
         // Summary metrics
-        writer.println("Summary Metrics");
-        writer.println("Total Revenue," + formatCurrency(data.getTotalRevenue()));
-        writer.println("Number of Sales," + data.getSalesCount());
-        writer.println("Average Sale Value," + formatCurrency(data.getAverageSaleValue()));
+        writer.println(LocaleManager.getString("report.summary.metrics"));
+        writer.println(LocaleManager.getString("report.total.revenue") + "," + formatCurrency(data.getTotalRevenue()));
+        writer.println(LocaleManager.getString("report.number.of.sales") + "," + data.getSalesCount());
+        writer.println(LocaleManager.getString("report.average.sale.value") + "," + formatCurrency(data.getAverageSaleValue()));
         writer.println();
         
         // Payment method breakdown
-        writer.println("Payment Method Breakdown");
-        writer.println("Payment Method,Total Revenue");
+        writer.println(LocaleManager.getString("report.payment.method.breakdown"));
+        writer.println(LocaleManager.getString("report.payment.method") + "," + LocaleManager.getString("report.total.revenue"));
         for (Map.Entry<PaymentMethod, BigDecimal> entry : data.getPaymentMethodBreakdown().entrySet()) {
             writer.println(entry.getKey() + "," + formatCurrency(entry.getValue()));
         }
         writer.println();
         
         // Discount analysis
-        writer.println("Discount Analysis");
-        writer.println("Total Discounts Given," + formatCurrency(data.getTotalDiscounts()));
-        writer.println("Average Discount Percentage," + data.getAverageDiscountPercentage() + "%");
+        writer.println(LocaleManager.getString("report.discount.analysis"));
+        writer.println(LocaleManager.getString("report.total.discounts.given") + "," + formatCurrency(data.getTotalDiscounts()));
+        writer.println(LocaleManager.getString("report.average.discount.percentage") + "," + data.getAverageDiscountPercentage() + "%");
         writer.println();
         
         // Top selling parts
-        writer.println("Top Selling Parts");
-        writer.println("Part Name,Quantity Sold,Revenue");
+        writer.println(LocaleManager.getString("report.top.selling.parts"));
+        writer.println(LocaleManager.getString("report.column.part.name") + "," + 
+                      LocaleManager.getString("report.quantity.sold") + "," + 
+                      LocaleManager.getString("report.column.revenue"));
         for (TopSellingPart part : data.getTopSellingParts()) {
             writer.println(escapeCSVField(part.getPartName()) + "," + 
                           part.getQuantitySold() + "," + 
@@ -90,24 +99,30 @@ public class CSVExporter {
     
     /**
      * Writes inventory report data to CSV format.
+     * Uses LocaleManager for internationalized labels and CurrencyFormatter for prices.
      */
     private void writeInventoryCSV(InventoryReportData data, PrintWriter writer) {
         // Header section
-        writer.println("Report Type,Inventory Report");
-        writer.println("Stock Threshold," + data.getStockThreshold() + " units");
-        writer.println("Generated On," + data.getGeneratedAt().format(DISPLAY_FORMATTER));
+        writer.println(LocaleManager.getString("report.type") + "," + LocaleManager.getString("report.inventory.title"));
+        writer.println(LocaleManager.getString("report.stock.threshold") + "," + data.getStockThreshold() + " " + LocaleManager.getString("report.units"));
+        writer.println(LocaleManager.getString("report.generated.on") + "," + data.getGeneratedAt().format(DISPLAY_FORMATTER));
         writer.println();
         
         // Summary metrics
-        writer.println("Summary Metrics");
-        writer.println("Total Inventory Value," + formatCurrency(data.getTotalInventoryValue()));
-        writer.println("Low Stock Items," + data.getLowStockParts().size());
-        writer.println("Out of Stock Items," + data.getOutOfStockParts().size());
+        writer.println(LocaleManager.getString("report.summary.metrics"));
+        writer.println(LocaleManager.getString("report.total.inventory.value") + "," + formatCurrency(data.getTotalInventoryValue()));
+        writer.println(LocaleManager.getString("report.low.stock.items") + "," + data.getLowStockParts().size());
+        writer.println(LocaleManager.getString("report.out.of.stock.items") + "," + data.getOutOfStockParts().size());
         writer.println();
         
         // Inventory details
-        writer.println("Inventory Details");
-        writer.println("Category,Part Name,Quantity,Price,Stock Value,Status");
+        writer.println(LocaleManager.getString("report.inventory.details"));
+        writer.println(LocaleManager.getString("report.column.category") + "," +
+                      LocaleManager.getString("report.column.part.name") + "," +
+                      LocaleManager.getString("report.column.quantity") + "," +
+                      LocaleManager.getString("report.column.price") + "," +
+                      LocaleManager.getString("report.stock.value") + "," +
+                      LocaleManager.getString("report.status"));
         
         for (Map.Entry<String, List<PartInventoryItem>> entry : data.getPartsByCategory().entrySet()) {
             for (PartInventoryItem item : entry.getValue()) {
@@ -138,13 +153,13 @@ public class CSVExporter {
     }
     
     /**
-     * Formats currency values with dollar sign and two decimal places.
+     * Formats currency values using CurrencyFormatter with configured currency symbol.
      */
     private String formatCurrency(BigDecimal amount) {
         if (amount == null) {
-            return "$0.00";
+            return CurrencyFormatter.format(0.0f);
         }
-        return String.format("$%,.2f", amount);
+        return CurrencyFormatter.format(amount.floatValue());
     }
     
     /**

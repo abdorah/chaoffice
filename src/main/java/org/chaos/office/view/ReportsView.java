@@ -59,10 +59,15 @@ public class ReportsView extends VBox {
         
         HBox datePresetBox = new HBox(10);
         datePresetBox.setAlignment(Pos.CENTER_LEFT);
-        Label presetLabel = new Label("Preset:");
+        Label presetLabel = new Label(LocaleManager.getString("reports.preset") + ":");
         datePresetComboBox = new ComboBox<>();
-        datePresetComboBox.getItems().addAll("Custom", "Today", "This Week", "This Month");
-        datePresetComboBox.setValue("This Month");
+        datePresetComboBox.getItems().addAll(
+            LocaleManager.getString("reports.preset.custom"),
+            LocaleManager.getString("reports.preset.today"),
+            LocaleManager.getString("reports.preset.week"),
+            LocaleManager.getString("reports.preset.month")
+        );
+        datePresetComboBox.setValue(LocaleManager.getString("reports.preset.month"));
         datePresetComboBox.setPrefWidth(150);
         datePresetBox.getChildren().addAll(presetLabel, datePresetComboBox);
         
@@ -90,7 +95,7 @@ public class ReportsView extends VBox {
         
         HBox thresholdBox = new HBox(10);
         thresholdBox.setAlignment(Pos.CENTER_LEFT);
-        Label thresholdDescLabel = new Label(LocaleManager.getString("reports.stock.threshold") + " (units):");
+        Label thresholdDescLabel = new Label(LocaleManager.getString("reports.stock.threshold") + " (" + LocaleManager.getString("reports.stock.threshold.units") + "):");
         stockThresholdField = new TextField("10");
         stockThresholdField.setPrefWidth(100);
         thresholdBox.getChildren().addAll(thresholdDescLabel, stockThresholdField);

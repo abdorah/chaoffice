@@ -3,6 +3,8 @@ package org.chaos.office.reports.services;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.chaos.office.reports.models.*;
+import org.chaos.office.util.CurrencyFormatter;
+import org.chaos.office.util.LocaleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +54,7 @@ public class ExcelExporter {
      * Writes sales report data to Excel workbook.
      */
     private void writeSalesExcel(SalesReportData data, Workbook workbook) {
-        Sheet sheet = workbook.createSheet("Sales Report");
+        Sheet sheet = workbook.createSheet(LocaleManager.getString("report.sales.title"));
         
         // Create styles
         CellStyle headerStyle = createHeaderStyle(workbook);
@@ -63,9 +65,9 @@ public class ExcelExporter {
         int rowNum = 0;
         
         // Report header
-        rowNum = writeReportHeader(sheet, rowNum, "Sales Report", 
-            "Date Range: " + data.getStartDate() + " to " + data.getEndDate(),
-            "Generated: " + data.getGeneratedAt().format(DISPLAY_FORMATTER),
+        rowNum = writeReportHeader(sheet, rowNum, LocaleManager.getString("report.sales.title"), 
+            LocaleManager.getString("report.period") + ": " + data.getStartDate() + " to " + data.getEndDate(),
+            LocaleManager.getString("report.generated.on") + ": " + data.getGeneratedAt().format(DISPLAY_FORMATTER),
             titleStyle, normalStyle);
         
         rowNum++; // Blank row
@@ -73,24 +75,24 @@ public class ExcelExporter {
         // Summary metrics section
         Row titleRow = sheet.createRow(rowNum++);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("Summary Metrics");
+        titleCell.setCellValue(LocaleManager.getString("report.summary.metrics"));
         titleCell.setCellStyle(headerStyle);
         
-        rowNum = writeLabelValueRow(sheet, rowNum, "Total Revenue", data.getTotalRevenue(), normalStyle, currencyStyle);
-        rowNum = writeLabelValueRow(sheet, rowNum, "Number of Sales", data.getSalesCount(), normalStyle, normalStyle);
-        rowNum = writeLabelValueRow(sheet, rowNum, "Average Sale Value", data.getAverageSaleValue(), normalStyle, currencyStyle);
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.total.revenue"), data.getTotalRevenue(), normalStyle, currencyStyle);
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.number.of.sales"), data.getSalesCount(), normalStyle, normalStyle);
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.average.sale.value"), data.getAverageSaleValue(), normalStyle, currencyStyle);
         
         rowNum++; // Blank row
         
         // Payment method breakdown
         Row paymentTitleRow = sheet.createRow(rowNum++);
         Cell paymentTitleCell = paymentTitleRow.createCell(0);
-        paymentTitleCell.setCellValue("Payment Method Breakdown");
+        paymentTitleCell.setCellValue(LocaleManager.getString("report.payment.method.breakdown"));
         paymentTitleCell.setCellStyle(headerStyle);
         
         Row paymentHeaderRow = sheet.createRow(rowNum++);
-        createHeaderCell(paymentHeaderRow, 0, "Payment Method", headerStyle);
-        createHeaderCell(paymentHeaderRow, 1, "Total Revenue", headerStyle);
+        createHeaderCell(paymentHeaderRow, 0, LocaleManager.getString("report.payment.method"), headerStyle);
+        createHeaderCell(paymentHeaderRow, 1, LocaleManager.getString("report.total.revenue"), headerStyle);
         
         for (Map.Entry<PaymentMethod, BigDecimal> entry : data.getPaymentMethodBreakdown().entrySet()) {
             Row row = sheet.createRow(rowNum++);
@@ -108,11 +110,11 @@ public class ExcelExporter {
         // Discount analysis
         Row discountTitleRow = sheet.createRow(rowNum++);
         Cell discountTitleCell = discountTitleRow.createCell(0);
-        discountTitleCell.setCellValue("Discount Analysis");
+        discountTitleCell.setCellValue(LocaleManager.getString("report.discount.analysis"));
         discountTitleCell.setCellStyle(headerStyle);
         
-        rowNum = writeLabelValueRow(sheet, rowNum, "Total Discounts Given", data.getTotalDiscounts(), normalStyle, currencyStyle);
-        rowNum = writeLabelValueRow(sheet, rowNum, "Average Discount Percentage", 
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.total.discounts.given"), data.getTotalDiscounts(), normalStyle, currencyStyle);
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.average.discount.percentage"), 
             data.getAverageDiscountPercentage().doubleValue() + "%", normalStyle, normalStyle);
         
         rowNum++; // Blank row
@@ -120,13 +122,13 @@ public class ExcelExporter {
         // Top selling parts
         Row topPartsTitleRow = sheet.createRow(rowNum++);
         Cell topPartsTitleCell = topPartsTitleRow.createCell(0);
-        topPartsTitleCell.setCellValue("Top Selling Parts");
+        topPartsTitleCell.setCellValue(LocaleManager.getString("report.top.selling.parts"));
         topPartsTitleCell.setCellStyle(headerStyle);
         
         Row topPartsHeaderRow = sheet.createRow(rowNum++);
-        createHeaderCell(topPartsHeaderRow, 0, "Part Name", headerStyle);
-        createHeaderCell(topPartsHeaderRow, 1, "Quantity Sold", headerStyle);
-        createHeaderCell(topPartsHeaderRow, 2, "Revenue", headerStyle);
+        createHeaderCell(topPartsHeaderRow, 0, LocaleManager.getString("report.column.part.name"), headerStyle);
+        createHeaderCell(topPartsHeaderRow, 1, LocaleManager.getString("report.quantity.sold"), headerStyle);
+        createHeaderCell(topPartsHeaderRow, 2, LocaleManager.getString("report.column.revenue"), headerStyle);
         
         for (TopSellingPart part : data.getTopSellingParts()) {
             Row row = sheet.createRow(rowNum++);
@@ -154,7 +156,7 @@ public class ExcelExporter {
      * Writes inventory report data to Excel workbook.
      */
     private void writeInventoryExcel(InventoryReportData data, Workbook workbook) {
-        Sheet sheet = workbook.createSheet("Inventory Report");
+        Sheet sheet = workbook.createSheet(LocaleManager.getString("report.inventory.title"));
         
         // Create styles
         CellStyle headerStyle = createHeaderStyle(workbook);
@@ -167,9 +169,9 @@ public class ExcelExporter {
         int rowNum = 0;
         
         // Report header
-        rowNum = writeReportHeader(sheet, rowNum, "Inventory Report",
-            "Stock Threshold: " + data.getStockThreshold() + " units",
-            "Generated: " + data.getGeneratedAt().format(DISPLAY_FORMATTER),
+        rowNum = writeReportHeader(sheet, rowNum, LocaleManager.getString("report.inventory.title"),
+            LocaleManager.getString("report.stock.threshold") + ": " + data.getStockThreshold() + " " + LocaleManager.getString("report.units"),
+            LocaleManager.getString("report.generated.on") + ": " + data.getGeneratedAt().format(DISPLAY_FORMATTER),
             titleStyle, normalStyle);
         
         rowNum++; // Blank row
@@ -177,28 +179,28 @@ public class ExcelExporter {
         // Summary metrics
         Row titleRow = sheet.createRow(rowNum++);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("Summary Metrics");
+        titleCell.setCellValue(LocaleManager.getString("report.summary.metrics"));
         titleCell.setCellStyle(headerStyle);
         
-        rowNum = writeLabelValueRow(sheet, rowNum, "Total Inventory Value", data.getTotalInventoryValue(), normalStyle, currencyStyle);
-        rowNum = writeLabelValueRow(sheet, rowNum, "Low Stock Items", data.getLowStockParts().size(), normalStyle, normalStyle);
-        rowNum = writeLabelValueRow(sheet, rowNum, "Out of Stock Items", data.getOutOfStockParts().size(), normalStyle, normalStyle);
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.total.inventory.value"), data.getTotalInventoryValue(), normalStyle, currencyStyle);
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.low.stock.items"), data.getLowStockParts().size(), normalStyle, normalStyle);
+        rowNum = writeLabelValueRow(sheet, rowNum, LocaleManager.getString("report.out.of.stock.items"), data.getOutOfStockParts().size(), normalStyle, normalStyle);
         
         rowNum++; // Blank row
         
         // Inventory details
         Row detailsTitleRow = sheet.createRow(rowNum++);
         Cell detailsTitleCell = detailsTitleRow.createCell(0);
-        detailsTitleCell.setCellValue("Inventory Details");
+        detailsTitleCell.setCellValue(LocaleManager.getString("report.inventory.details"));
         detailsTitleCell.setCellStyle(headerStyle);
         
         Row detailsHeaderRow = sheet.createRow(rowNum++);
-        createHeaderCell(detailsHeaderRow, 0, "Category", headerStyle);
-        createHeaderCell(detailsHeaderRow, 1, "Part Name", headerStyle);
-        createHeaderCell(detailsHeaderRow, 2, "Quantity", headerStyle);
-        createHeaderCell(detailsHeaderRow, 3, "Price", headerStyle);
-        createHeaderCell(detailsHeaderRow, 4, "Stock Value", headerStyle);
-        createHeaderCell(detailsHeaderRow, 5, "Status", headerStyle);
+        createHeaderCell(detailsHeaderRow, 0, LocaleManager.getString("report.column.category"), headerStyle);
+        createHeaderCell(detailsHeaderRow, 1, LocaleManager.getString("report.column.part.name"), headerStyle);
+        createHeaderCell(detailsHeaderRow, 2, LocaleManager.getString("report.column.quantity"), headerStyle);
+        createHeaderCell(detailsHeaderRow, 3, LocaleManager.getString("report.column.price"), headerStyle);
+        createHeaderCell(detailsHeaderRow, 4, LocaleManager.getString("report.stock.value"), headerStyle);
+        createHeaderCell(detailsHeaderRow, 5, LocaleManager.getString("report.status"), headerStyle);
         
         for (Map.Entry<String, List<PartInventoryItem>> entry : data.getPartsByCategory().entrySet()) {
             for (PartInventoryItem item : entry.getValue()) {
@@ -343,11 +345,13 @@ public class ExcelExporter {
     }
     
     /**
-     * Creates currency style ($ format).
+     * Creates currency style with dynamic currency symbol from CurrencyFormatter.
      */
     private CellStyle createCurrencyStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
-        style.setDataFormat(workbook.createDataFormat().getFormat("$#,##0.00"));
+        // Use the currency symbol from CurrencyFormatter
+        String currencySymbol = CurrencyFormatter.getSymbol();
+        style.setDataFormat(workbook.createDataFormat().getFormat(currencySymbol + "#,##0.00"));
         return style;
     }
     

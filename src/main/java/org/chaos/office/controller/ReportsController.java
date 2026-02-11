@@ -89,24 +89,24 @@ public class ReportsController {
         String preset = view.getDatePresetComboBox().getValue();
         LocalDate today = LocalDate.now();
         
-        switch (preset) {
-            case "Today":
-                view.getStartDatePicker().setValue(today);
-                view.getEndDatePicker().setValue(today);
-                break;
-            case "This Week":
-                LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-                view.getStartDatePicker().setValue(monday);
-                view.getEndDatePicker().setValue(today);
-                break;
-            case "This Month":
-                LocalDate firstDay = today.withDayOfMonth(1);
-                view.getStartDatePicker().setValue(firstDay);
-                view.getEndDatePicker().setValue(today);
-                break;
-            case "Custom":
-                // User can manually select dates
-                break;
+        String customPreset = LocaleManager.getString("reports.preset.custom");
+        String todayPreset = LocaleManager.getString("reports.preset.today");
+        String weekPreset = LocaleManager.getString("reports.preset.week");
+        String monthPreset = LocaleManager.getString("reports.preset.month");
+        
+        if (todayPreset.equals(preset)) {
+            view.getStartDatePicker().setValue(today);
+            view.getEndDatePicker().setValue(today);
+        } else if (weekPreset.equals(preset)) {
+            LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            view.getStartDatePicker().setValue(monday);
+            view.getEndDatePicker().setValue(today);
+        } else if (monthPreset.equals(preset)) {
+            LocalDate firstDay = today.withDayOfMonth(1);
+            view.getStartDatePicker().setValue(firstDay);
+            view.getEndDatePicker().setValue(today);
+        } else if (customPreset.equals(preset)) {
+            // User can manually select dates
         }
     }
     

@@ -129,6 +129,164 @@ class AuthenticationServiceTest {
         assertFalse(SessionManager.getInstance().isAuthenticated());
     }
     
+    @Test
+    void testChangeUsernameWithValidCredentials() throws SQLException {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Change username
+        boolean result = authService.changeUsername("testpass", "newusername");
+        
+        assertTrue(result);
+        assertEquals("newusername", SessionManager.getInstance().getCurrentUser().getUsername());
+        
+        // Clean up new username
+        deleteTestUser("newusername");
+    }
+    
+    @Test
+    void testChangeUsernameWithIncorrectPassword() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Try to change username with wrong password
+        boolean result = authService.changeUsername("wrongpass", "newusername");
+        
+        assertFalse(result);
+        assertEquals("testuser", SessionManager.getInstance().getCurrentUser().getUsername());
+    }
+    
+    @Test
+    void testChangeUsernameWithEmptyUsername() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Try to change to empty username
+        boolean result = authService.changeUsername("testpass", "");
+        
+        assertFalse(result);
+        assertEquals("testuser", SessionManager.getInstance().getCurrentUser().getUsername());
+    }
+    
+    @Test
+    void testChangeUsernameWithWhitespaceUsername() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Try to change to whitespace-only username
+        boolean result = authService.changeUsername("testpass", "   ");
+        
+        assertFalse(result);
+        assertEquals("testuser", SessionManager.getInstance().getCurrentUser().getUsername());
+    }
+    
+    @Test
+    void testChangeUsernameWithoutAuthentication() {
+        // Try to change username without being authenticated
+        boolean result = authService.changeUsername("testpass", "newusername");
+        
+        assertFalse(result);
+    }
+    
+    @Test
+    void testChangePasswordWithValidCredentials() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Change password
+        boolean result = authService.changePassword("testpass", "newpass123", "newpass123");
+        
+        assertTrue(result);
+        
+        // Verify can authenticate with new password
+        SessionManager.getInstance().clearSession();
+        Optional<User> authResult = authService.authenticate("testuser", "newpass123");
+        assertTrue(authResult.isPresent());
+    }
+    
+    @Test
+    void testChangePasswordWithIncorrectCurrentPassword() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Try to change password with wrong current password
+        boolean result = authService.changePassword("wrongpass", "newpass123", "newpass123");
+        
+        assertFalse(result);
+        
+        // Verify old password still works
+        SessionManager.getInstance().clearSession();
+        Optional<User> authResult = authService.authenticate("testuser", "testpass");
+        assertTrue(authResult.isPresent());
+    }
+    
+    @Test
+    void testChangePasswordWithMismatchedConfirmation() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Try to change password with mismatched confirmation
+        boolean result = authService.changePassword("testpass", "newpass123", "differentpass");
+        
+        assertFalse(result);
+        
+        // Verify old password still works
+        SessionManager.getInstance().clearSession();
+        Optional<User> authResult = authService.authenticate("testuser", "testpass");
+        assertTrue(authResult.isPresent());
+    }
+    
+    @Test
+    void testChangePasswordWithShortPassword() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Try to change to password shorter than 6 characters
+        boolean result = authService.changePassword("testpass", "short", "short");
+        
+        assertFalse(result);
+        
+        // Verify old password still works
+        SessionManager.getInstance().clearSession();
+        Optional<User> authResult = authService.authenticate("testuser", "testpass");
+        assertTrue(authResult.isPresent());
+    }
+    
+    @Test
+    void testChangePasswordWithExactly6Characters() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Change to password with exactly 6 characters (minimum)
+        boolean result = authService.changePassword("testpass", "pass12", "pass12");
+        
+        assertTrue(result);
+        
+        // Verify can authenticate with new password
+        SessionManager.getInstance().clearSession();
+        Optional<User> authResult = authService.authenticate("testuser", "pass12");
+        assertTrue(authResult.isPresent());
+    }
+    
+    @Test
+    void testChangePasswordWithoutAuthentication() {
+        // Try to change password without being authenticated
+        boolean result = authService.changePassword("testpass", "newpass123", "newpass123");
+        
+        assertFalse(result);
+    }
+    
+    @Test
+    void testChangePasswordWithNullPassword() {
+        // Authenticate first
+        authService.authenticate("testuser", "testpass");
+        
+        // Try to change to null password
+        boolean result = authService.changePassword("testpass", null, null);
+        
+        assertFalse(result);
+    }
+    
     // Helper methods
     
     private void createTestUser(String username, String password, String role, 
