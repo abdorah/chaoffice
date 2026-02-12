@@ -10,6 +10,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import org.chaos.office.model.Category;
 import org.chaos.office.util.LocaleManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 
@@ -18,6 +20,7 @@ import java.io.ByteArrayInputStream;
  */
 public class CategoryManagementView extends BorderPane {
     
+    private static final Logger logger = LoggerFactory.getLogger(CategoryManagementView.class);
     private final FlowPane categoryCardsPane;
     private final Button addButton;
     private final Button editButton;
@@ -84,13 +87,18 @@ public class CategoryManagementView extends BorderPane {
         
         if (category.getImage() != null && category.getImage().length > 0) {
             try {
+                logger.debug("Creating card for category '{}' with image size: {} bytes", 
+                    category.getName(), category.getImage().length);
                 Image image = new Image(new ByteArrayInputStream(category.getImage()));
                 imageView.setImage(image);
+                logger.debug("Successfully set image for category '{}'", category.getName());
             } catch (Exception e) {
+                logger.error("Failed to load image for category '{}': {}", category.getName(), e.getMessage());
                 // Use placeholder if image fails to load
                 setPlaceholderIcon(imageView);
             }
         } else {
+            logger.debug("Category '{}' has no image, using placeholder", category.getName());
             // No image - use placeholder
             setPlaceholderIcon(imageView);
         }

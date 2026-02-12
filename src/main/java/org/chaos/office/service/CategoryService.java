@@ -45,6 +45,10 @@ public class CategoryService {
             while (rs.next()) {
                 Category category = mapResultSetToCategory(rs);
                 categories.add(category);
+                logger.debug("Loaded category ID: {}, Name: {}, Image size: {} bytes", 
+                    category.getId(), 
+                    category.getName(), 
+                    category.getImage() != null ? category.getImage().length : 0);
             }
             
             logger.info("Retrieved {} categories from database", categories.size());
@@ -121,6 +125,11 @@ public class CategoryService {
             stmt.setString(2, category.getDescription());
             stmt.setBytes(3, category.getImage());
             stmt.setInt(4, category.getId());
+            
+            logger.info("Updating category ID: {}, Name: {}, Image size: {} bytes", 
+                category.getId(), 
+                category.getName(), 
+                category.getImage() != null ? category.getImage().length : 0);
             
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {

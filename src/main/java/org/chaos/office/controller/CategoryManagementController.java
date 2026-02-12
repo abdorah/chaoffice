@@ -189,6 +189,11 @@ public class CategoryManagementController {
         
         final byte[][] selectedImage = {existing != null ? existing.getImage() : null};
         
+        // Update label to show if existing category has an image
+        if (existing != null && existing.getImage() != null && existing.getImage().length > 0) {
+            imageLabel.setText(LocaleManager.getString("category.has.image"));
+        }
+        
         imageButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle(LocaleManager.getString("category.select.image"));
@@ -201,6 +206,7 @@ public class CategoryManagementController {
                 try {
                     selectedImage[0] = ImageHelper.fileToByteArray(file);
                     imageLabel.setText(file.getName());
+                    logger.info("Selected new image for category: {} bytes", selectedImage[0].length);
                 } catch (Exception ex) {
                     logger.error("Error loading image", ex);
                     AlertHelper.showError(
@@ -227,7 +233,7 @@ public class CategoryManagementController {
         
         // Convert result
         dialog.setResultConverter(buttonType -> {
-            if (buttonType == ButtonType.OK) {
+            if (buttonType == okButtonType) {
                 if (nameField.getText().trim().isEmpty()) {
                     AlertHelper.showError(
                         LocaleManager.getString("error.title"),
@@ -240,6 +246,11 @@ public class CategoryManagementController {
                 category.setName(nameField.getText().trim());
                 category.setDescription(descField.getText().trim());
                 category.setImage(selectedImage[0]);
+                
+                logger.info("Category dialog result - ID: {}, Name: {}, Image size: {}", 
+                    category.getId(), 
+                    category.getName(), 
+                    selectedImage[0] != null ? selectedImage[0].length : 0);
                 
                 return category;
             }
