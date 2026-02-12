@@ -50,10 +50,10 @@ public class SalesAnalyticsView extends BorderPane {
         
         // Center: Sales chart
         CategoryAxis xAxis = new CategoryAxis();
-        xAxis.setLabel("Date");
+        xAxis.setLabel(LocaleManager.getString("analytics.chart.date"));
         
         NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel("Sales (" + CurrencyFormatter.getSymbol() + ")");
+        yAxis.setLabel(LocaleManager.getString("analytics.chart.sales") + " (" + CurrencyFormatter.getSymbol() + ")");
         
         salesChart = new LineChart<>(xAxis, yAxis);
         salesChart.setTitle(LocaleManager.getString("analytics.chart.title"));
@@ -69,7 +69,7 @@ public class SalesAnalyticsView extends BorderPane {
         statsBox.setPrefWidth(250);
         statsBox.setAlignment(Pos.TOP_CENTER);
         
-        Label statsTitle = new Label("Summary");
+        Label statsTitle = new Label(LocaleManager.getString("analytics.summary"));
         statsTitle.getStyleClass().add("label-subtitle");
         
         totalRevenueLabel = new Label(LocaleManager.getString("analytics.revenue") + ": " + CurrencyFormatter.format(0));

@@ -67,8 +67,23 @@ public class SettingsController {
         
         // Set current theme
         String currentTheme = ThemeManager.getCurrentTheme();
-        ThemeManager.Theme theme = ThemeManager.Theme.fromId(currentTheme);
-        view.getThemeComboBox().setValue(theme.getDisplayName());
+        
+        // Map theme ID to localized display name
+        String themeDisplayName;
+        switch (currentTheme) {
+            case "dark":
+                themeDisplayName = LocaleManager.getString("settings.theme.dark");
+                break;
+            case "ubuntu":
+                themeDisplayName = LocaleManager.getString("settings.theme.ubuntu");
+                break;
+            case "none":
+                themeDisplayName = LocaleManager.getString("settings.theme.none");
+                break;
+            default:
+                themeDisplayName = LocaleManager.getString("settings.theme.main");
+        }
+        view.getThemeComboBox().setValue(themeDisplayName);
         
         // Set database path
         view.getDatabasePathField().setText(System.getProperty("user.home") + "/.chaoffice/chaoffice.db");
@@ -212,7 +227,25 @@ public class SettingsController {
     
     private void handleSave() {
         try {
-            // Handle language change
+            // IMPORTANT: Get the theme ID BEFORE changing language
+            // because the dropdown value is in the current language
+            String selectedTheme = view.getThemeComboBox().getValue();
+            String themeId;
+            
+            // Map localized display name back to theme ID using CURRENT language
+            if (selectedTheme.equals(LocaleManager.getString("settings.theme.dark"))) {
+                themeId = "dark";
+            } else if (selectedTheme.equals(LocaleManager.getString("settings.theme.ubuntu"))) {
+                themeId = "ubuntu";
+            } else if (selectedTheme.equals(LocaleManager.getString("settings.theme.none"))) {
+                themeId = "none";
+            } else {
+                themeId = "main";
+            }
+            
+            logger.info("Theme selected: '{}' mapped to ID: '{}'", selectedTheme, themeId);
+            
+            // Handle language change AFTER getting theme ID
             String selectedLanguage = view.getLanguageComboBox().getValue();
             Locale locale;
             
@@ -229,28 +262,9 @@ public class SettingsController {
             
             LocaleManager.setLocale(locale);
             
-            // Handle theme change
-            String selectedTheme = view.getThemeComboBox().getValue();
-            String themeId;
-            
-            switch (selectedTheme) {
-                case "Dark Theme":
-                    themeId = "dark";
-                    break;
-                case "Ubuntu Theme":
-                    themeId = "ubuntu";
-                    break;
-                case "No Theme":
-                    themeId = "none";
-                    break;
-                default:
-                    themeId = "main";
-            }
-            
-            // Apply theme to current stage if available
-            if (stage != null && stage.getScene() != null) {
-                ThemeManager.setTheme(stage.getScene(), themeId);
-            }
+            // Save theme to settings file BEFORE recreating dashboard
+            // This ensures the new dashboard loads with the correct theme
+            ThemeManager.setTheme(stage.getScene(), themeId);
             
             // Save branding settings
             saveBrandingSettings();
@@ -259,12 +273,10 @@ public class SettingsController {
             saveCurrencySettings();
             
             // Refresh the entire dashboard if we have access to stage
+            // The new dashboard will automatically load the saved theme via applyCurrentTheme()
             if (stage != null) {
                 DashboardController newDashboard = new DashboardController(stage);
                 stage.setScene(newDashboard);
-                
-                // Reapply theme to the new scene
-                ThemeManager.setTheme(stage.getScene(), themeId);
             }
             
             AlertHelper.showInfo(
@@ -379,7 +391,7 @@ public class SettingsController {
             logger.warn("Username change failed: new username is empty");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Username cannot be empty"
+                LocaleManager.getString("settings.username.error.empty")
             );
             return;
         }
@@ -389,7 +401,7 @@ public class SettingsController {
             logger.warn("Username change failed: current password not provided");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Current password is required to change username"
+                LocaleManager.getString("settings.password.error.required")
             );
             return;
         }
@@ -401,7 +413,7 @@ public class SettingsController {
             logger.info("Username changed successfully");
             AlertHelper.showInfo(
                 LocaleManager.getString("success.title"),
-                "Username changed successfully"
+                LocaleManager.getString("settings.username.success")
             );
             
             // Clear the fields
@@ -411,7 +423,7 @@ public class SettingsController {
             logger.warn("Username change failed");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Failed to change username. Please check your current password."
+                LocaleManager.getString("settings.username.error.failed")
             );
         }
     }
@@ -434,7 +446,7 @@ public class SettingsController {
             logger.warn("Password change failed: current password not provided");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Current password is required"
+                LocaleManager.getString("settings.password.error.required")
             );
             return;
         }
@@ -444,7 +456,7 @@ public class SettingsController {
             logger.warn("Password change failed: new password is empty");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "New password cannot be empty"
+                LocaleManager.getString("settings.password.error.empty")
             );
             return;
         }
@@ -454,7 +466,7 @@ public class SettingsController {
             logger.warn("Password change failed: new password is too short");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "New password must be at least 6 characters long"
+                LocaleManager.getString("settings.password.error.short")
             );
             return;
         }
@@ -464,7 +476,7 @@ public class SettingsController {
             logger.warn("Password change failed: password confirmation does not match");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Password confirmation does not match"
+                LocaleManager.getString("settings.password.error.mismatch")
             );
             return;
         }
@@ -476,7 +488,7 @@ public class SettingsController {
             logger.info("Password changed successfully");
             AlertHelper.showInfo(
                 LocaleManager.getString("success.title"),
-                "Password changed successfully"
+                LocaleManager.getString("settings.password.success")
             );
             
             // Clear all password fields
@@ -487,7 +499,7 @@ public class SettingsController {
             logger.warn("Password change failed");
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Failed to change password. Please check your current password."
+                LocaleManager.getString("settings.password.error.failed")
             );
         }
     }

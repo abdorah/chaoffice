@@ -166,9 +166,30 @@ public class AuthenticationService {
             return false;
         }
         
+        logger.info("Current user ID: {}, Current username: {}", currentUser.getId(), currentUser.getUsername());
+        
         // Verify current password
         if (!verifyPassword(currentPassword, currentUser.getPassword())) {
             logger.warn("Username change failed: incorrect current password");
+            return false;
+        }
+        
+        // Check if new username already exists (for a different user)
+        String checkSql = "SELECT id FROM users WHERE username = ? AND id != ?";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            
+            checkStmt.setString(1, newUsername.trim());
+            checkStmt.setInt(2, currentUser.getId());
+            
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next()) {
+                    logger.warn("Username change failed: username '{}' already exists for another user", newUsername);
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error checking username uniqueness", e);
             return false;
         }
         
@@ -183,15 +204,24 @@ public class AuthenticationService {
             
             int rowsAffected = stmt.executeUpdate();
             
+            logger.info("Username update affected {} rows", rowsAffected);
+            
             if (rowsAffected > 0) {
                 // Update the session with new username
+                String oldUsername = currentUser.getUsername();
                 currentUser.setUsername(newUsername.trim());
                 SessionManager.getInstance().setCurrentUser(currentUser);
-                logger.info("Username changed successfully to: {}", newUsername);
+                logger.info("Username changed successfully from '{}' to '{}' for user ID {}", 
+                    oldUsername, newUsername, currentUser.getId());
                 return true;
+            } else {
+                logger.warn("Username update affected 0 rows - user ID {} may not exist", currentUser.getId());
             }
         } catch (SQLException e) {
             logger.error("Error changing username", e);
+            if (e.getMessage().contains("UNIQUE constraint failed")) {
+                logger.error("Username '{}' already exists in database", newUsername);
+            }
         }
         
         return false;

@@ -41,13 +41,13 @@ public class InventoryReportData extends ReportData {
     
     @Override
     public String getReportTitle() {
-        return "Inventory Report";
+        return org.chaos.office.util.LocaleManager.getString("report.inventory.title");
     }
     
     @Override
     public Map<String, String> getParameters() {
         Map<String, String> params = new HashMap<>();
-        params.put("Stock Threshold", stockThreshold + " units");
+        params.put(org.chaos.office.util.LocaleManager.getString("report.stock.threshold"), stockThreshold + " " + org.chaos.office.util.LocaleManager.getString("report.units"));
         return params;
     }
     

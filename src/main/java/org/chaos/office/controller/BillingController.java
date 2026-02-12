@@ -11,6 +11,7 @@ import org.chaos.office.model.Part;
 import org.chaos.office.service.BillService;
 import org.chaos.office.service.PartService;
 import org.chaos.office.util.AlertHelper;
+import org.chaos.office.util.LocaleManager;
 import org.chaos.office.util.ToastNotification;
 import org.chaos.office.util.TooltipHelper;
 import org.chaos.office.util.ValidationHelper;
@@ -89,8 +90,8 @@ public class BillingController {
         // Check for zero-stock parts first (Requirement 12.5)
         if (selectedPart.getQuantity() <= 0) {
             AlertHelper.showError(
-                "Out of Stock",
-                String.format("The part '%s' is currently out of stock and cannot be added to the bill.", 
+                LocaleManager.getString("parts.out.of.stock.title"),
+                String.format(LocaleManager.getString("parts.out.of.stock.message.short"), 
                     selectedPart.getName())
             );
             logger.warn("Attempted to add zero-stock part: {}", selectedPart.getName());

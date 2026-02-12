@@ -8,7 +8,6 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.*;
 import javafx.util.converter.FloatStringConverter;
 import org.chaos.office.model.Command;
-import org.chaos.office.util.CurrencyFormatter;
 import org.chaos.office.util.LocaleManager;
 
 /**
@@ -86,7 +85,7 @@ public class BillingView extends BorderPane {
         centerBox.setPadding(new Insets(10));
         
         // Part Search Component
-        Label searchLabel = new Label("Search and Select Parts");
+        Label searchLabel = new Label(LocaleManager.getString("billing.search.label"));
         searchLabel.getStyleClass().add("label-subtitle");
         
         partSearchComponent = new PartSearchComponent();
@@ -113,6 +112,7 @@ public class BillingView extends BorderPane {
         // Commands table with editable price column
         commandsTable = new TableView<>();
         commandsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        commandsTable.setPrefHeight(180);
         
         TableColumn<Command, String> partNameCol = new TableColumn<>("Part Name");
         partNameCol.setCellValueFactory(new PropertyValueFactory<>("partName"));
@@ -129,51 +129,36 @@ public class BillingView extends BorderPane {
         priceCol.setEditable(true);
         priceCol.setPrefWidth(100);
         
-        TableColumn<Command, Float> subtotalCol = new TableColumn<>("Subtotal");
+        TableColumn<Command, Float> subtotalCol = new TableColumn<>(LocaleManager.getString("billing.subtotal"));
         subtotalCol.setCellValueFactory(cellData -> {
             Command cmd = cellData.getValue();
             float subtotal = cmd.getQuantity() * cmd.getPriceConsidered();
             return new javafx.beans.property.SimpleFloatProperty(subtotal).asObject();
-        });
-        subtotalCol.setCellFactory(column -> new TableCell<Command, Float>() {
-            @Override
-            protected void updateItem(Float item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(CurrencyFormatter.format(item));
-                }
-            }
         });
         subtotalCol.setPrefWidth(100);
         
         commandsTable.getColumns().addAll(partNameCol, quantityCol, priceCol, subtotalCol);
         commandsTable.setEditable(true);
         
-        // Wrap commands table in ScrollPane with max height constraint
-        ScrollPane tableScrollPane = new ScrollPane(commandsTable);
-        tableScrollPane.setFitToWidth(true);
-        tableScrollPane.setFitToHeight(true);
-        tableScrollPane.setMaxHeight(300);
-        tableScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        tableScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        tableScrollPane.getStyleClass().add("edge-to-edge");
+        // Make commands table grow to fill available vertical space
+        VBox.setVgrow(commandsTable, Priority.ALWAYS);
+        commandsTable.setMinHeight(180);
+        commandsTable.setMaxHeight(Double.MAX_VALUE);
         
         // Discount controls section
-        Label discountLabel = new Label("Discount");
+        Label discountLabel = new Label(LocaleManager.getString("billing.discount.label"));
         discountLabel.getStyleClass().add("label-subtitle");
         
         discountTypeGroup = new ToggleGroup();
         
-        discountNoneRadio = new RadioButton("None");
+        discountNoneRadio = new RadioButton(LocaleManager.getString("billing.discount.none"));
         discountNoneRadio.setToggleGroup(discountTypeGroup);
         discountNoneRadio.setSelected(true);
         
-        discountPercentageRadio = new RadioButton("Percentage");
+        discountPercentageRadio = new RadioButton(LocaleManager.getString("billing.discount.percentage"));
         discountPercentageRadio.setToggleGroup(discountTypeGroup);
         
-        discountFixedRadio = new RadioButton("Fixed Amount");
+        discountFixedRadio = new RadioButton(LocaleManager.getString("billing.discount.fixed"));
         discountFixedRadio.setToggleGroup(discountTypeGroup);
         
         discountValueField = new TextField();
@@ -181,7 +166,8 @@ public class BillingView extends BorderPane {
         discountValueField.setPrefWidth(100);
         discountValueField.setDisable(true); // Disabled when "None" is selected
         
-        VBox discountBox = new VBox(8);
+        HBox discountBox = new HBox(15);
+        discountBox.setAlignment(Pos.CENTER_LEFT);
         discountBox.getChildren().addAll(
             discountNoneRadio,
             discountPercentageRadio,
@@ -190,77 +176,28 @@ public class BillingView extends BorderPane {
         );
         
         // Payment method controls section
-        Label paymentLabel = new Label("Payment Method");
+        Label paymentLabel = new Label(LocaleManager.getString("billing.payment.label"));
         paymentLabel.getStyleClass().add("label-subtitle");
         
         paymentMethodGroup = new ToggleGroup();
         
-        paymentCashRadio = new RadioButton("Cash");
+        paymentCashRadio = new RadioButton(LocaleManager.getString("billing.payment.cash"));
         paymentCashRadio.setToggleGroup(paymentMethodGroup);
         paymentCashRadio.setSelected(true);
         
-        paymentCardRadio = new RadioButton("Card");
+        paymentCardRadio = new RadioButton(LocaleManager.getString("billing.payment.card"));
         paymentCardRadio.setToggleGroup(paymentMethodGroup);
         
-        paymentCheckRadio = new RadioButton("Check");
+        paymentCheckRadio = new RadioButton(LocaleManager.getString("billing.payment.check"));
         paymentCheckRadio.setToggleGroup(paymentMethodGroup);
         
-        VBox paymentBox = new VBox(8);
+        HBox paymentBox = new HBox(15);
+        paymentBox.setAlignment(Pos.CENTER_LEFT);
         paymentBox.getChildren().addAll(
             paymentCashRadio,
             paymentCardRadio,
             paymentCheckRadio
         );
-        
-        // Total display labels
-        subtotalLabel = new Label("Subtotal: " + CurrencyFormatter.format(0));
-        subtotalLabel.getStyleClass().add("label-subtitle");
-        
-        this.discountLabel = new Label("Discount: -" + CurrencyFormatter.format(0));
-        this.discountLabel.getStyleClass().add("label-subtitle");
-        
-        Separator totalSeparator = new Separator();
-        
-        totalLabel = new Label(LocaleManager.getString("billing.total") + ": " + CurrencyFormatter.format(0));
-        totalLabel.getStyleClass().add("label-headline");
-        
-        completeSaleButton = new Button(LocaleManager.getString("billing.complete"));
-        completeSaleButton.getStyleClass().add("success-button");
-        completeSaleButton.setPrefWidth(200);
-        completeSaleButton.setPrefHeight(40);
-        
-        // Right controls panel with discount, payment, totals, and complete button
-        VBox rightControlsPanel = new VBox(15);
-        rightControlsPanel.setPadding(new Insets(10));
-        rightControlsPanel.getChildren().addAll(
-            discountLabel,
-            discountBox,
-            new Separator(),
-            paymentLabel,
-            paymentBox,
-            new Separator(),
-            subtotalLabel,
-            this.discountLabel,
-            totalSeparator,
-            totalLabel,
-            completeSaleButton
-        );
-        
-        // Wrap right controls in ScrollPane to handle overflow
-        ScrollPane rightControlsScrollPane = new ScrollPane(rightControlsPanel);
-        rightControlsScrollPane.setFitToWidth(true);
-        rightControlsScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        rightControlsScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        rightControlsScrollPane.setPrefWidth(250);
-        rightControlsScrollPane.setMinWidth(250);
-        rightControlsScrollPane.getStyleClass().add("edge-to-edge");
-        
-        // HBox containing table (left) and controls (right)
-        HBox tableAndControlsBox = new HBox(10);
-        tableAndControlsBox.getChildren().addAll(tableScrollPane, rightControlsScrollPane);
-        
-        // Set horizontal growth priority for table to expand
-        HBox.setHgrow(tableScrollPane, Priority.ALWAYS);
         
         // Add all components to center box
         centerBox.getChildren().addAll(
@@ -268,14 +205,55 @@ public class BillingView extends BorderPane {
             partSearchComponent,
             quantityBox,
             new Separator(),
-            tableAndControlsBox
+            commandsTable,
+            new Separator(),
+            discountLabel,
+            discountBox,
+            paymentLabel,
+            paymentBox
         );
         
-        setCenter(centerBox);
+        // Wrap center content in ScrollPane to handle overflow
+        ScrollPane scrollPane = new ScrollPane(centerBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("edge-to-edge");
         
-        // Bottom: Empty or minimal footer (totals and button moved to right panel)
-        // Keeping bottom section empty for now
-        setBottom(null);
+        setCenter(scrollPane);
+        
+        // Bottom: Enhanced total display and complete sale button
+        VBox totalsBox = new VBox(5);
+        totalsBox.setAlignment(Pos.CENTER_RIGHT);
+        
+        subtotalLabel = new Label(LocaleManager.getString("billing.subtotal") + ": $0.00");
+        subtotalLabel.getStyleClass().add("label-subtitle");
+        
+        this.discountLabel = new Label(LocaleManager.getString("billing.discount.amount") + ": -$0.00");
+        this.discountLabel.getStyleClass().add("label-subtitle");
+        
+        Separator totalSeparator = new Separator();
+        totalSeparator.setPrefWidth(200);
+        
+        totalLabel = new Label(LocaleManager.getString("billing.total") + ": $0.00");
+        totalLabel.getStyleClass().add("label-headline");
+        
+        totalsBox.getChildren().addAll(
+            subtotalLabel,
+            this.discountLabel,
+            totalSeparator,
+            totalLabel
+        );
+        
+        completeSaleButton = new Button(LocaleManager.getString("billing.complete"));
+        completeSaleButton.getStyleClass().add("success-button");
+        completeSaleButton.setPrefWidth(200);
+        completeSaleButton.setPrefHeight(40);
+        
+        HBox bottomBox = new HBox(20, totalsBox, completeSaleButton);
+        bottomBox.setPadding(new Insets(15));
+        bottomBox.setAlignment(Pos.CENTER_RIGHT);
+        setBottom(bottomBox);
         
         // Setup discount type change listener to enable/disable value field
         discountTypeGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
@@ -378,9 +356,9 @@ public class BillingView extends BorderPane {
      * @param total the final total after discount
      */
     public void updateTotals(float subtotal, float discountAmount, float total) {
-        subtotalLabel.setText("Subtotal: " + CurrencyFormatter.format(subtotal));
-        discountLabel.setText("Discount: -" + CurrencyFormatter.format(discountAmount));
-        totalLabel.setText(LocaleManager.getString("billing.total") + ": " + CurrencyFormatter.format(total));
+        subtotalLabel.setText(String.format("%s: $%.2f", LocaleManager.getString("billing.subtotal"), subtotal));
+        discountLabel.setText(String.format("%s: -$%.2f", LocaleManager.getString("billing.discount.amount"), discountAmount));
+        totalLabel.setText(String.format("%s: $%.2f", LocaleManager.getString("billing.total"), total));
     }
     
     /**

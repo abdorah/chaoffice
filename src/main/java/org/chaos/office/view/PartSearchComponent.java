@@ -17,6 +17,7 @@ import org.chaos.office.model.Category;
 import org.chaos.office.model.Part;
 import org.chaos.office.service.CategoryService;
 import org.chaos.office.service.SearchService;
+import org.chaos.office.util.LocaleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +87,7 @@ public class PartSearchComponent extends VBox {
         
         // Initialize category filter
         this.categoryFilter = new ComboBox<>();
-        this.categoryFilter.setPromptText("All Categories");
+        this.categoryFilter.setPromptText(LocaleManager.getString("category.all"));
         
         // Initialize results view
         this.resultsView = new ListView<>();
@@ -171,7 +172,7 @@ public class PartSearchComponent extends VBox {
             // Create "All Categories" option
             Category allCategories = new Category();
             allCategories.setId(-1);
-            allCategories.setName("All Categories");
+            allCategories.setName(LocaleManager.getString("category.all"));
             
             // Add to combo box
             categoryFilter.getItems().clear();
@@ -197,7 +198,7 @@ public class PartSearchComponent extends VBox {
                 protected void updateItem(Category item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
-                        setText("All Categories");
+                        setText(LocaleManager.getString("category.all"));
                     } else {
                         setText(item.getName());
                     }
@@ -281,8 +282,8 @@ public class PartSearchComponent extends VBox {
             // Show error alert for zero-stock parts
             javafx.application.Platform.runLater(() -> {
                 org.chaos.office.util.AlertHelper.showError(
-                    "Out of Stock",
-                    String.format("The part '%s' is currently out of stock and cannot be added to the bill.\n\nPlease select a different part or wait for restocking.", 
+                    org.chaos.office.util.LocaleManager.getString("parts.out.of.stock.title"),
+                    String.format(org.chaos.office.util.LocaleManager.getString("parts.out.of.stock.message"), 
                         part.getName())
                 );
             });

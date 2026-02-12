@@ -181,7 +181,7 @@ public class ReportsController {
         container.getChildren().clear();
         
         // Summary section
-        Label summaryTitle = new Label("Summary Metrics");
+        Label summaryTitle = new Label(LocaleManager.getString("report.summary.metrics"));
         summaryTitle.getStyleClass().add("label-title");
         
         GridPane summaryGrid = new GridPane();
@@ -189,12 +189,12 @@ public class ReportsController {
         summaryGrid.setVgap(10);
         summaryGrid.setPadding(new Insets(10));
         
-        addGridRow(summaryGrid, 0, "Total Revenue:", formatCurrency(data.getTotalRevenue()));
-        addGridRow(summaryGrid, 1, "Number of Sales:", String.valueOf(data.getSalesCount()));
-        addGridRow(summaryGrid, 2, "Average Sale Value:", formatCurrency(data.getAverageSaleValue()));
+        addGridRow(summaryGrid, 0, LocaleManager.getString("report.total.revenue") + ":", formatCurrency(data.getTotalRevenue()));
+        addGridRow(summaryGrid, 1, LocaleManager.getString("report.number.of.sales") + ":", String.valueOf(data.getSalesCount()));
+        addGridRow(summaryGrid, 2, LocaleManager.getString("report.average.sale.value") + ":", formatCurrency(data.getAverageSaleValue()));
         
         // Payment method breakdown
-        Label paymentTitle = new Label("Payment Method Breakdown");
+        Label paymentTitle = new Label(LocaleManager.getString("report.payment.method.breakdown"));
         paymentTitle.getStyleClass().add("label-title");
         
         GridPane paymentGrid = new GridPane();
@@ -208,7 +208,7 @@ public class ReportsController {
         }
         
         // Discount analysis
-        Label discountTitle = new Label("Discount Analysis");
+        Label discountTitle = new Label(LocaleManager.getString("report.discount.analysis"));
         discountTitle.getStyleClass().add("label-title");
         
         GridPane discountGrid = new GridPane();
@@ -216,11 +216,11 @@ public class ReportsController {
         discountGrid.setVgap(10);
         discountGrid.setPadding(new Insets(10));
         
-        addGridRow(discountGrid, 0, "Total Discounts:", formatCurrency(data.getTotalDiscounts()));
-        addGridRow(discountGrid, 1, "Average Discount %:", data.getAverageDiscountPercentage() + "%");
+        addGridRow(discountGrid, 0, LocaleManager.getString("report.total.discounts.given") + ":", formatCurrency(data.getTotalDiscounts()));
+        addGridRow(discountGrid, 1, LocaleManager.getString("report.average.discount.percentage") + ":", data.getAverageDiscountPercentage() + "%");
         
         // Top selling parts
-        Label topPartsTitle = new Label("Top Selling Parts");
+        Label topPartsTitle = new Label(LocaleManager.getString("report.top.selling.parts"));
         topPartsTitle.getStyleClass().add("label-title");
         
         GridPane topPartsGrid = new GridPane();
@@ -228,7 +228,9 @@ public class ReportsController {
         topPartsGrid.setVgap(10);
         topPartsGrid.setPadding(new Insets(10));
         
-        addGridRow(topPartsGrid, 0, "Part Name", "Quantity", "Revenue");
+        addGridRow(topPartsGrid, 0, LocaleManager.getString("report.column.part.name"), 
+                   LocaleManager.getString("report.quantity.sold"), 
+                   LocaleManager.getString("report.column.revenue"));
         int partRow = 1;
         for (TopSellingPart part : data.getTopSellingParts()) {
             addGridRow(topPartsGrid, partRow++, part.getPartName(), 
@@ -252,7 +254,7 @@ public class ReportsController {
         container.getChildren().clear();
         
         // Summary section
-        Label summaryTitle = new Label("Summary Metrics");
+        Label summaryTitle = new Label(LocaleManager.getString("report.summary.metrics"));
         summaryTitle.getStyleClass().add("label-title");
         
         GridPane summaryGrid = new GridPane();
@@ -260,12 +262,12 @@ public class ReportsController {
         summaryGrid.setVgap(10);
         summaryGrid.setPadding(new Insets(10));
         
-        addGridRow(summaryGrid, 0, "Total Inventory Value:", formatCurrency(data.getTotalInventoryValue()));
-        addGridRow(summaryGrid, 1, "Low Stock Items:", String.valueOf(data.getLowStockParts().size()));
-        addGridRow(summaryGrid, 2, "Out of Stock Items:", String.valueOf(data.getOutOfStockParts().size()));
+        addGridRow(summaryGrid, 0, LocaleManager.getString("report.total.inventory.value") + ":", formatCurrency(data.getTotalInventoryValue()));
+        addGridRow(summaryGrid, 1, LocaleManager.getString("report.low.stock.items") + ":", String.valueOf(data.getLowStockParts().size()));
+        addGridRow(summaryGrid, 2, LocaleManager.getString("report.out.of.stock.items") + ":", String.valueOf(data.getOutOfStockParts().size()));
         
         // Inventory details (show first 20 items)
-        Label detailsTitle = new Label("Inventory Details (First 20 items)");
+        Label detailsTitle = new Label(LocaleManager.getString("report.inventory.details") + " (First 20 items)");
         detailsTitle.getStyleClass().add("label-title");
         
         GridPane detailsGrid = new GridPane();
@@ -273,7 +275,10 @@ public class ReportsController {
         detailsGrid.setVgap(8);
         detailsGrid.setPadding(new Insets(10));
         
-        addGridRow(detailsGrid, 0, "Category", "Part Name", "Quantity", "Status");
+        addGridRow(detailsGrid, 0, LocaleManager.getString("report.column.category"), 
+                   LocaleManager.getString("report.column.part.name"), 
+                   LocaleManager.getString("report.column.quantity"), 
+                   LocaleManager.getString("report.status"));
         
         int row = 1;
         int count = 0;
@@ -343,17 +348,26 @@ public class ReportsController {
         if (file != null) {
             try {
                 reportService.exportToPDF(currentReportData, file.getAbsolutePath());
-                AlertHelper.showInfo("Success", "Report exported successfully to:\n" + file.getAbsolutePath());
+                AlertHelper.showInfo(
+                    LocaleManager.getString("success.title"), 
+                    LocaleManager.getString("reports.export.success") + ":\n" + file.getAbsolutePath()
+                );
             } catch (IOException | DocumentException e) {
                 logger.error("Error exporting PDF", e);
-                AlertHelper.showError("Export Error", "Failed to export PDF: " + e.getMessage());
+                AlertHelper.showError(
+                    LocaleManager.getString("error.title"), 
+                    LocaleManager.getString("reports.export.error") + ": " + e.getMessage()
+                );
             }
         }
     }
     
     private void onExportCSVClicked() {
         if (currentReportData == null) {
-            AlertHelper.showError("Error", "No Report: Please generate a preview first.");
+            AlertHelper.showError(
+                LocaleManager.getString("error.title"), 
+                LocaleManager.getString("reports.no.report.error")
+            );
             return;
         }
         
@@ -368,17 +382,26 @@ public class ReportsController {
         if (file != null) {
             try {
                 reportService.exportToCSV(currentReportData, file.getAbsolutePath());
-                AlertHelper.showInfo("Success", "Report exported successfully to:\n" + file.getAbsolutePath());
+                AlertHelper.showInfo(
+                    LocaleManager.getString("success.title"), 
+                    LocaleManager.getString("reports.export.success") + ":\n" + file.getAbsolutePath()
+                );
             } catch (IOException e) {
                 logger.error("Error exporting CSV", e);
-                AlertHelper.showError("Export Error", "Failed to export CSV: " + e.getMessage());
+                AlertHelper.showError(
+                    LocaleManager.getString("error.title"), 
+                    LocaleManager.getString("reports.export.error") + ": " + e.getMessage()
+                );
             }
         }
     }
     
     private void onExportExcelClicked() {
         if (currentReportData == null) {
-            AlertHelper.showError("Error", "No Report: Please generate a preview first.");
+            AlertHelper.showError(
+                LocaleManager.getString("error.title"), 
+                LocaleManager.getString("reports.no.report.error")
+            );
             return;
         }
         
@@ -393,10 +416,16 @@ public class ReportsController {
         if (file != null) {
             try {
                 reportService.exportToExcel(currentReportData, file.getAbsolutePath());
-                AlertHelper.showInfo("Success", "Report exported successfully to:\n" + file.getAbsolutePath());
+                AlertHelper.showInfo(
+                    LocaleManager.getString("success.title"), 
+                    LocaleManager.getString("reports.export.success") + ":\n" + file.getAbsolutePath()
+                );
             } catch (IOException e) {
                 logger.error("Error exporting Excel", e);
-                AlertHelper.showError("Export Error", "Failed to export Excel: " + e.getMessage());
+                AlertHelper.showError(
+                    LocaleManager.getString("error.title"), 
+                    LocaleManager.getString("reports.export.error") + ": " + e.getMessage()
+                );
             }
         }
     }

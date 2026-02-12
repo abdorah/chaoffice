@@ -1,5 +1,42 @@
-/* ChaOffice Point of Sale System - No Theme (Empty) */
-/* This theme provides no styling, using JavaFX defaults */
+/* ChaOffice Point of Sale System - No Theme (Minimal) */
+/* This theme provides minimal styling with emphasis on page headers only */
+
+/* ===== Page Titles ===== */
+/* Main page titles */
+.title-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* Login screen title */
+.title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.label-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* ===== Section Headers ===== */
+/* Section headers like welcome message and main sections */
+.header {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.label-headline {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* ===== Subsection Labels ===== */
+/* Subtitle labels for subsections */
+.label-subtitle {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
 
 /* ===== Category Cards ===== */
 /* Minimal styling for selected category cards */

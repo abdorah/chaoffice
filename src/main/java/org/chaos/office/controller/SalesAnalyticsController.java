@@ -92,7 +92,7 @@ public class SalesAnalyticsController {
         view.getSalesChart().getData().clear();
         
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Sales");
+        series.setName(LocaleManager.getString("analytics.chart.sales"));
         
         // Sort by date and add to chart
         TreeMap<LocalDate, Double> sortedSales = new TreeMap<>(salesByDate);

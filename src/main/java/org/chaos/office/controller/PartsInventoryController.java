@@ -67,17 +67,18 @@ public class PartsInventoryController {
     private void loadCategories() {
         var categories = categoryService.getAllCategories();
         var categoryNames = new ArrayList<String>();
-        categoryNames.add("All Categories"); // Add default option
+        categoryNames.add(LocaleManager.getString("category.all")); // Add default option
         for (Category category : categories) {
             categoryNames.add(category.getName());
         }
         view.getCategoryFilter().setItems(FXCollections.observableArrayList(categoryNames));
-        view.getCategoryFilter().setValue("All Categories");
+        view.getCategoryFilter().setValue(LocaleManager.getString("category.all"));
     }
     
     private void handleCategoryFilter() {
         String selected = view.getCategoryFilter().getValue();
-        if (selected == null || selected.equals("All Categories")) {
+        String allCategoriesText = LocaleManager.getString("category.all");
+        if (selected == null || selected.equals(allCategoriesText)) {
             loadParts();
         } else {
             // Find category by name
@@ -134,7 +135,11 @@ public class PartsInventoryController {
             LocaleManager.getString("common.save"), 
             ButtonBar.ButtonData.OK_DONE
         );
-        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+        ButtonType cancelButtonType = new ButtonType(
+            LocaleManager.getString("common.cancel"),
+            ButtonBar.ButtonData.CANCEL_CLOSE
+        );
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, cancelButtonType);
         
         // Create form
         GridPane grid = new GridPane();

@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-
 /**
  * Exports report data to professionally formatted PDF documents.
  * Supports Unicode characters including Arabic text.
@@ -31,16 +30,40 @@ public class PDFExporter {
     
     /**
      * Creates a font that supports Unicode characters including Arabic.
-     * Falls back to Helvetica if Unicode font creation fails.
+     * Uses Identity-H encoding for proper Unicode support.
      */
     private Font createUnicodeFont(int size, int style) {
         try {
-            // Use Identity-H encoding for Unicode support (including Arabic)
-            BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
+            // Try multiple font options that support Arabic
+            String[] fontOptions = {
+                "c:/windows/fonts/arial.ttf",           // Windows Arial
+                "c:/windows/fonts/arialuni.ttf",        // Windows Arial Unicode MS
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  // Linux DejaVu Sans
+                "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"  // macOS Arial Unicode
+            };
+            
+            for (String fontPath : fontOptions) {
+                try {
+                    BaseFont bf = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                    return new Font(bf, size, style);
+                } catch (Exception ignored) {
+                    // Try next font
+                }
+            }
+            
+            // If no file-based fonts work, try system fonts
+            BaseFont bf = BaseFont.createFont("Arial", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             return new Font(bf, size, style);
         } catch (Exception e) {
-            logger.warn("Failed to create Unicode font, using default", e);
-            return new Font(Font.HELVETICA, size, style);
+            logger.warn("Failed to create Unicode font with Arabic support, using Helvetica", e);
+            try {
+                // Last resort: use Helvetica (won't render Arabic correctly)
+                BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+                return new Font(bf, size, style);
+            } catch (Exception e2) {
+                logger.error("Failed to create any font", e2);
+                return new Font(Font.HELVETICA, size, style);
+            }
         }
     }
     
@@ -123,6 +146,10 @@ public class PDFExporter {
      * Adds header section to the PDF document.
      */
     private void addHeader(Document document, ReportData reportData) throws DocumentException {
+        // Check if current locale is Arabic (RTL)
+        boolean isRTL = LocaleManager.getCurrentLocale().getLanguage().equals("ar");
+        int alignment = isRTL ? Element.ALIGN_RIGHT : Element.ALIGN_CENTER;
+        
         // Add branding logo if configured
         if (brandingService.getBrandingSettings().hasLogo()) {
             try {
@@ -138,34 +165,91 @@ public class PDFExporter {
             }
         }
         
+        // For Arabic text in Paragraphs, we need to use tables with RTL support
+        // because Paragraph doesn't properly handle Arabic text shaping
+        
         // Add store name if configured, otherwise use default company name
         String companyName = brandingService.getBrandingSettings().hasStoreName() 
             ? brandingService.getBrandingSettings().getStoreName()
             : LocaleManager.getString("app.title");
         
-        Paragraph company = new Paragraph(companyName, getTitleFont());
-        company.setAlignment(Element.ALIGN_CENTER);
-        document.add(company);
+        if (isRTL) {
+            // Use a single-cell table for proper Arabic rendering
+            PdfPTable companyTable = new PdfPTable(1);
+            companyTable.setWidthPercentage(100);
+            companyTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+            PdfPCell companyCell = new PdfPCell(new Phrase(companyName, getTitleFont()));
+            companyCell.setBorder(Rectangle.NO_BORDER);
+            companyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            companyTable.addCell(companyCell);
+            document.add(companyTable);
+        } else {
+            Paragraph company = new Paragraph(companyName, getTitleFont());
+            company.setAlignment(alignment);
+            document.add(company);
+        }
         
         document.add(new Paragraph(" ")); // Spacing
         
         // Report title
-        Paragraph title = new Paragraph(reportData.getReportTitle(), getHeaderFont());
-        title.setAlignment(Element.ALIGN_CENTER);
-        document.add(title);
+        String titleText = reportData.getReportTitle();
+        if (isRTL) {
+            // Use a single-cell table for proper Arabic rendering
+            PdfPTable titleTable = new PdfPTable(1);
+            titleTable.setWidthPercentage(100);
+            titleTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+            PdfPCell titleCell = new PdfPCell(new Phrase(titleText, getHeaderFont()));
+            titleCell.setBorder(Rectangle.NO_BORDER);
+            titleCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            titleTable.addCell(titleCell);
+            document.add(titleTable);
+        } else {
+            Paragraph title = new Paragraph(titleText, getHeaderFont());
+            title.setAlignment(alignment);
+            document.add(title);
+        }
         
         // Generation timestamp
-        Paragraph timestamp = new Paragraph(LocaleManager.getString("report.generated.on") + ": " + 
-                reportData.getGeneratedAt().format(DISPLAY_FORMATTER), getNormalFont());
-        timestamp.setAlignment(Element.ALIGN_CENTER);
-        document.add(timestamp);
+        String timestampLabel = LocaleManager.getString("report.generated.on");
+        String timestampValue = reportData.getGeneratedAt().format(DISPLAY_FORMATTER);
+        String timestampText = timestampLabel + ": " + timestampValue;
+        
+        if (isRTL) {
+            PdfPTable timestampTable = new PdfPTable(1);
+            timestampTable.setWidthPercentage(100);
+            timestampTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+            PdfPCell timestampCell = new PdfPCell(new Phrase(timestampText, getNormalFont()));
+            timestampCell.setBorder(Rectangle.NO_BORDER);
+            timestampCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            timestampTable.addCell(timestampCell);
+            document.add(timestampTable);
+        } else {
+            Paragraph timestamp = new Paragraph(timestampText, getNormalFont());
+            timestamp.setAlignment(alignment);
+            document.add(timestamp);
+        }
         
         // Report parameters
         Map<String, String> params = reportData.getParameters();
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            Paragraph param = new Paragraph(entry.getKey() + ": " + entry.getValue(), getNormalFont());
-            param.setAlignment(Element.ALIGN_CENTER);
-            document.add(param);
+            String paramLabel = entry.getKey();
+            String paramValue = entry.getValue();
+            String paramText = paramLabel + ": " + paramValue;
+            
+            if (isRTL) {
+                PdfPTable paramTable = new PdfPTable(1);
+                paramTable.setWidthPercentage(100);
+                paramTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+                PdfPCell paramCell = new PdfPCell(new Phrase(paramText, getNormalFont()));
+                paramCell.setBorder(Rectangle.NO_BORDER);
+                paramCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                paramTable.addCell(paramCell);
+                document.add(paramTable);
+            } else {
+                Paragraph param = new Paragraph(paramText, getNormalFont());
+                param.setAlignment(alignment);
+                document.add(param);
+            }
         }
         
         document.add(new Paragraph(" ")); // Spacing
@@ -173,18 +257,67 @@ public class PDFExporter {
     }
     
     /**
+     * Processes text for RTL display in PDF.
+     * For Arabic text, we DON'T reverse it - we let the font handle it naturally
+     * and just use right alignment. This preserves Arabic letter connections.
+     */
+    private String reverseText(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        
+        // If text doesn't contain Arabic, return as-is
+        if (!containsArabic(text)) {
+            return text;
+        }
+        
+        // For Arabic text, DON'T reverse it
+        // The Unicode font with proper Arabic support will render it correctly
+        // We just need right alignment (which is already set)
+        return text;
+    }
+    
+    /**
+     * Adds a title/heading to the document with proper RTL support.
+     * For Arabic, uses a borderless table to ensure proper text rendering.
+     */
+    private void addTitle(Document document, String text, Font font, int alignment, boolean isRTL) throws DocumentException {
+        if (isRTL) {
+            // Use a single-cell table for proper Arabic rendering
+            PdfPTable titleTable = new PdfPTable(1);
+            titleTable.setWidthPercentage(100);
+            titleTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+            PdfPCell titleCell = new PdfPCell(new Phrase(text, font));
+            titleCell.setBorder(Rectangle.NO_BORDER);
+            titleCell.setHorizontalAlignment(alignment);
+            titleTable.addCell(titleCell);
+            document.add(titleTable);
+        } else {
+            Paragraph title = new Paragraph(text, font);
+            title.setAlignment(alignment);
+            document.add(title);
+        }
+    }
+    
+    /**
      * Adds sales report content to the PDF document.
      */
     private void addSalesContent(Document document, SalesReportData data) throws DocumentException {
+        boolean isRTL = LocaleManager.getCurrentLocale().getLanguage().equals("ar");
+        int alignment = isRTL ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT;
+        
         // Summary metrics
-        document.add(new Paragraph(LocaleManager.getString("report.summary.metrics"), getHeaderFont()));
+        addTitle(document, LocaleManager.getString("report.summary.metrics"), getHeaderFont(), alignment, isRTL);
         document.add(new Paragraph(" "));
         
         PdfPTable summaryTable = new PdfPTable(2);
         summaryTable.setWidthPercentage(100);
-        addTableRow(summaryTable, LocaleManager.getString("report.total.revenue"), formatCurrency(data.getTotalRevenue()), true);
-        addTableRow(summaryTable, LocaleManager.getString("report.number.of.sales"), String.valueOf(data.getSalesCount()), false);
-        addTableRow(summaryTable, LocaleManager.getString("report.average.sale.value"), formatCurrency(data.getAverageSaleValue()), true);
+        if (isRTL) {
+            summaryTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+        }
+        addTableRow(summaryTable, LocaleManager.getString("report.total.revenue"), formatCurrency(data.getTotalRevenue()), true, isRTL);
+        addTableRow(summaryTable, LocaleManager.getString("report.number.of.sales"), String.valueOf(data.getSalesCount()), false, isRTL);
+        addTableRow(summaryTable, LocaleManager.getString("report.average.sale.value"), formatCurrency(data.getAverageSaleValue()), true, isRTL);
         formatTable(summaryTable);
         document.add(summaryTable);
         
@@ -192,16 +325,19 @@ public class PDFExporter {
         document.add(new Paragraph(" "));
         
         // Payment method breakdown
-        document.add(new Paragraph(LocaleManager.getString("report.payment.method.breakdown"), getHeaderFont()));
+        addTitle(document, LocaleManager.getString("report.payment.method.breakdown"), getHeaderFont(), alignment, isRTL);
         document.add(new Paragraph(" "));
         
         PdfPTable paymentTable = new PdfPTable(2);
         paymentTable.setWidthPercentage(100);
-        addTableHeader(paymentTable, LocaleManager.getString("report.payment.method"));
-        addTableHeader(paymentTable, LocaleManager.getString("report.total.revenue"));
+        if (isRTL) {
+            paymentTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+        }
+        addTableHeader(paymentTable, LocaleManager.getString("report.payment.method"), isRTL);
+        addTableHeader(paymentTable, LocaleManager.getString("report.total.revenue"), isRTL);
         
         for (Map.Entry<PaymentMethod, BigDecimal> entry : data.getPaymentMethodBreakdown().entrySet()) {
-            addTableRow(paymentTable, entry.getKey().toString(), formatCurrency(entry.getValue()), false);
+            addTableRow(paymentTable, entry.getKey().toString(), formatCurrency(entry.getValue()), false, isRTL);
         }
         formatTable(paymentTable);
         document.add(paymentTable);
@@ -210,13 +346,16 @@ public class PDFExporter {
         document.add(new Paragraph(" "));
         
         // Discount analysis
-        document.add(new Paragraph(LocaleManager.getString("report.discount.analysis"), getHeaderFont()));
+        addTitle(document, LocaleManager.getString("report.discount.analysis"), getHeaderFont(), alignment, isRTL);
         document.add(new Paragraph(" "));
         
         PdfPTable discountTable = new PdfPTable(2);
         discountTable.setWidthPercentage(100);
-        addTableRow(discountTable, LocaleManager.getString("report.total.discounts.given"), formatCurrency(data.getTotalDiscounts()), true);
-        addTableRow(discountTable, LocaleManager.getString("report.average.discount.percentage"), data.getAverageDiscountPercentage() + "%", false);
+        if (isRTL) {
+            discountTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+        }
+        addTableRow(discountTable, LocaleManager.getString("report.total.discounts.given"), formatCurrency(data.getTotalDiscounts()), true, isRTL);
+        addTableRow(discountTable, LocaleManager.getString("report.average.discount.percentage"), data.getAverageDiscountPercentage() + "%", false, isRTL);
         formatTable(discountTable);
         document.add(discountTable);
         
@@ -224,19 +363,22 @@ public class PDFExporter {
         document.add(new Paragraph(" "));
         
         // Top selling parts
-        document.add(new Paragraph(LocaleManager.getString("report.top.selling.parts"), getHeaderFont()));
+        addTitle(document, LocaleManager.getString("report.top.selling.parts"), getHeaderFont(), alignment, isRTL);
         document.add(new Paragraph(" "));
         
         PdfPTable partsTable = new PdfPTable(3);
         partsTable.setWidthPercentage(100);
-        addTableHeader(partsTable, LocaleManager.getString("report.column.part.name"));
-        addTableHeader(partsTable, LocaleManager.getString("report.quantity.sold"));
-        addTableHeader(partsTable, LocaleManager.getString("report.column.revenue"));
+        if (isRTL) {
+            partsTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+        }
+        addTableHeader(partsTable, LocaleManager.getString("report.column.part.name"), isRTL);
+        addTableHeader(partsTable, LocaleManager.getString("report.quantity.sold"), isRTL);
+        addTableHeader(partsTable, LocaleManager.getString("report.column.revenue"), isRTL);
         
         for (TopSellingPart part : data.getTopSellingParts()) {
-            addTableCell(partsTable, part.getPartName());
-            addTableCell(partsTable, String.valueOf(part.getQuantitySold()));
-            addTableCell(partsTable, formatCurrency(part.getRevenue()));
+            addTableCell(partsTable, part.getPartName(), isRTL);
+            addTableCell(partsTable, String.valueOf(part.getQuantitySold()), isRTL);
+            addTableCell(partsTable, formatCurrency(part.getRevenue()), isRTL);
         }
         formatTable(partsTable);
         document.add(partsTable);
@@ -246,15 +388,21 @@ public class PDFExporter {
      * Adds inventory report content to the PDF document.
      */
     private void addInventoryContent(Document document, InventoryReportData data) throws DocumentException {
+        boolean isRTL = LocaleManager.getCurrentLocale().getLanguage().equals("ar");
+        int alignment = isRTL ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT;
+        
         // Summary metrics
-        document.add(new Paragraph(LocaleManager.getString("report.summary.metrics"), getHeaderFont()));
+        addTitle(document, LocaleManager.getString("report.summary.metrics"), getHeaderFont(), alignment, isRTL);
         document.add(new Paragraph(" "));
         
         PdfPTable summaryTable = new PdfPTable(2);
         summaryTable.setWidthPercentage(100);
-        addTableRow(summaryTable, LocaleManager.getString("report.total.inventory.value"), formatCurrency(data.getTotalInventoryValue()), true);
-        addTableRow(summaryTable, LocaleManager.getString("report.low.stock.items"), String.valueOf(data.getLowStockParts().size()), false);
-        addTableRow(summaryTable, LocaleManager.getString("report.out.of.stock.items"), String.valueOf(data.getOutOfStockParts().size()), true);
+        if (isRTL) {
+            summaryTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+        }
+        addTableRow(summaryTable, LocaleManager.getString("report.total.inventory.value"), formatCurrency(data.getTotalInventoryValue()), true, isRTL);
+        addTableRow(summaryTable, LocaleManager.getString("report.low.stock.items"), String.valueOf(data.getLowStockParts().size()), false, isRTL);
+        addTableRow(summaryTable, LocaleManager.getString("report.out.of.stock.items"), String.valueOf(data.getOutOfStockParts().size()), true, isRTL);
         formatTable(summaryTable);
         document.add(summaryTable);
         
@@ -262,28 +410,36 @@ public class PDFExporter {
         document.add(new Paragraph(" "));
         
         // Inventory details by category
-        document.add(new Paragraph(LocaleManager.getString("report.inventory.details"), getHeaderFont()));
+        addTitle(document, LocaleManager.getString("report.inventory.details"), getHeaderFont(), alignment, isRTL);
         document.add(new Paragraph(" "));
         
         PdfPTable inventoryTable = new PdfPTable(6);
         inventoryTable.setWidthPercentage(100);
-        addTableHeader(inventoryTable, LocaleManager.getString("report.column.category"));
-        addTableHeader(inventoryTable, LocaleManager.getString("report.column.part.name"));
-        addTableHeader(inventoryTable, LocaleManager.getString("report.column.quantity"));
-        addTableHeader(inventoryTable, LocaleManager.getString("report.column.price"));
-        addTableHeader(inventoryTable, LocaleManager.getString("report.stock.value"));
-        addTableHeader(inventoryTable, LocaleManager.getString("report.status"));
+        if (isRTL) {
+            inventoryTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
+        }
+        addTableHeader(inventoryTable, LocaleManager.getString("report.column.category"), isRTL);
+        addTableHeader(inventoryTable, LocaleManager.getString("report.column.part.name"), isRTL);
+        addTableHeader(inventoryTable, LocaleManager.getString("report.column.quantity"), isRTL);
+        addTableHeader(inventoryTable, LocaleManager.getString("report.column.price"), isRTL);
+        addTableHeader(inventoryTable, LocaleManager.getString("report.stock.value"), isRTL);
+        addTableHeader(inventoryTable, LocaleManager.getString("report.status"), isRTL);
         
         for (Map.Entry<String, List<PartInventoryItem>> entry : data.getPartsByCategory().entrySet()) {
             for (PartInventoryItem item : entry.getValue()) {
-                addTableCell(inventoryTable, entry.getKey());
-                addTableCell(inventoryTable, item.getPartName());
-                addTableCell(inventoryTable, String.valueOf(item.getQuantity()));
-                addTableCell(inventoryTable, formatCurrency(item.getPrice()));
-                addTableCell(inventoryTable, formatCurrency(item.getStockValue()));
+                addTableCell(inventoryTable, entry.getKey(), isRTL);
+                addTableCell(inventoryTable, item.getPartName(), isRTL);
+                addTableCell(inventoryTable, String.valueOf(item.getQuantity()), isRTL);
+                addTableCell(inventoryTable, formatCurrency(item.getPrice()), isRTL);
+                addTableCell(inventoryTable, formatCurrency(item.getStockValue()), isRTL);
                 
                 // Highlight low stock and out of stock items
-                PdfPCell statusCell = new PdfPCell(new Phrase(item.getStatus().toString(), getNormalFont()));
+                String statusText = item.getStatus().toString();
+                PdfPCell statusCell = new PdfPCell(new Phrase(statusText, getNormalFont()));
+                statusCell.setPadding(5);
+                if (isRTL) {
+                    statusCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                }
                 if (item.getStatus() == StockStatus.OUT_OF_STOCK) {
                     statusCell.setBackgroundColor(new Color(255, 200, 200)); // Light red
                 } else if (item.getStatus() == StockStatus.LOW_STOCK) {
@@ -300,9 +456,19 @@ public class PDFExporter {
      * Adds a header cell to a table.
      */
     private void addTableHeader(PdfPTable table, String text) {
+        addTableHeader(table, text, false);
+    }
+    
+    /**
+     * Adds a header cell to a table with RTL support.
+     */
+    private void addTableHeader(PdfPTable table, String text, boolean isRTL) {
         PdfPCell cell = new PdfPCell(new Phrase(text, getTableHeaderFont()));
         cell.setBackgroundColor(new Color(200, 200, 200));
         cell.setPadding(5);
+        if (isRTL) {
+            cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        }
         table.addCell(cell);
     }
     
@@ -310,19 +476,52 @@ public class PDFExporter {
      * Adds a regular cell to a table.
      */
     private void addTableCell(PdfPTable table, String text) {
+        addTableCell(table, text, false);
+    }
+    
+    /**
+     * Adds a regular cell to a table with RTL support.
+     */
+    private void addTableCell(PdfPTable table, String text, boolean isRTL) {
         PdfPCell cell = new PdfPCell(new Phrase(text, getNormalFont()));
         cell.setPadding(5);
+        if (isRTL) {
+            cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        }
         table.addCell(cell);
+    }
+    
+    /**
+     * Checks if text contains Arabic characters.
+     */
+    private boolean containsArabic(String text) {
+        if (text == null) return false;
+        for (char c : text.toCharArray()) {
+            if (Character.UnicodeBlock.of(c) == Character.UnicodeBlock.ARABIC) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
      * Adds a two-column row to a table.
      */
     private void addTableRow(PdfPTable table, String label, String value, boolean highlight) {
+        addTableRow(table, label, value, highlight, false);
+    }
+    
+    /**
+     * Adds a two-column row to a table with RTL support.
+     */
+    private void addTableRow(PdfPTable table, String label, String value, boolean highlight, boolean isRTL) {
         PdfPCell labelCell = new PdfPCell(new Phrase(label, getTableHeaderFont()));
         labelCell.setPadding(5);
         if (highlight) {
             labelCell.setBackgroundColor(new Color(240, 240, 240));
+        }
+        if (isRTL) {
+            labelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         }
         table.addCell(labelCell);
         
@@ -330,6 +529,9 @@ public class PDFExporter {
         valueCell.setPadding(5);
         if (highlight) {
             valueCell.setBackgroundColor(new Color(240, 240, 240));
+        }
+        if (isRTL) {
+            valueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         }
         table.addCell(valueCell);
     }

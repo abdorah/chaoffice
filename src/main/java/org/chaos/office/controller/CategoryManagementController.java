@@ -220,7 +220,10 @@ public class CategoryManagementController {
         grid.add(imageLabel, 1, 3);
         
         dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        ButtonType okButtonType = new ButtonType(LocaleManager.getString("common.ok"), ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType(LocaleManager.getString("common.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, cancelButtonType);
         
         // Convert result
         dialog.setResultConverter(buttonType -> {

@@ -107,7 +107,7 @@ public class BillsHistoryController {
         
         // Create dialog to show details
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Bill Details - #" + selectedBill.getId());
+        dialog.setTitle(LocaleManager.getString("bills.details.title") + " - #" + selectedBill.getId());
         dialog.setHeaderText(String.format("Client: %s | Phone: %s | Date: %s",
             selectedBill.getClientName(),
             selectedBill.getClientPhone(),
@@ -120,19 +120,19 @@ public class BillsHistoryController {
         TableView<Command> commandsTable = new TableView<>();
         commandsTable.setItems(FXCollections.observableArrayList(commands));
         
-        TableColumn<Command, String> partCol = new TableColumn<>("Part");
+        TableColumn<Command, String> partCol = new TableColumn<>(LocaleManager.getString("bills.details.part"));
         partCol.setCellValueFactory(cellData -> {
             // Get part name from part ID
             return new javafx.beans.property.SimpleStringProperty("Part #" + cellData.getValue().getPartId());
         });
         
-        TableColumn<Command, Integer> qtyCol = new TableColumn<>("Quantity");
+        TableColumn<Command, Integer> qtyCol = new TableColumn<>(LocaleManager.getString("bills.details.quantity"));
         qtyCol.setCellValueFactory(cellData -> cellData.getValue().quantityProperty().asObject());
         
-        TableColumn<Command, Float> priceCol = new TableColumn<>("Price");
+        TableColumn<Command, Float> priceCol = new TableColumn<>(LocaleManager.getString("bills.details.price"));
         priceCol.setCellValueFactory(cellData -> cellData.getValue().priceConsideredProperty().asObject());
         
-        TableColumn<Command, String> subtotalCol = new TableColumn<>("Subtotal");
+        TableColumn<Command, String> subtotalCol = new TableColumn<>(LocaleManager.getString("bills.details.subtotal"));
         subtotalCol.setCellValueFactory(cellData -> {
             Command cmd = cellData.getValue();
             float subtotal = cmd.getQuantity() * cmd.getPriceConsidered();
@@ -142,7 +142,7 @@ public class BillsHistoryController {
         commandsTable.getColumns().addAll(partCol, qtyCol, priceCol, subtotalCol);
         commandsTable.setPrefHeight(300);
         
-        Label totalLabel = new Label(String.format("Total: $%.2f", selectedBill.getTotalPrice()));
+        Label totalLabel = new Label(String.format("%s: $%.2f", LocaleManager.getString("bills.details.total"), selectedBill.getTotalPrice()));
         totalLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         
         GridPane content = new GridPane();
@@ -151,7 +151,8 @@ public class BillsHistoryController {
         content.add(totalLabel, 0, 1);
         
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        ButtonType closeButtonType = new ButtonType(LocaleManager.getString("common.close"), ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().add(closeButtonType);
         
         dialog.showAndWait();
         
@@ -187,7 +188,7 @@ public class BillsHistoryController {
                 
                 AlertHelper.showInfo(
                     LocaleManager.getString("success.title"),
-                    "PDF generated successfully: " + file.getName()
+                    LocaleManager.getString("bills.pdf.success") + ": " + file.getName()
                 );
                 
                 logger.info("Generated PDF for bill #{} at {}", selectedBill.getId(), file.getAbsolutePath());
@@ -195,7 +196,7 @@ public class BillsHistoryController {
                 logger.error("Error generating PDF", e);
                 AlertHelper.showError(
                     LocaleManager.getString("error.title"),
-                    "Failed to generate PDF: " + e.getMessage()
+                    LocaleManager.getString("bills.pdf.error") + ": " + e.getMessage()
                 );
             }
         }

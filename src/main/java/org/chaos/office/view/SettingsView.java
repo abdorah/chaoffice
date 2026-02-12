@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.chaos.office.util.LocaleManager;
 
@@ -37,33 +38,48 @@ public class SettingsView extends BorderPane {
     private final Button changePasswordButton;
     
     public SettingsView() {
-        // Create content VBox
-        VBox contentBox = new VBox(16);
-        contentBox.setPadding(new Insets(16));
+        // Create main HBox for two-column layout
+        HBox mainLayout = new HBox(20);
+        mainLayout.setPadding(new Insets(16));
         
-        // Title
+        // Left column
+        VBox leftColumn = new VBox(16);
+        leftColumn.setPrefWidth(400);
+        
+        // Right column
+        VBox rightColumn = new VBox(16);
+        rightColumn.setPrefWidth(400);
+        
+        // Title (spans both columns)
         Label titleLabel = new Label(LocaleManager.getString("settings.title"));
         titleLabel.getStyleClass().add("label-headline");
+        
+        // LEFT COLUMN CONTENT
         
         // Language selection
         Label languageLabel = new Label(LocaleManager.getString("settings.language"));
         languageComboBox = new ComboBox<>();
         languageComboBox.getItems().addAll("English", "Français", "العربية");
         languageComboBox.setValue("English");
-        languageComboBox.setPrefWidth(300);
+        languageComboBox.setMaxWidth(Double.MAX_VALUE);
         
         // Theme selection
-        Label themeLabel = new Label("Theme");
+        Label themeLabel = new Label(LocaleManager.getString("settings.theme"));
         themeComboBox = new ComboBox<>();
-        themeComboBox.getItems().addAll("Main Theme", "Dark Theme", "Ubuntu Theme", "No Theme");
-        themeComboBox.setValue("Main Theme");
-        themeComboBox.setPrefWidth(300);
+        themeComboBox.getItems().addAll(
+            LocaleManager.getString("settings.theme.main"),
+            LocaleManager.getString("settings.theme.dark"),
+            LocaleManager.getString("settings.theme.ubuntu"),
+            LocaleManager.getString("settings.theme.none")
+        );
+        themeComboBox.setValue(LocaleManager.getString("settings.theme.main"));
+        themeComboBox.setMaxWidth(Double.MAX_VALUE);
         
         // Database path (read-only)
         Label dbLabel = new Label(LocaleManager.getString("settings.database"));
         databasePathField = new TextField();
         databasePathField.setEditable(false);
-        databasePathField.setPrefWidth(300);
+        databasePathField.setMaxWidth(Double.MAX_VALUE);
         
         // Store Branding Section
         Label brandingLabel = new Label(LocaleManager.getString("settings.branding"));
@@ -72,16 +88,30 @@ public class SettingsView extends BorderPane {
         Label storeNameLabel = new Label(LocaleManager.getString("settings.branding.storeName"));
         storeNameField = new TextField();
         storeNameField.setPromptText(LocaleManager.getString("settings.branding.storeName"));
-        storeNameField.setPrefWidth(300);
+        storeNameField.setMaxWidth(Double.MAX_VALUE);
         
         Label logoLabel = new Label(LocaleManager.getString("settings.branding.logo"));
         selectLogoButton = new Button(LocaleManager.getString("settings.branding.selectLogo"));
+        selectLogoButton.setMaxWidth(Double.MAX_VALUE);
         
         logoPreview = new ImageView();
         logoPreview.setFitWidth(150);
         logoPreview.setFitHeight(150);
         logoPreview.setPreserveRatio(true);
         logoPreview.setStyle("-fx-border-color: #cccccc; -fx-border-width: 1;");
+        
+        // Add to left column
+        leftColumn.getChildren().addAll(
+            languageLabel, languageComboBox,
+            themeLabel, themeComboBox,
+            dbLabel, databasePathField,
+            new Separator(),
+            brandingLabel,
+            storeNameLabel, storeNameField,
+            logoLabel, selectLogoButton, logoPreview
+        );
+        
+        // RIGHT COLUMN CONTENT
         
         // Currency Settings Section
         Label currencyLabel = new Label(LocaleManager.getString("settings.currency"));
@@ -91,12 +121,12 @@ public class SettingsView extends BorderPane {
         currencySymbolComboBox = new ComboBox<>();
         currencySymbolComboBox.getItems().addAll("$", "€", "£", "¥", "₹", "Custom");
         currencySymbolComboBox.setValue("$");
-        currencySymbolComboBox.setPrefWidth(300);
+        currencySymbolComboBox.setMaxWidth(Double.MAX_VALUE);
         
         Label customSymbolLabel = new Label(LocaleManager.getString("settings.currency.custom"));
         customSymbolField = new TextField();
         customSymbolField.setPromptText(LocaleManager.getString("settings.currency.custom"));
-        customSymbolField.setPrefWidth(300);
+        customSymbolField.setMaxWidth(Double.MAX_VALUE);
         customSymbolField.setDisable(true); // Initially disabled
         
         // Enable/disable custom symbol field based on ComboBox selection
@@ -108,7 +138,7 @@ public class SettingsView extends BorderPane {
         Label currencyAcronymLabel = new Label(LocaleManager.getString("settings.currency.acronym"));
         currencyAcronymField = new TextField();
         currencyAcronymField.setPromptText("USD");
-        currencyAcronymField.setPrefWidth(300);
+        currencyAcronymField.setMaxWidth(Double.MAX_VALUE);
         
         // User Account Management Section
         Label accountLabel = new Label(LocaleManager.getString("settings.account"));
@@ -118,9 +148,10 @@ public class SettingsView extends BorderPane {
         Label usernameLabel = new Label(LocaleManager.getString("settings.account.username"));
         newUsernameField = new TextField();
         newUsernameField.setPromptText(LocaleManager.getString("settings.account.newUsername"));
-        newUsernameField.setPrefWidth(300);
+        newUsernameField.setMaxWidth(Double.MAX_VALUE);
         
         changeUsernameButton = new Button(LocaleManager.getString("settings.account.changeUsername"));
+        changeUsernameButton.setMaxWidth(Double.MAX_VALUE);
         
         // Password change
         Label passwordLabel = new Label(LocaleManager.getString("settings.account.password"));
@@ -128,33 +159,23 @@ public class SettingsView extends BorderPane {
         Label currentPasswordLabel = new Label(LocaleManager.getString("settings.account.currentPassword"));
         currentPasswordField = new PasswordField();
         currentPasswordField.setPromptText(LocaleManager.getString("settings.account.currentPassword"));
-        currentPasswordField.setPrefWidth(300);
+        currentPasswordField.setMaxWidth(Double.MAX_VALUE);
         
         Label newPasswordLabel = new Label(LocaleManager.getString("settings.account.newPassword"));
         newPasswordField = new PasswordField();
         newPasswordField.setPromptText(LocaleManager.getString("settings.account.newPassword"));
-        newPasswordField.setPrefWidth(300);
+        newPasswordField.setMaxWidth(Double.MAX_VALUE);
         
         Label confirmPasswordLabel = new Label(LocaleManager.getString("settings.account.confirmPassword"));
         confirmPasswordField = new PasswordField();
         confirmPasswordField.setPromptText(LocaleManager.getString("settings.account.confirmPassword"));
-        confirmPasswordField.setPrefWidth(300);
+        confirmPasswordField.setMaxWidth(Double.MAX_VALUE);
         
         changePasswordButton = new Button(LocaleManager.getString("settings.account.changePassword"));
+        changePasswordButton.setMaxWidth(Double.MAX_VALUE);
         
-        // Save button
-        saveButton = new Button(LocaleManager.getString("settings.save"));
-        
-        contentBox.getChildren().addAll(
-            titleLabel,
-            languageLabel, languageComboBox,
-            themeLabel, themeComboBox,
-            dbLabel, databasePathField,
-            new Separator(),
-            brandingLabel,
-            storeNameLabel, storeNameField,
-            logoLabel, selectLogoButton, logoPreview,
-            new Separator(),
+        // Add to right column
+        rightColumn.getChildren().addAll(
             currencyLabel,
             currencySymbolLabel, currencySymbolComboBox,
             customSymbolLabel, customSymbolField,
@@ -166,12 +187,23 @@ public class SettingsView extends BorderPane {
             currentPasswordLabel, currentPasswordField,
             newPasswordLabel, newPasswordField,
             confirmPasswordLabel, confirmPasswordField,
-            changePasswordButton,
-            saveButton
+            changePasswordButton
         );
         
+        // Save button (bottom of right column)
+        saveButton = new Button(LocaleManager.getString("settings.save"));
+        saveButton.setMaxWidth(Double.MAX_VALUE);
+        rightColumn.getChildren().add(saveButton);
+        
+        // Add columns to main layout
+        mainLayout.getChildren().addAll(leftColumn, rightColumn);
+        
+        // Create wrapper VBox with title
+        VBox wrapper = new VBox(16, titleLabel, mainLayout);
+        wrapper.setPadding(new Insets(16));
+        
         // Wrap content in ScrollPane
-        ScrollPane scrollPane = new ScrollPane(contentBox);
+        ScrollPane scrollPane = new ScrollPane(wrapper);
         scrollPane.setFitToWidth(true);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);

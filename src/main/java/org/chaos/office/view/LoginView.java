@@ -26,7 +26,7 @@ public class LoginView extends VBox {
         
         // Title
         Label titleLabel = new Label(LocaleManager.getString("app.title"));
-        titleLabel.getStyleClass().add("label-title");
+        titleLabel.getStyleClass().addAll("label-title", "title");
         
         // Username field
         Label usernameLabel = new Label(LocaleManager.getString("login.username"));

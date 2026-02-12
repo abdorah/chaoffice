@@ -65,6 +65,7 @@ public class DashboardView extends BorderPane {
         String userName = SessionManager.getInstance().getCurrentUser() != null ?
             SessionManager.getInstance().getCurrentUser().getFirstName() : "User";
         Label userLabel = new Label(LocaleManager.getString("dashboard.welcome").replace("{0}", userName));
+        userLabel.getStyleClass().add("header");
         
         Button logoutButton = new Button(LocaleManager.getString("dashboard.logout"));
         logoutButton.getStyleClass().add("button-outlined");

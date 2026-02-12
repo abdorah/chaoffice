@@ -49,14 +49,14 @@ public class SalesReportData extends ReportData {
     
     @Override
     public String getReportTitle() {
-        return "Sales Report";
+        return org.chaos.office.util.LocaleManager.getString("report.sales.title");
     }
     
     @Override
     public Map<String, String> getParameters() {
         Map<String, String> params = new HashMap<>();
         if (startDate != null && endDate != null) {
-            params.put("Date Range", startDate + " to " + endDate);
+            params.put(org.chaos.office.util.LocaleManager.getString("report.date.range"), startDate + " to " + endDate);
         }
         return params;
     }

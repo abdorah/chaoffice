@@ -171,9 +171,9 @@ public class PartCell extends ListCell<Part> {
         
         // Stock
         if (part.getQuantity() <= 0) {
-            details.append("Out of Stock");
+            details.append(org.chaos.office.util.LocaleManager.getString("parts.out.of.stock"));
         } else {
-            details.append("Stock: ").append(part.getQuantity());
+            details.append(org.chaos.office.util.LocaleManager.getString("parts.stock")).append(": ").append(part.getQuantity());
         }
         
         return details.toString();
