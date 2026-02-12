@@ -4,6 +4,7 @@ import org.chaos.office.reports.models.InventoryReportData;
 import org.chaos.office.reports.models.PartInventoryItem;
 import org.chaos.office.reports.models.StockStatus;
 import org.chaos.office.service.PartService;
+import org.chaos.office.util.LocaleManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,8 @@ class InventoryReportGeneratorTest {
     
     @BeforeEach
     void setUp() {
+        // Set locale to English for consistent test results
+        LocaleManager.setLocale(LocaleManager.LOCALE_ENGLISH);
         partService = new PartService();
         generator = new InventoryReportGenerator(partService);
     }

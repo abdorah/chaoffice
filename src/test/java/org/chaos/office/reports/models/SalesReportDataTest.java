@@ -2,6 +2,7 @@ package org.chaos.office.reports.models;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.chaos.office.util.LocaleManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +23,8 @@ class SalesReportDataTest {
     
     @BeforeEach
     void setUp() {
+        // Set locale to English for consistent test results
+        LocaleManager.setLocale(LocaleManager.LOCALE_ENGLISH);
         salesReportData = new SalesReportData();
     }
     

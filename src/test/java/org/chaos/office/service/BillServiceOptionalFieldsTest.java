@@ -1,6 +1,7 @@
 package org.chaos.office.service;
 
 import org.chaos.office.model.Bill;
+import org.chaos.office.model.Category;
 import org.chaos.office.model.Command;
 import org.chaos.office.model.Part;
 import org.chaos.office.util.DatabaseConnection;
@@ -26,11 +27,30 @@ class BillServiceOptionalFieldsTest {
     private static final Logger logger = LoggerFactory.getLogger(BillServiceOptionalFieldsTest.class);
     private BillService billService;
     private PartService partService;
+    private Part testPart;
     
     @BeforeEach
     void setUp() {
         billService = new BillService();
         partService = new PartService();
+        
+        // Create a test part with sufficient inventory for all tests
+        // Get an existing category from the database
+        CategoryService categoryService = new CategoryService();
+        Category category = categoryService.getAllCategories().stream().findFirst().orElse(null);
+        
+        testPart = new Part();
+        testPart.setName("Test Part for Bills");
+        testPart.setMaker("Test Maker");
+        testPart.setDescription("Test part with sufficient stock");
+        testPart.setPrice(100.0f);
+        testPart.setQuantity(1000); // Sufficient quantity for all tests
+        if (category != null) {
+            testPart.setCategory(category);
+        }
+        
+        partService.savePart(testPart);
+        logger.info("Created test part with ID: {} and quantity: {}", testPart.getId(), testPart.getQuantity());
     }
     
     @Test
@@ -43,9 +63,8 @@ class BillServiceOptionalFieldsTest {
         bill.setTotalPrice(100.0f);
         bill.setDate(LocalDate.now());
         
-        Part part = partService.getAllParts().get(0);
         Command command = new Command();
-        command.setPartId(part.getId());
+        command.setPartId(testPart.getId());
         command.setQuantity(1);
         command.setPriceConsidered(100.0f);
         
@@ -74,9 +93,8 @@ class BillServiceOptionalFieldsTest {
         bill.setTotalPrice(100.0f);
         bill.setDate(LocalDate.now());
         
-        Part part = partService.getAllParts().get(0);
         Command command = new Command();
-        command.setPartId(part.getId());
+        command.setPartId(testPart.getId());
         command.setQuantity(1);
         command.setPriceConsidered(100.0f);
         
@@ -105,9 +123,8 @@ class BillServiceOptionalFieldsTest {
         bill.setTotalPrice(100.0f);
         bill.setDate(LocalDate.now());
         
-        Part part = partService.getAllParts().get(0);
         Command command = new Command();
-        command.setPartId(part.getId());
+        command.setPartId(testPart.getId());
         command.setQuantity(1);
         command.setPriceConsidered(100.0f);
         
@@ -139,6 +156,12 @@ class BillServiceOptionalFieldsTest {
             // Delete test bills
             try (PreparedStatement stmt = conn.prepareStatement(
                     "DELETE FROM bills WHERE clientname = '' OR clientname = 'Test Client'")) {
+                stmt.executeUpdate();
+            }
+            
+            // Delete test parts
+            try (PreparedStatement stmt = conn.prepareStatement(
+                    "DELETE FROM parts WHERE name = 'Test Part for Bills'")) {
                 stmt.executeUpdate();
             }
         } catch (Exception e) {
