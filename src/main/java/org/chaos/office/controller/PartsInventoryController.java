@@ -48,7 +48,15 @@ public class PartsInventoryController {
     
     private void setupEventHandlers() {
         view.getSearchField().textProperty().addListener((obs, old, newVal) -> handleSearch(newVal));
-        view.getCategoryFilter().setOnAction(e -> handleCategoryFilter());
+        
+        // Use valueProperty listener instead of setOnAction to avoid triggering on programmatic setValue
+        // This prevents infinite loop when loadCategories() sets the value
+        view.getCategoryFilter().valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.equals(oldVal)) {
+                handleCategoryFilterChange(newVal);
+            }
+        });
+        
         view.getAddButton().setOnAction(e -> handleAdd());
         view.getEditButton().setOnAction(e -> handleEdit());
         view.getDeleteButton().setOnAction(e -> handleDelete());
@@ -60,8 +68,10 @@ public class PartsInventoryController {
         var parts = partService.getAllParts();
         view.getPartsTable().setItems(FXCollections.observableArrayList(parts));
         
-        // Load categories into filter dropdown
-        loadCategories();
+        // Only load categories if the filter is empty (first time initialization)
+        if (view.getCategoryFilter().getItems().isEmpty()) {
+            loadCategories();
+        }
     }
     
     private void loadCategories() {
@@ -75,13 +85,18 @@ public class PartsInventoryController {
         view.getCategoryFilter().setValue(LocaleManager.getString("category.all"));
     }
     
-    private void handleCategoryFilter() {
-        String selected = view.getCategoryFilter().getValue();
+    /**
+     * Handles category filter changes without reloading categories.
+     * This prevents infinite loop that was caused by loadParts() -> loadCategories() -> setValue() -> handleCategoryFilter()
+     */
+    private void handleCategoryFilterChange(String selected) {
         String allCategoriesText = LocaleManager.getString("category.all");
         if (selected == null || selected.equals(allCategoriesText)) {
-            loadParts();
+            // Show all parts without reloading categories
+            var parts = partService.getAllParts();
+            view.getPartsTable().setItems(FXCollections.observableArrayList(parts));
         } else {
-            // Find category by name
+            // Find category by name and filter parts
             var categories = categoryService.getAllCategories();
             for (Category category : categories) {
                 if (category.getName().equals(selected)) {

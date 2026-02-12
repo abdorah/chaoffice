@@ -3,7 +3,6 @@ package org.chaos.office.controller;
 import javafx.collections.FXCollections;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.chaos.office.model.Bill;
@@ -125,12 +124,15 @@ public class BillsHistoryController {
             // Get part name from part ID
             return new javafx.beans.property.SimpleStringProperty("Part #" + cellData.getValue().getPartId());
         });
+        partCol.prefWidthProperty().bind(commandsTable.widthProperty().multiply(0.40)); // 40% width
         
         TableColumn<Command, Integer> qtyCol = new TableColumn<>(LocaleManager.getString("bills.details.quantity"));
         qtyCol.setCellValueFactory(cellData -> cellData.getValue().quantityProperty().asObject());
+        qtyCol.prefWidthProperty().bind(commandsTable.widthProperty().multiply(0.20)); // 20% width
         
         TableColumn<Command, Float> priceCol = new TableColumn<>(LocaleManager.getString("bills.details.price"));
         priceCol.setCellValueFactory(cellData -> cellData.getValue().priceConsideredProperty().asObject());
+        priceCol.prefWidthProperty().bind(commandsTable.widthProperty().multiply(0.20)); // 20% width
         
         TableColumn<Command, String> subtotalCol = new TableColumn<>(LocaleManager.getString("bills.details.subtotal"));
         subtotalCol.setCellValueFactory(cellData -> {
@@ -138,17 +140,29 @@ public class BillsHistoryController {
             float subtotal = cmd.getQuantity() * cmd.getPriceConsidered();
             return new javafx.beans.property.SimpleStringProperty(String.format("$%.2f", subtotal));
         });
+        subtotalCol.prefWidthProperty().bind(commandsTable.widthProperty().multiply(0.20)); // 20% width
         
         commandsTable.getColumns().addAll(partCol, qtyCol, priceCol, subtotalCol);
-        commandsTable.setPrefHeight(300);
+        
+        // Use constrained resize policy to fill all horizontal space and eliminate empty column
+        commandsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+        
+        // Set table to grow vertically and take all available space
+        commandsTable.setPrefHeight(400);
+        commandsTable.setMinHeight(300);
+        commandsTable.setMaxHeight(Double.MAX_VALUE);
         
         Label totalLabel = new Label(String.format("%s: $%.2f", LocaleManager.getString("bills.details.total"), selectedBill.getTotalPrice()));
         totalLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         
-        GridPane content = new GridPane();
-        content.setVgap(10);
-        content.add(commandsTable, 0, 0);
-        content.add(totalLabel, 0, 1);
+        // Use VBox instead of GridPane for better vertical space management
+        javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(10);
+        content.getChildren().addAll(commandsTable, totalLabel);
+        content.setPrefWidth(600);
+        content.setPrefHeight(450);
+        
+        // Make table grow to fill available space
+        javafx.scene.layout.VBox.setVgrow(commandsTable, javafx.scene.layout.Priority.ALWAYS);
         
         dialog.getDialogPane().setContent(content);
         ButtonType closeButtonType = new ButtonType(LocaleManager.getString("common.close"), ButtonBar.ButtonData.CANCEL_CLOSE);
