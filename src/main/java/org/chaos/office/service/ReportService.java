@@ -147,15 +147,36 @@ public class ReportService {
     
     /**
      * Gets a font that supports the current locale, including Arabic and other Unicode characters.
+     * Implements a fallback chain to ensure fonts work across different operating systems.
      */
     private Font getFontForLocale(int size, int style) {
         try {
-            // Try to use a Unicode font that supports Arabic
-            BaseFont bf = BaseFont.createFont("STSong-Light", "UniGB-UCS2-H", BaseFont.NOT_EMBEDDED);
+            // Try multiple font options that support Arabic
+            String[] fontPaths = {
+                "c:/windows/fonts/arial.ttf",           // Windows Arial
+                "c:/windows/fonts/arialuni.ttf",        // Windows Arial Unicode MS
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  // Linux DejaVu Sans
+                "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"  // macOS Arial Unicode
+            };
+            
+            for (String fontPath : fontPaths) {
+                try {
+                    BaseFont bf = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+                    logger.debug("Successfully loaded font: {}", fontPath);
+                    return new Font(bf, size, style);
+                } catch (Exception e) {
+                    // Try next font
+                    logger.debug("Font not available: {}", fontPath);
+                }
+            }
+            
+            // If no file-based fonts work, try system fonts
+            BaseFont bf = BaseFont.createFont("Arial", BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
             return new Font(bf, size, style);
+            
         } catch (Exception e) {
-            logger.warn("Could not load Unicode font, falling back to default", e);
-            // Fallback to default font
+            logger.warn("Failed to create Unicode font with Arabic support, using Helvetica", e);
+            // Last resort: use Helvetica (won't render Arabic correctly)
             return new Font(Font.HELVETICA, size, style);
         }
     }

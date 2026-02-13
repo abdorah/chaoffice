@@ -431,14 +431,14 @@
 }
 
 .card-title {
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-text-fill: #e0e0e0;
     -fx-text-alignment: center;
 }
 
 .card-description {
-    -fx-font-size: 12px;
+    -fx-font-size: 13px;
     -fx-text-fill: #b0b0b0;
     -fx-text-alignment: center;
 }

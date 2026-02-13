@@ -315,11 +315,53 @@ public class SettingsController {
             // Save to database
             brandingService.saveBrandingSettings(settings);
             
+            // Update application branding immediately
+            updateApplicationBranding();
+            
             logger.info("Branding settings saved successfully");
             
         } catch (Exception e) {
             logger.error("Error saving branding settings", e);
             throw new RuntimeException("Failed to save branding settings", e);
+        }
+    }
+    
+    /**
+     * Updates the application window branding immediately without restart.
+     * Updates both the window title and icon based on current branding settings.
+     * Requirements: 9.1, 9.2, 9.3
+     */
+    private void updateApplicationBranding() {
+        if (stage == null) {
+            logger.warn("Cannot update application branding: stage reference is null");
+            return;
+        }
+        
+        try {
+            // Update window title
+            String storeName = view.getStoreNameField().getText();
+            if (storeName != null && !storeName.trim().isEmpty()) {
+                stage.setTitle(storeName);
+                logger.info("Updated window title to: {}", storeName);
+            } else {
+                stage.setTitle(LocaleManager.getString("app.title"));
+                logger.info("Reset window title to default");
+            }
+            
+            // Update window icon
+            if (selectedLogoData != null && selectedLogoData.length > 0) {
+                try {
+                    Image logo = new Image(new ByteArrayInputStream(selectedLogoData));
+                    stage.getIcons().clear();
+                    stage.getIcons().add(logo);
+                    logger.info("Updated window icon with new logo");
+                } catch (Exception e) {
+                    logger.error("Failed to update window icon", e);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error updating application branding", e);
         }
     }
     

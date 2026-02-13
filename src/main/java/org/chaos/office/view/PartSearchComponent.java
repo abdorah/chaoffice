@@ -83,7 +83,7 @@ public class PartSearchComponent extends VBox {
         
         // Initialize search field
         this.searchField = new TextField();
-        this.searchField.setPromptText("Search parts by name, maker, category...");
+        this.searchField.setPromptText(LocaleManager.getString("search.parts.placeholder"));
         
         // Initialize category filter
         this.categoryFilter = new ComboBox<>();
@@ -121,11 +121,11 @@ public class PartSearchComponent extends VBox {
         searchControls.setPadding(new Insets(10));
         
         // Search field label
-        Label searchLabel = new Label("Search:");
+        Label searchLabel = new Label(LocaleManager.getString("search.label"));
         searchLabel.setMinWidth(60);
         
         // Category filter label
-        Label categoryLabel = new Label("Category:");
+        Label categoryLabel = new Label(LocaleManager.getString("search.category.label"));
         categoryLabel.setMinWidth(70);
         
         // Configure search field to grow horizontally

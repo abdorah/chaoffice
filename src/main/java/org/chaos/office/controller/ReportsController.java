@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import org.chaos.office.reports.models.*;
 import org.chaos.office.reports.services.ReportService;
 import org.chaos.office.util.AlertHelper;
+import org.chaos.office.util.EnumLocalizer;
 import org.chaos.office.util.LocaleManager;
 import org.chaos.office.view.ReportsView;
 import org.slf4j.Logger;
@@ -204,7 +205,7 @@ public class ReportsController {
         
         int row = 0;
         for (Map.Entry<PaymentMethod, BigDecimal> entry : data.getPaymentMethodBreakdown().entrySet()) {
-            addGridRow(paymentGrid, row++, entry.getKey().toString() + ":", formatCurrency(entry.getValue()));
+            addGridRow(paymentGrid, row++, EnumLocalizer.getLocalizedPaymentMethod(entry.getKey()) + ":", formatCurrency(entry.getValue()));
         }
         
         // Discount analysis
@@ -286,7 +287,7 @@ public class ReportsController {
             for (PartInventoryItem item : entry.getValue()) {
                 if (count++ >= 20) break;
                 addGridRow(detailsGrid, row++, entry.getKey(), item.getPartName(), 
-                          String.valueOf(item.getQuantity()), item.getStatus().toString());
+                          String.valueOf(item.getQuantity()), EnumLocalizer.getLocalizedStockStatus(item.getStatus()));
             }
             if (count >= 20) break;
         }

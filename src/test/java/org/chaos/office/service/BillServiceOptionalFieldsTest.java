@@ -34,23 +34,31 @@ class BillServiceOptionalFieldsTest {
         billService = new BillService();
         partService = new PartService();
         
-        // Create a test part with sufficient inventory for all tests
         // Get an existing category from the database
         CategoryService categoryService = new CategoryService();
-        Category category = categoryService.getAllCategories().stream().findFirst().orElse(null);
+        Category category = categoryService.getAllCategories().stream()
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("No categories found in database. " +
+                                                         "Please ensure test database has at least one category."));
         
         testPart = new Part();
         testPart.setName("Test Part for Bills");
         testPart.setMaker("Test Maker");
         testPart.setDescription("Test part with sufficient stock");
         testPart.setPrice(100.0f);
-        testPart.setQuantity(1000); // Sufficient quantity for all tests
-        if (category != null) {
-            testPart.setCategory(category);
-        }
+        testPart.setQuantity(1000);
+        testPart.setCategory(category); // Ensure valid category
         
         partService.savePart(testPart);
-        logger.info("Created test part with ID: {} and quantity: {}", testPart.getId(), testPart.getQuantity());
+        
+        // Retrieve the saved part to get its ID
+        List<Part> savedParts = partService.searchParts("Test Part for Bills");
+        if (!savedParts.isEmpty()) {
+            testPart = savedParts.get(0);
+        }
+        
+        logger.info("Created test part with ID: {}, Category: {}", 
+                    testPart.getId(), category.getName());
     }
     
     @Test

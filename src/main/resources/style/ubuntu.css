@@ -420,14 +420,14 @@
 }
 
 .card-title {
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
     -fx-text-fill: #2c2c2c;
     -fx-text-alignment: center;
 }
 
 .card-description {
-    -fx-font-size: 12px;
+    -fx-font-size: 13px;
     -fx-text-fill: #5e5e5e;
     -fx-text-alignment: center;
 }

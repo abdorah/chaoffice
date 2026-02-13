@@ -56,7 +56,8 @@ public class SalesReportData extends ReportData {
     public Map<String, String> getParameters() {
         Map<String, String> params = new HashMap<>();
         if (startDate != null && endDate != null) {
-            params.put(org.chaos.office.util.LocaleManager.getString("report.date.range"), startDate + " to " + endDate);
+            String separator = org.chaos.office.util.LocaleManager.getString("date.range.separator");
+            params.put(org.chaos.office.util.LocaleManager.getString("report.date.range"), startDate + separator + endDate);
         }
         return params;
     }

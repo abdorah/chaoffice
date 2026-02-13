@@ -1,6 +1,7 @@
 package org.chaos.office.util;
 
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,15 +94,55 @@ public class AlertHelper {
         alert.setHeaderText(null); // Material Design 3 style - no header
         alert.setContentText(message);
         
+        // Replace default buttons with localized ones
+        alert.getButtonTypes().setAll(createLocalizedOkButton(), createLocalizedCancelButton());
+        
         // Apply consistent styling
         applyAlertStyling(alert);
         
         Optional<ButtonType> result = alert.showAndWait();
-        boolean confirmed = result.isPresent() && result.get() == ButtonType.OK;
+        boolean confirmed = result.isPresent() && 
+                           result.get().getButtonData() == ButtonBar.ButtonData.OK_DONE;
         
         logger.info("Confirmation result: {}", confirmed ? "OK" : "Cancel");
         
         return confirmed;
+    }
+    
+    /**
+     * Creates a localized OK button type.
+     * 
+     * @return a ButtonType with localized OK text and OK_DONE button data
+     */
+    private static ButtonType createLocalizedOkButton() {
+        return new ButtonType(LocaleManager.getString("common.ok"), ButtonBar.ButtonData.OK_DONE);
+    }
+    
+    /**
+     * Creates a localized Cancel button type.
+     * 
+     * @return a ButtonType with localized Cancel text and CANCEL_CLOSE button data
+     */
+    private static ButtonType createLocalizedCancelButton() {
+        return new ButtonType(LocaleManager.getString("common.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
+    }
+    
+    /**
+     * Creates a localized Yes button type.
+     * 
+     * @return a ButtonType with localized Yes text and YES button data
+     */
+    private static ButtonType createLocalizedYesButton() {
+        return new ButtonType(LocaleManager.getString("common.yes"), ButtonBar.ButtonData.YES);
+    }
+    
+    /**
+     * Creates a localized No button type.
+     * 
+     * @return a ButtonType with localized No text and NO button data
+     */
+    private static ButtonType createLocalizedNoButton() {
+        return new ButtonType(LocaleManager.getString("common.no"), ButtonBar.ButtonData.NO);
     }
     
     /**

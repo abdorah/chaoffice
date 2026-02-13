@@ -4,6 +4,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.chaos.office.reports.models.*;
 import org.chaos.office.util.CurrencyFormatter;
+import org.chaos.office.util.EnumLocalizer;
 import org.chaos.office.util.LocaleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,8 +66,9 @@ public class ExcelExporter {
         int rowNum = 0;
         
         // Report header
+        String separator = LocaleManager.getString("date.range.separator");
         rowNum = writeReportHeader(sheet, rowNum, LocaleManager.getString("report.sales.title"), 
-            LocaleManager.getString("report.period") + ": " + data.getStartDate() + " to " + data.getEndDate(),
+            LocaleManager.getString("report.period") + ": " + data.getStartDate() + separator + data.getEndDate(),
             LocaleManager.getString("report.generated.on") + ": " + data.getGeneratedAt().format(DISPLAY_FORMATTER),
             titleStyle, normalStyle);
         
@@ -97,7 +99,7 @@ public class ExcelExporter {
         for (Map.Entry<PaymentMethod, BigDecimal> entry : data.getPaymentMethodBreakdown().entrySet()) {
             Row row = sheet.createRow(rowNum++);
             Cell methodCell = row.createCell(0);
-            methodCell.setCellValue(entry.getKey().toString());
+            methodCell.setCellValue(EnumLocalizer.getLocalizedPaymentMethod(entry.getKey()));
             methodCell.setCellStyle(normalStyle);
             
             Cell valueCell = row.createCell(1);
@@ -247,7 +249,7 @@ public class ExcelExporter {
                 valueCell.setCellStyle(valueCellStyle);
                 
                 Cell statusCell = row.createCell(5);
-                statusCell.setCellValue(item.getStatus().toString());
+                statusCell.setCellValue(EnumLocalizer.getLocalizedStockStatus(item.getStatus()));
                 statusCell.setCellStyle(rowStyle);
             }
         }

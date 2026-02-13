@@ -5,6 +5,7 @@ import com.lowagie.text.pdf.*;
 import org.chaos.office.reports.models.*;
 import org.chaos.office.service.BrandingService;
 import org.chaos.office.util.CurrencyFormatter;
+import org.chaos.office.util.EnumLocalizer;
 import org.chaos.office.util.LocaleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -337,7 +338,8 @@ public class PDFExporter {
         addTableHeader(paymentTable, LocaleManager.getString("report.total.revenue"), isRTL);
         
         for (Map.Entry<PaymentMethod, BigDecimal> entry : data.getPaymentMethodBreakdown().entrySet()) {
-            addTableRow(paymentTable, entry.getKey().toString(), formatCurrency(entry.getValue()), false, isRTL);
+            String localizedMethod = EnumLocalizer.getLocalizedPaymentMethod(entry.getKey());
+            addTableRow(paymentTable, localizedMethod, formatCurrency(entry.getValue()), false, isRTL);
         }
         formatTable(paymentTable);
         document.add(paymentTable);
@@ -434,7 +436,7 @@ public class PDFExporter {
                 addTableCell(inventoryTable, formatCurrency(item.getStockValue()), isRTL);
                 
                 // Highlight low stock and out of stock items
-                String statusText = item.getStatus().toString();
+                String statusText = EnumLocalizer.getLocalizedStockStatus(item.getStatus());
                 PdfPCell statusCell = new PdfPCell(new Phrase(statusText, getNormalFont()));
                 statusCell.setPadding(5);
                 if (isRTL) {

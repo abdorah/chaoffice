@@ -2,14 +2,17 @@ package org.chaos.office.reports.services;
 
 import org.chaos.office.reports.models.*;
 import org.chaos.office.util.CurrencyFormatter;
+import org.chaos.office.util.EnumLocalizer;
 import org.chaos.office.util.LocaleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -28,7 +31,7 @@ public class CSVExporter {
     private static final DateTimeFormatter DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     /**
-     * Exports report data to a CSV file.
+     * Exports report data to a CSV file with UTF-8 encoding and BOM for Excel compatibility.
      * 
      * @param reportData The report data to export
      * @param filePath The destination file path
@@ -37,16 +40,22 @@ public class CSVExporter {
     public void export(ReportData reportData, String filePath) throws IOException {
         logger.info("Exporting report to CSV: {}", filePath);
         
-        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
-            if (reportData instanceof SalesReportData) {
-                writeSalesCSV((SalesReportData) reportData, writer);
-            } else if (reportData instanceof InventoryReportData) {
-                writeInventoryCSV((InventoryReportData) reportData, writer);
-            } else {
-                throw new IllegalArgumentException("Unsupported report type: " + reportData.getClass().getName());
-            }
+        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+            // Write UTF-8 BOM for Excel compatibility
+            fos.write(new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF});
             
-            logger.info("CSV export completed successfully");
+            // Use UTF-8 encoding for the writer
+            try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8))) {
+                if (reportData instanceof SalesReportData) {
+                    writeSalesCSV((SalesReportData) reportData, writer);
+                } else if (reportData instanceof InventoryReportData) {
+                    writeInventoryCSV((InventoryReportData) reportData, writer);
+                } else {
+                    throw new IllegalArgumentException("Unsupported report type: " + reportData.getClass().getName());
+                }
+                
+                logger.info("CSV export completed successfully with UTF-8 encoding");
+            }
         } catch (IOException e) {
             logger.error("Failed to export CSV: {}", e.getMessage(), e);
             throw e;
@@ -59,8 +68,9 @@ public class CSVExporter {
      */
     private void writeSalesCSV(SalesReportData data, PrintWriter writer) {
         // Header section
+        String separator = LocaleManager.getString("date.range.separator");
         writer.println(LocaleManager.getString("report.type") + "," + LocaleManager.getString("report.sales.title"));
-        writer.println(LocaleManager.getString("report.period") + "," + data.getStartDate() + " to " + data.getEndDate());
+        writer.println(LocaleManager.getString("report.period") + "," + data.getStartDate() + separator + data.getEndDate());
         writer.println(LocaleManager.getString("report.generated.on") + "," + data.getGeneratedAt().format(DISPLAY_FORMATTER));
         writer.println();
         
@@ -75,7 +85,7 @@ public class CSVExporter {
         writer.println(LocaleManager.getString("report.payment.method.breakdown"));
         writer.println(LocaleManager.getString("report.payment.method") + "," + LocaleManager.getString("report.total.revenue"));
         for (Map.Entry<PaymentMethod, BigDecimal> entry : data.getPaymentMethodBreakdown().entrySet()) {
-            writer.println(entry.getKey() + "," + formatCurrency(entry.getValue()));
+            writer.println(EnumLocalizer.getLocalizedPaymentMethod(entry.getKey()) + "," + formatCurrency(entry.getValue()));
         }
         writer.println();
         
@@ -131,7 +141,7 @@ public class CSVExporter {
                               item.getQuantity() + "," +
                               formatCurrency(item.getPrice()) + "," +
                               formatCurrency(item.getStockValue()) + "," +
-                              item.getStatus());
+                              EnumLocalizer.getLocalizedStockStatus(item.getStatus()));
             }
         }
     }
