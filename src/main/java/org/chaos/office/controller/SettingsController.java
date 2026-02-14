@@ -8,6 +8,7 @@ import org.chaos.office.model.BrandingSettings;
 import org.chaos.office.model.CurrencySettings;
 import org.chaos.office.service.AuthenticationService;
 import org.chaos.office.service.BrandingService;
+import org.chaos.office.service.DatabaseService;
 import org.chaos.office.service.SettingsService;
 import org.chaos.office.util.AlertHelper;
 import org.chaos.office.util.LocaleManager;
@@ -34,6 +35,7 @@ public class SettingsController {
     private final BrandingService brandingService;
     private final SettingsService settingsService;
     private final AuthenticationService authenticationService;
+    private final DatabaseService databaseService;
     
     // Store selected logo data temporarily until save
     private byte[] selectedLogoData;
@@ -49,6 +51,7 @@ public class SettingsController {
         this.brandingService = new BrandingService();
         this.settingsService = new SettingsService();
         this.authenticationService = new AuthenticationService();
+        this.databaseService = new DatabaseService();
         
         loadSettings();
         setupEventHandlers();
@@ -169,6 +172,7 @@ public class SettingsController {
         view.getSelectLogoButton().setOnAction(e -> handleLogoSelection());
         view.getChangeUsernameButton().setOnAction(e -> handleChangeUsername());
         view.getChangePasswordButton().setOnAction(e -> handleChangePassword());
+        view.getResetDatabaseButton().setOnAction(e -> handleResetDatabase());
     }
     
     /**
@@ -542,6 +546,46 @@ public class SettingsController {
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
                 LocaleManager.getString("settings.password.error.failed")
+            );
+        }
+    }
+    
+    /**
+     * Handles database reset request.
+     * Shows confirmation dialog and resets the database if confirmed.
+     */
+    private void handleResetDatabase() {
+        // Show confirmation dialog
+        boolean confirmed = AlertHelper.showConfirmation(
+            LocaleManager.getString("settings.database.reset.confirm.title"),
+            LocaleManager.getString("settings.database.reset.confirm.message")
+        );
+        
+        if (!confirmed) {
+            logger.info("Database reset cancelled by user");
+            return;
+        }
+        
+        try {
+            // Reset the database
+            databaseService.resetDatabase();
+            
+            // Show success message
+            AlertHelper.showInfo(
+                LocaleManager.getString("success.title"),
+                LocaleManager.getString("settings.database.reset.success")
+            );
+            
+            logger.info("Database reset successfully");
+            
+        } catch (Exception e) {
+            logger.error("Error resetting database", e);
+            AlertHelper.showError(
+                LocaleManager.getString("error.title"),
+                java.text.MessageFormat.format(
+                    LocaleManager.getString("settings.database.reset.failed"),
+                    e.getMessage()
+                )
             );
         }
     }

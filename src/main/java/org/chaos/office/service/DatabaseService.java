@@ -108,4 +108,47 @@ public class DatabaseService {
             logger.error("Error seeding default admin", e);
         }
     }
+    
+    /**
+     * Resets the database to an empty state, keeping only essential information:
+     * - User accounts
+     * - Store branding settings (logo, store name)
+     * - Currency settings
+     * 
+     * This will delete:
+     * - All parts
+     * - All categories
+     * - All bills and commands
+     */
+    public void resetDatabase() {
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             Statement stmt = conn.createStatement()) {
+            
+            logger.info("Starting database reset...");
+            
+            // Delete all commands (must be first due to foreign key constraints)
+            stmt.execute("DELETE FROM commands");
+            logger.info("Deleted all commands");
+            
+            // Delete all bills
+            stmt.execute("DELETE FROM bills");
+            logger.info("Deleted all bills");
+            
+            // Delete all parts
+            stmt.execute("DELETE FROM parts");
+            logger.info("Deleted all parts");
+            
+            // Delete all categories
+            stmt.execute("DELETE FROM categories");
+            logger.info("Deleted all categories");
+            
+            // Note: users, settings, and branding tables are NOT deleted
+            
+            logger.info("Database reset completed successfully");
+            
+        } catch (Exception e) {
+            logger.error("Error resetting database", e);
+            throw new RuntimeException("Failed to reset database", e);
+        }
+    }
 }

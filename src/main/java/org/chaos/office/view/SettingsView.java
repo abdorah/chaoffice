@@ -37,6 +37,9 @@ public class SettingsView extends BorderPane {
     private final PasswordField confirmPasswordField;
     private final Button changePasswordButton;
     
+    // Database management
+    private final Button resetDatabaseButton;
+    
     public SettingsView() {
         // Create main HBox for two-column layout
         HBox mainLayout = new HBox(20);
@@ -174,6 +177,14 @@ public class SettingsView extends BorderPane {
         changePasswordButton = new Button(LocaleManager.getString("settings.account.changePassword"));
         changePasswordButton.setMaxWidth(Double.MAX_VALUE);
         
+        // Database Reset Section
+        Label databaseResetLabel = new Label(LocaleManager.getString("settings.database.reset"));
+        databaseResetLabel.getStyleClass().add("label-headline");
+        
+        resetDatabaseButton = new Button(LocaleManager.getString("settings.database.reset.button"));
+        resetDatabaseButton.setMaxWidth(Double.MAX_VALUE);
+        resetDatabaseButton.getStyleClass().add("button-danger");
+        
         // Add to right column
         rightColumn.getChildren().addAll(
             currencyLabel,
@@ -187,7 +198,10 @@ public class SettingsView extends BorderPane {
             currentPasswordLabel, currentPasswordField,
             newPasswordLabel, newPasswordField,
             confirmPasswordLabel, confirmPasswordField,
-            changePasswordButton
+            changePasswordButton,
+            new Separator(),
+            databaseResetLabel,
+            resetDatabaseButton
         );
         
         // Save button (bottom of right column)
@@ -234,4 +248,7 @@ public class SettingsView extends BorderPane {
     public PasswordField getNewPasswordField() { return newPasswordField; }
     public PasswordField getConfirmPasswordField() { return confirmPasswordField; }
     public Button getChangePasswordButton() { return changePasswordButton; }
+    
+    // Database management getters
+    public Button getResetDatabaseButton() { return resetDatabaseButton; }
 }
