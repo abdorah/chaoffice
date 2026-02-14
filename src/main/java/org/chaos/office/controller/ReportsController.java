@@ -139,7 +139,8 @@ public class ReportsController {
             
         } catch (Exception e) {
             logger.error("Error generating report preview", e);
-            AlertHelper.showError("Error", "Failed to generate report: " + e.getMessage());
+            AlertHelper.showError(LocaleManager.getString("dialog.title.reports.error"), 
+                String.format(LocaleManager.getString("error.reports.generate.failed"), e.getMessage()));
         }
     }
     
@@ -153,23 +154,27 @@ public class ReportsController {
             LocalDate endDate = view.getEndDatePicker().getValue();
             
             if (startDate == null || endDate == null) {
-                AlertHelper.showError("Validation Error", "Invalid Date Range: Please select both start and end dates.");
+                AlertHelper.showError(LocaleManager.getString("dialog.title.validation.error"), 
+                    LocaleManager.getString("error.reports.date.range.required"));
                 return false;
             }
             
             if (startDate.isAfter(endDate)) {
-                AlertHelper.showError("Validation Error", "Invalid Date Range: Start date cannot be after end date.");
+                AlertHelper.showError(LocaleManager.getString("dialog.title.validation.error"), 
+                    LocaleManager.getString("error.reports.date.range.invalid"));
                 return false;
             }
         } else if (inventoryReportType.equals(reportType)) {
             try {
                 int threshold = Integer.parseInt(view.getStockThresholdField().getText());
                 if (threshold < 0) {
-                    AlertHelper.showError("Validation Error", "Invalid Threshold: Stock threshold must be a positive number.");
+                    AlertHelper.showError(LocaleManager.getString("dialog.title.validation.error"), 
+                        LocaleManager.getString("error.reports.threshold.negative"));
                     return false;
                 }
             } catch (NumberFormatException e) {
-                AlertHelper.showError("Validation Error", "Invalid Threshold: Stock threshold must be a valid number.");
+                AlertHelper.showError(LocaleManager.getString("dialog.title.validation.error"), 
+                    LocaleManager.getString("error.reports.threshold.invalid"));
                 return false;
             }
         }
@@ -334,7 +339,8 @@ public class ReportsController {
     
     private void onExportPDFClicked() {
         if (currentReportData == null) {
-            AlertHelper.showError("Error", "No Report: Please generate a preview first.");
+            AlertHelper.showError(LocaleManager.getString("dialog.title.reports.error"), 
+                LocaleManager.getString("error.reports.no.preview"));
             return;
         }
         

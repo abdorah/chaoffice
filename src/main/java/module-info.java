@@ -10,6 +10,7 @@ module org.chaos.office {
   requires com.github.librepdf.openpdf;
   requires org.apache.poi.poi;
   requires org.apache.poi.ooxml;
+  requires com.ibm.icu;
 
   opens org.chaos.office to
       javafx.fxml;

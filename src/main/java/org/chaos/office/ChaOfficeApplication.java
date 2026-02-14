@@ -34,8 +34,9 @@ public class ChaOfficeApplication extends Application {
             // Initialize branding service
             BrandingService brandingService = new BrandingService();
             
-            // Load saved language preference
-            LocaleManager.setLocale(new Locale("en", "US"));
+            // Load saved language preference (LocaleManager will load from preferences)
+            // Don't set a specific locale - let LocaleManager load the saved preference
+            LocaleManager.getCurrentLocale(); // This triggers loading saved locale
             
             // Set up primary stage with branding
             primaryStage.setTitle(brandingService.getApplicationTitle());

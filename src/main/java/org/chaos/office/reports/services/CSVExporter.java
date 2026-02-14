@@ -177,7 +177,8 @@ public class CSVExporter {
      */
     public String generateFilename(String reportType) {
         String timestamp = LocalDateTime.now().format(FILENAME_FORMATTER);
-        String sanitizedType = reportType.replace(" ", "");
+        // Only replace characters that are invalid in filenames (keep Unicode characters like Arabic)
+        String sanitizedType = reportType.replaceAll("[\\\\/:*?\"<>|]", "_").replace(" ", "_");
         return sanitizedType + "_" + timestamp + ".csv";
     }
 }

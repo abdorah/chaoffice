@@ -4,6 +4,7 @@ import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
 import org.chaos.office.reports.models.*;
 import org.chaos.office.service.BrandingService;
+import org.chaos.office.util.ArabicTextProcessor;
 import org.chaos.office.util.CurrencyFormatter;
 import org.chaos.office.util.EnumLocalizer;
 import org.chaos.office.util.LocaleManager;
@@ -166,13 +167,15 @@ public class PDFExporter {
             }
         }
         
-        // For Arabic text in Paragraphs, we need to use tables with RTL support
-        // because Paragraph doesn't properly handle Arabic text shaping
-        
         // Add store name if configured, otherwise use default company name
         String companyName = brandingService.getBrandingSettings().hasStoreName() 
             ? brandingService.getBrandingSettings().getStoreName()
             : LocaleManager.getString("app.title");
+        
+        if (isRTL) {
+            // Only shape, don't reorder - let the table's RTL direction handle ordering
+            companyName = ArabicTextProcessor.shapeOnly(companyName);
+        }
         
         if (isRTL) {
             // Use a single-cell table for proper Arabic rendering
@@ -195,6 +198,11 @@ public class PDFExporter {
         // Report title
         String titleText = reportData.getReportTitle();
         if (isRTL) {
+            // Only shape, don't reorder - let the table's RTL direction handle ordering
+            titleText = ArabicTextProcessor.shapeOnly(titleText);
+        }
+        
+        if (isRTL) {
             // Use a single-cell table for proper Arabic rendering
             PdfPTable titleTable = new PdfPTable(1);
             titleTable.setWidthPercentage(100);
@@ -214,6 +222,11 @@ public class PDFExporter {
         String timestampLabel = LocaleManager.getString("report.generated.on");
         String timestampValue = reportData.getGeneratedAt().format(DISPLAY_FORMATTER);
         String timestampText = timestampLabel + ": " + timestampValue;
+        
+        if (isRTL) {
+            // Only shape, don't reorder - let the table's RTL direction handle ordering
+            timestampText = ArabicTextProcessor.shapeOnly(timestampText);
+        }
         
         if (isRTL) {
             PdfPTable timestampTable = new PdfPTable(1);
@@ -238,6 +251,11 @@ public class PDFExporter {
             String paramText = paramLabel + ": " + paramValue;
             
             if (isRTL) {
+                // Only shape, don't reorder - let the table's RTL direction handle ordering
+                paramText = ArabicTextProcessor.shapeOnly(paramText);
+            }
+            
+            if (isRTL) {
                 PdfPTable paramTable = new PdfPTable(1);
                 paramTable.setWidthPercentage(100);
                 paramTable.setRunDirection(PdfWriter.RUN_DIRECTION_RTL);
@@ -258,32 +276,13 @@ public class PDFExporter {
     }
     
     /**
-     * Processes text for RTL display in PDF.
-     * For Arabic text, we DON'T reverse it - we let the font handle it naturally
-     * and just use right alignment. This preserves Arabic letter connections.
-     */
-    private String reverseText(String text) {
-        if (text == null || text.isEmpty()) {
-            return text;
-        }
-        
-        // If text doesn't contain Arabic, return as-is
-        if (!containsArabic(text)) {
-            return text;
-        }
-        
-        // For Arabic text, DON'T reverse it
-        // The Unicode font with proper Arabic support will render it correctly
-        // We just need right alignment (which is already set)
-        return text;
-    }
-    
-    /**
      * Adds a title/heading to the document with proper RTL support.
      * For Arabic, uses a borderless table to ensure proper text rendering.
      */
     private void addTitle(Document document, String text, Font font, int alignment, boolean isRTL) throws DocumentException {
         if (isRTL) {
+            // Only shape, don't reorder - let the table's RTL direction handle ordering
+            text = ArabicTextProcessor.shapeOnly(text);
             // Use a single-cell table for proper Arabic rendering
             PdfPTable titleTable = new PdfPTable(1);
             titleTable.setWidthPercentage(100);
@@ -455,16 +454,12 @@ public class PDFExporter {
     }
     
     /**
-     * Adds a header cell to a table.
-     */
-    private void addTableHeader(PdfPTable table, String text) {
-        addTableHeader(table, text, false);
-    }
-    
-    /**
      * Adds a header cell to a table with RTL support.
      */
     private void addTableHeader(PdfPTable table, String text, boolean isRTL) {
+        if (isRTL) {
+            text = ArabicTextProcessor.shapeOnly(text);
+        }
         PdfPCell cell = new PdfPCell(new Phrase(text, getTableHeaderFont()));
         cell.setBackgroundColor(new Color(200, 200, 200));
         cell.setPadding(5);
@@ -475,16 +470,12 @@ public class PDFExporter {
     }
     
     /**
-     * Adds a regular cell to a table.
-     */
-    private void addTableCell(PdfPTable table, String text) {
-        addTableCell(table, text, false);
-    }
-    
-    /**
      * Adds a regular cell to a table with RTL support.
      */
     private void addTableCell(PdfPTable table, String text, boolean isRTL) {
+        if (isRTL && ArabicTextProcessor.containsArabic(text)) {
+            text = ArabicTextProcessor.shapeOnly(text);
+        }
         PdfPCell cell = new PdfPCell(new Phrase(text, getNormalFont()));
         cell.setPadding(5);
         if (isRTL) {
@@ -494,29 +485,16 @@ public class PDFExporter {
     }
     
     /**
-     * Checks if text contains Arabic characters.
-     */
-    private boolean containsArabic(String text) {
-        if (text == null) return false;
-        for (char c : text.toCharArray()) {
-            if (Character.UnicodeBlock.of(c) == Character.UnicodeBlock.ARABIC) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Adds a two-column row to a table.
-     */
-    private void addTableRow(PdfPTable table, String label, String value, boolean highlight) {
-        addTableRow(table, label, value, highlight, false);
-    }
-    
-    /**
      * Adds a two-column row to a table with RTL support.
      */
     private void addTableRow(PdfPTable table, String label, String value, boolean highlight, boolean isRTL) {
+        if (isRTL && ArabicTextProcessor.containsArabic(label)) {
+            label = ArabicTextProcessor.shapeOnly(label);
+        }
+        if (isRTL && ArabicTextProcessor.containsArabic(value)) {
+            value = ArabicTextProcessor.shapeOnly(value);
+        }
+        
         PdfPCell labelCell = new PdfPCell(new Phrase(label, getTableHeaderFont()));
         labelCell.setPadding(5);
         if (highlight) {
@@ -561,7 +539,8 @@ public class PDFExporter {
      */
     public String generateFilename(String reportType) {
         String timestamp = LocalDateTime.now().format(FILENAME_FORMATTER);
-        String sanitizedType = reportType.replace(" ", "");
+        // Only replace characters that are invalid in filenames (keep Unicode characters like Arabic)
+        String sanitizedType = reportType.replaceAll("[\\\\/:*?\"<>|]", "_").replace(" ", "_");
         return sanitizedType + "_" + timestamp + ".pdf";
     }
 }

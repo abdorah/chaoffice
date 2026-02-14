@@ -144,9 +144,7 @@ public class DashboardView extends BorderPane {
         Label titleLabel = (Label) ((HBox) getTop()).getChildren().get(0);
         titleLabel.setText(LocaleManager.getString("dashboard.title"));
         
-        String userName = SessionManager.getInstance().getCurrentUser() != null ?
-            SessionManager.getInstance().getCurrentUser().getFirstName() : "User";
-        userLabel.setText(LocaleManager.getString("dashboard.welcome").replace("{0}", userName));
+        userLabel.setText(LocaleManager.getString("dashboard.welcome"));
         logoutButton.setText(LocaleManager.getString("dashboard.logout"));
         
         // Update navigation buttons

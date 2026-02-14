@@ -8,6 +8,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import org.chaos.office.model.Bill;
 import org.chaos.office.model.Command;
 import org.chaos.office.model.Part;
+import org.chaos.office.util.ArabicTextProcessor;
 import org.chaos.office.util.LocaleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,29 +63,47 @@ public class ReportService {
             }
             
             // Title
-            Paragraph title = new Paragraph(LocaleManager.getString("bill.receipt.title"), titleFont);
+            String titleText = LocaleManager.getString("bill.receipt.title");
+            if (isRTL) {
+                titleText = ArabicTextProcessor.processForPDF(titleText, true);
+            }
+            Paragraph title = new Paragraph(titleText, titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             title.setSpacingAfter(20);
             document.add(title);
             
             // Bill information
+            String billIdLabel = LocaleManager.getString("bill.receipt.id");
+            String billDateLabel = LocaleManager.getString("bill.receipt.date");
+            String clientNameLabel = LocaleManager.getString("bill.receipt.client.name");
+            String clientPhoneLabel = LocaleManager.getString("bill.receipt.client.phone");
             
-            document.add(new Paragraph(LocaleManager.getString("bill.receipt.id") + ": " + bill.getId(), valueFont));
-            document.add(new Paragraph(LocaleManager.getString("bill.receipt.date") + ": " + bill.getDate().toString(), valueFont));
+            if (isRTL) {
+                billIdLabel = ArabicTextProcessor.processForPDF(billIdLabel, true);
+                billDateLabel = ArabicTextProcessor.processForPDF(billDateLabel, true);
+                clientNameLabel = ArabicTextProcessor.processForPDF(clientNameLabel, true);
+                clientPhoneLabel = ArabicTextProcessor.processForPDF(clientPhoneLabel, true);
+            }
+            
+            document.add(new Paragraph(billIdLabel + ": " + bill.getId(), valueFont));
+            document.add(new Paragraph(billDateLabel + ": " + bill.getDate().toString(), valueFont));
             
             // Client name and phone are optional - keep their space even if empty
             String clientName = bill.getClientName();
             if (clientName == null || clientName.trim().isEmpty()) {
-                document.add(new Paragraph(LocaleManager.getString("bill.receipt.client.name") + ": ", valueFont));
+                document.add(new Paragraph(clientNameLabel + ": ", valueFont));
             } else {
-                document.add(new Paragraph(LocaleManager.getString("bill.receipt.client.name") + ": " + clientName, valueFont));
+                if (isRTL && ArabicTextProcessor.containsArabic(clientName)) {
+                    clientName = ArabicTextProcessor.processForPDF(clientName, true);
+                }
+                document.add(new Paragraph(clientNameLabel + ": " + clientName, valueFont));
             }
             
             String clientPhone = bill.getClientPhone();
             if (clientPhone == null || clientPhone.trim().isEmpty()) {
-                document.add(new Paragraph(LocaleManager.getString("bill.receipt.client.phone") + ": ", valueFont));
+                document.add(new Paragraph(clientPhoneLabel + ": ", valueFont));
             } else {
-                document.add(new Paragraph(LocaleManager.getString("bill.receipt.client.phone") + ": " + clientPhone, valueFont));
+                document.add(new Paragraph(clientPhoneLabel + ": " + clientPhone, valueFont));
             }
             
             document.add(new Paragraph(" "));
@@ -102,16 +121,36 @@ public class ReportService {
             Font headerFont = getFontForLocale(12, Font.BOLD);
             Font cellFont = getFontForLocale(12, Font.NORMAL);
             
-            addTableHeader(table, LocaleManager.getString("bill.receipt.part.name"), headerFont);
-            addTableHeader(table, LocaleManager.getString("bill.receipt.quantity"), headerFont);
-            addTableHeader(table, LocaleManager.getString("bill.receipt.unit.price"), headerFont);
-            addTableHeader(table, LocaleManager.getString("bill.receipt.subtotal"), headerFont);
-            addTableHeader(table, LocaleManager.getString("bill.receipt.total"), headerFont);
+            String partNameHeader = LocaleManager.getString("bill.receipt.part.name");
+            String quantityHeader = LocaleManager.getString("bill.receipt.quantity");
+            String unitPriceHeader = LocaleManager.getString("bill.receipt.unit.price");
+            String subtotalHeader = LocaleManager.getString("bill.receipt.subtotal");
+            String totalHeader = LocaleManager.getString("bill.receipt.total");
+            
+            // For tables with RTL direction, only shape (don't reorder)
+            if (isRTL) {
+                partNameHeader = ArabicTextProcessor.shapeOnly(partNameHeader);
+                quantityHeader = ArabicTextProcessor.shapeOnly(quantityHeader);
+                unitPriceHeader = ArabicTextProcessor.shapeOnly(unitPriceHeader);
+                subtotalHeader = ArabicTextProcessor.shapeOnly(subtotalHeader);
+                totalHeader = ArabicTextProcessor.shapeOnly(totalHeader);
+            }
+            
+            addTableHeader(table, partNameHeader, headerFont);
+            addTableHeader(table, quantityHeader, headerFont);
+            addTableHeader(table, unitPriceHeader, headerFont);
+            addTableHeader(table, subtotalHeader, headerFont);
+            addTableHeader(table, totalHeader, headerFont);
             
             // Table rows
             for (Command command : commands) {
                 Part part = partService.getPartById(command.getPartId()).orElse(null);
                 String partName = part != null ? part.getName() : LocaleManager.getString("bill.receipt.unknown.part");
+                
+                // For tables with RTL direction, only shape (don't reorder)
+                if (isRTL && ArabicTextProcessor.containsArabic(partName)) {
+                    partName = ArabicTextProcessor.shapeOnly(partName);
+                }
                 
                 float subtotal = command.getQuantity() * command.getPriceConsidered();
                 
@@ -126,8 +165,10 @@ public class ReportService {
             
             // Total
             String totalText = LocaleManager.getString("bill.receipt.total");
-            // Don't uppercase for RTL languages as it may break the text
-            if (!isRTL) {
+            if (isRTL) {
+                totalText = ArabicTextProcessor.processForPDF(totalText, true);
+            } else {
+                // Only uppercase for LTR languages
                 totalText = totalText.toUpperCase();
             }
             Paragraph total = new Paragraph(totalText + ": " + String.format("%.2f", bill.getTotalPrice()), labelFont);

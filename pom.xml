@@ -76,6 +76,13 @@
             <artifactId>openpdf</artifactId>
             <version>${openpdf.version}</version>
         </dependency>
+        
+        <!-- ICU4J for proper Arabic/RTL text handling -->
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>74.2</version>
+        </dependency>
 
         <!-- Apache POI for Excel generation -->
         <dependency>

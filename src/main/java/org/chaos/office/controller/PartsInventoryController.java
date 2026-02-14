@@ -139,8 +139,8 @@ public class PartsInventoryController {
             LocaleManager.getString("parts.add") : 
             LocaleManager.getString("parts.edit"));
         dialog.setHeaderText(existingPart == null ? 
-            "Add New Part" : 
-            "Edit Part");
+            LocaleManager.getString("dialog.header.add.part") : 
+            LocaleManager.getString("dialog.header.edit.part"));
         
         // Apply current theme to dialog
         DialogHelper.applyTheme(dialog);
@@ -225,19 +225,19 @@ public class PartsInventoryController {
                     // Validate inputs
                     if (!ValidationHelper.isNotEmpty(nameField.getText())) {
                         AlertHelper.showError(LocaleManager.getString("error.title"), 
-                            "Part name is required");
+                            LocaleManager.getString("error.part.name.required"));
                         return null;
                     }
                     
                     if (!ValidationHelper.isNotEmpty(makerField.getText())) {
                         AlertHelper.showError(LocaleManager.getString("error.title"), 
-                            "Maker is required");
+                            LocaleManager.getString("error.part.maker.required"));
                         return null;
                     }
                     
                     if (!ValidationHelper.isNotEmpty(descriptionField.getText())) {
                         AlertHelper.showError(LocaleManager.getString("error.title"), 
-                            "Description is required");
+                            LocaleManager.getString("error.part.description.required"));
                         return null;
                     }
                     
@@ -246,12 +246,12 @@ public class PartsInventoryController {
                         price = Float.parseFloat(priceField.getText());
                         if (price < 0) {
                             AlertHelper.showError(LocaleManager.getString("error.title"), 
-                                "Price must be non-negative");
+                                LocaleManager.getString("error.part.price.negative"));
                             return null;
                         }
                     } catch (NumberFormatException e) {
                         AlertHelper.showError(LocaleManager.getString("error.title"), 
-                            "Invalid price format");
+                            LocaleManager.getString("error.part.price.invalid"));
                         return null;
                     }
                     
@@ -260,18 +260,18 @@ public class PartsInventoryController {
                         quantity = Integer.parseInt(quantityField.getText());
                         if (quantity < 0) {
                             AlertHelper.showError(LocaleManager.getString("error.title"), 
-                                "Quantity must be non-negative");
+                                LocaleManager.getString("error.part.quantity.negative"));
                             return null;
                         }
                     } catch (NumberFormatException e) {
                         AlertHelper.showError(LocaleManager.getString("error.title"), 
-                            "Invalid quantity format");
+                            LocaleManager.getString("error.part.quantity.invalid"));
                         return null;
                     }
                     
                     if (categoryCombo.getValue() == null) {
                         AlertHelper.showError(LocaleManager.getString("error.title"), 
-                            "Category is required");
+                            LocaleManager.getString("error.part.category.required"));
                         return null;
                     }
                     
@@ -286,7 +286,7 @@ public class PartsInventoryController {
                     return part;
                 } catch (Exception e) {
                     AlertHelper.showError(LocaleManager.getString("error.title"), 
-                        "Error: " + e.getMessage());
+                        String.format(LocaleManager.getString("error.part.save.failed"), e.getMessage()));
                     return null;
                 }
             }

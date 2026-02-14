@@ -107,9 +107,12 @@ public class BillsHistoryController {
         // Create dialog to show details
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle(LocaleManager.getString("bills.details.title") + " - #" + selectedBill.getId());
-        dialog.setHeaderText(String.format("Client: %s | Phone: %s | Date: %s",
+        dialog.setHeaderText(String.format("%s: %s | %s: %s | %s: %s",
+            LocaleManager.getString("bills.details.client.label"),
             selectedBill.getClientName(),
+            LocaleManager.getString("bills.details.phone.label"),
             selectedBill.getClientPhone(),
+            LocaleManager.getString("bills.details.date.label"),
             selectedBill.getDate()));
         
         // Apply current theme to dialog
@@ -188,7 +191,11 @@ public class BillsHistoryController {
         // Show file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save PDF");
-        fileChooser.setInitialFileName(String.format("bill_%d_%s.pdf", 
+        
+        // Generate localized filename
+        String billWord = LocaleManager.getString("bills.title").toLowerCase().replace(" ", "_");
+        fileChooser.setInitialFileName(String.format("%s_%d_%s.pdf", 
+            billWord,
             selectedBill.getId(), 
             selectedBill.getDate().toString()));
         fileChooser.getExtensionFilters().add(

@@ -392,7 +392,8 @@ public class ExcelExporter {
      */
     public String generateFilename(String reportTitle) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String sanitizedTitle = reportTitle.replaceAll("[^a-zA-Z0-9]", "_");
+        // Only replace characters that are invalid in filenames (keep Unicode characters like Arabic)
+        String sanitizedTitle = reportTitle.replaceAll("[\\\\/:*?\"<>|]", "_").replace(" ", "_");
         return sanitizedTitle + "_" + timestamp + ".xlsx";
     }
 }

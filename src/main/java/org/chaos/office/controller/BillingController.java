@@ -303,8 +303,8 @@ public class BillingController {
         
         if (commands.isEmpty()) {
             AlertHelper.showError(
-                "Empty Bill",
-                "Please add at least one part to the bill before completing the sale."
+                LocaleManager.getString("dialog.title.empty.bill"),
+                LocaleManager.getString("error.billing.empty")
             );
             return;
         }
@@ -332,8 +332,8 @@ public class BillingController {
                             TooltipHelper.showError(view.getDiscountValueField(), 
                                 "Percentage must be between 0 and 100");
                             AlertHelper.showError(
-                                "Invalid Discount",
-                                "Percentage discount must be between 0 and 100.\n\nPlease correct the discount value."
+                                LocaleManager.getString("dialog.title.invalid.discount"),
+                                LocaleManager.getString("error.billing.discount.percentage.range")
                             );
                             return;
                         }
@@ -343,8 +343,8 @@ public class BillingController {
                             TooltipHelper.showError(view.getDiscountValueField(), 
                                 String.format("Discount cannot exceed subtotal of $%.2f", subtotal));
                             AlertHelper.showError(
-                                "Invalid Discount",
-                                String.format("Fixed discount cannot exceed the subtotal of $%.2f.\n\nPlease reduce the discount amount.", subtotal)
+                                LocaleManager.getString("dialog.title.invalid.discount"),
+                                String.format(LocaleManager.getString("error.billing.discount.fixed.exceeds"), subtotal)
                             );
                             return;
                         }
@@ -353,8 +353,8 @@ public class BillingController {
                 } catch (NumberFormatException e) {
                     TooltipHelper.showError(view.getDiscountValueField(), "Please enter a valid number");
                     AlertHelper.showError(
-                        "Invalid Discount",
-                        "Please enter a valid number for the discount value."
+                        LocaleManager.getString("dialog.title.invalid.discount"),
+                        LocaleManager.getString("error.billing.discount.invalid")
                     );
                     return;
                 }
@@ -388,8 +388,8 @@ public class BillingController {
             );
             
             AlertHelper.showInfo(
-                "Sale Completed",
-                String.format("Bill created successfully for %s.\n\nTotal: $%.2f\nPayment: %s", 
+                LocaleManager.getString("dialog.title.sale.completed"),
+                String.format(LocaleManager.getString("success.billing.completed"), 
                     clientName, finalTotal, paymentMethod)
             );
             
@@ -413,8 +413,8 @@ public class BillingController {
             logger.error("Validation error completing sale", e);
             
             AlertHelper.showError(
-                "Cannot Complete Sale",
-                String.format("The sale could not be completed:\n\n%s\n\nPlease review the items and try again.", 
+                LocaleManager.getString("dialog.title.cannot.complete.sale"),
+                String.format(LocaleManager.getString("error.billing.cannot.complete"), 
                     e.getMessage())
             );
             
@@ -425,30 +425,30 @@ public class BillingController {
             // Database and other runtime errors - provide user-friendly message
             logger.error("Error completing sale", e);
             
-            String userMessage = "An error occurred while saving the bill.\n\n";
+            String userMessage;
             String errorMsg = e.getMessage() != null ? e.getMessage() : "";
             
             if (errorMsg.contains("UNIQUE constraint") || errorMsg.contains("unique constraint")) {
-                userMessage += "This appears to be a duplicate entry. Please try again.";
+                userMessage = LocaleManager.getString("error.billing.save.duplicate");
             } else if (errorMsg.contains("NOT NULL constraint") || errorMsg.contains("not null")) {
-                userMessage += "Some required information is missing. Please check all fields.";
+                userMessage = LocaleManager.getString("error.billing.save.missing");
             } else if (errorMsg.contains("CHECK constraint") || errorMsg.contains("check constraint")) {
-                userMessage += "Invalid data detected. Please verify discount and payment method values.";
+                userMessage = LocaleManager.getString("error.billing.save.invalid");
             } else if (errorMsg.contains("database") || errorMsg.contains("Database")) {
-                userMessage += "Database error: " + errorMsg + "\n\nPlease try again or contact support if the problem persists.";
+                userMessage = String.format(LocaleManager.getString("error.billing.save.database"), errorMsg);
             } else {
-                userMessage += "Error: " + errorMsg + "\n\nPlease try again or contact support if the problem persists.";
+                userMessage = String.format(LocaleManager.getString("error.billing.save.general"), errorMsg);
             }
             
-            AlertHelper.showError("Error Saving Bill", userMessage);
+            AlertHelper.showError(LocaleManager.getString("dialog.title.error.saving.bill"), userMessage);
             
         } catch (Exception e) {
             // Unexpected errors
             logger.error("Unexpected error completing sale", e);
             
             AlertHelper.showError(
-                "Unexpected Error",
-                String.format("An unexpected error occurred:\n\n%s\n\nThe bill was not saved. Please try again or contact support.", 
+                LocaleManager.getString("dialog.title.unexpected.error"),
+                String.format(LocaleManager.getString("error.billing.unexpected"), 
                     e.getMessage())
             );
         }

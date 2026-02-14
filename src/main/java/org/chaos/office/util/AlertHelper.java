@@ -51,6 +51,9 @@ public class AlertHelper {
         alert.setHeaderText(null); // Material Design 3 style - no header
         alert.setContentText(message);
         
+        // Replace default button with localized OK button
+        alert.getButtonTypes().setAll(createLocalizedOkButton());
+        
         // Apply consistent styling
         applyAlertStyling(alert);
         
@@ -71,6 +74,9 @@ public class AlertHelper {
         alert.setTitle(title);
         alert.setHeaderText(null); // Material Design 3 style - no header
         alert.setContentText(message);
+        
+        // Replace default button with localized OK button
+        alert.getButtonTypes().setAll(createLocalizedOkButton());
         
         // Apply consistent styling
         applyAlertStyling(alert);

@@ -32,13 +32,15 @@ public class LoginView extends VBox {
         Label usernameLabel = new Label(LocaleManager.getString("login.username"));
         usernameField = new TextField();
         usernameField.setPromptText(LocaleManager.getString("login.username"));
-        usernameField.setPrefWidth(300);
+        usernameField.setPrefWidth(250);
+        usernameField.setMaxWidth(250);
         
         // Password field
         Label passwordLabel = new Label(LocaleManager.getString("login.password"));
         passwordField = new PasswordField();
         passwordField.setPromptText(LocaleManager.getString("login.password"));
-        passwordField.setPrefWidth(300);
+        passwordField.setPrefWidth(250);
+        passwordField.setMaxWidth(250);
         
         // Language selector
         Label languageLabel = new Label(LocaleManager.getString("login.language"));
@@ -55,11 +57,13 @@ public class LoginView extends VBox {
             languageComboBox.setValue("English");
         }
         
-        languageComboBox.setPrefWidth(300);
+        languageComboBox.setPrefWidth(250);
+        languageComboBox.setMaxWidth(250);
         
         // Login button
         loginButton = new Button(LocaleManager.getString("login.button"));
-        loginButton.setPrefWidth(300);
+        loginButton.setPrefWidth(250);
+        loginButton.setMaxWidth(250);
         loginButton.setDefaultButton(true);
         
         // Add all components
