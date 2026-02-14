@@ -62,13 +62,14 @@ public class BulkImportService {
      * Process:
      * 1. Determine file type from extension
      * 2. Select appropriate parser
-     * 3. Parse file into List<PartImportData>
-     * 4. Load all categories into Map<String, Category>
-     * 5. For each PartImportData:
+     * 3. For Excel files: Check for Categories sheet and import categories first
+     * 4. Parse file into List<PartImportData>
+     * 5. Load all categories into Map<String, Category>
+     * 6. For each PartImportData:
      *    - Validate using ImportValidator
      *    - If valid: convert to Part, save via PartService, increment success count
      *    - If invalid or save fails: record error, increment failure count
-     * 6. Return ImportResult with counts and errors
+     * 7. Return ImportResult with counts and errors
      * 
      * @param file The file to import (.csv, .xlsx, or .xls)
      * @return ImportResult containing success/failure counts and error details
@@ -87,12 +88,14 @@ public class BulkImportService {
         // Determine file type from extension (Requirement 2.4)
         String fileName = file.getName().toLowerCase();
         FileParser parser = null;
+        boolean isExcelFile = false;
         
         if (fileName.endsWith(".csv")) {
             parser = csvFileParser;
             logger.info("Selected CSV parser for file: {}", file.getName());
         } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
             parser = excelFileParser;
+            isExcelFile = true;
             logger.info("Selected Excel parser for file: {}", file.getName());
         } else {
             // Unsupported file type (Requirement 2.4)
@@ -102,6 +105,16 @@ public class BulkImportService {
             result.incrementFailureCount();
             logger.error("Import failed: unsupported file type - {}", fileName);
             return result;
+        }
+        
+        // For Excel files, check for Categories sheet and import categories first
+        if (isExcelFile) {
+            try {
+                importCategoriesFromExcel(file);
+            } catch (Exception e) {
+                logger.warn("Failed to import categories from Excel file: {}", e.getMessage());
+                // Continue with parts import even if categories import fails
+            }
         }
         
         // Parse file into List<PartImportData> (Requirements 3.1, 3.2)
@@ -181,6 +194,103 @@ public class BulkImportService {
             result.getSuccessCount(), result.getFailureCount());
         
         return result;
+    }
+    
+    /**
+     * Imports categories from the "Categories" sheet in an Excel file.
+     * Creates categories that don't already exist in the database.
+     * 
+     * @param file The Excel file containing the Categories sheet
+     * @throws IOException If the file cannot be read
+     */
+    private void importCategoriesFromExcel(File file) throws IOException {
+        try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file)) {
+            // Look for "Categories" sheet
+            org.apache.poi.ss.usermodel.Sheet categoriesSheet = workbook.getSheet("Categories");
+            
+            if (categoriesSheet == null) {
+                logger.debug("No Categories sheet found in Excel file");
+                return;
+            }
+            
+            logger.info("Found Categories sheet, importing categories...");
+            
+            // Get existing categories to avoid duplicates
+            Map<String, Category> existingCategories = loadCategoryMap();
+            
+            // Skip header row (row 0) and process data rows
+            for (int rowIndex = 1; rowIndex <= categoriesSheet.getLastRowNum(); rowIndex++) {
+                org.apache.poi.ss.usermodel.Row row = categoriesSheet.getRow(rowIndex);
+                
+                if (row == null) {
+                    continue;
+                }
+                
+                // Get category name and description
+                org.apache.poi.ss.usermodel.Cell nameCell = row.getCell(0);
+                org.apache.poi.ss.usermodel.Cell descCell = row.getCell(1);
+                
+                if (nameCell == null) {
+                    continue;
+                }
+                
+                String categoryName = getCellValueAsString(nameCell).trim();
+                String categoryDesc = descCell != null ? getCellValueAsString(descCell).trim() : "";
+                
+                // Skip empty rows or existing categories
+                if (categoryName.isEmpty() || existingCategories.containsKey(categoryName)) {
+                    continue;
+                }
+                
+                // Create new category
+                Category newCategory = new Category();
+                newCategory.setName(categoryName);
+                newCategory.setDescription(categoryDesc);
+                
+                try {
+                    categoryService.saveCategory(newCategory);
+                    logger.info("Imported category: {}", categoryName);
+                } catch (Exception e) {
+                    logger.warn("Failed to import category '{}': {}", categoryName, e.getMessage());
+                }
+            }
+        }
+    }
+    
+    /**
+     * Converts a cell value to a string, handling different cell types.
+     * 
+     * @param cell The cell to convert
+     * @return The cell value as a string, or empty string if cell is null/blank
+     */
+    private String getCellValueAsString(org.apache.poi.ss.usermodel.Cell cell) {
+        if (cell == null) {
+            return "";
+        }
+        
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+                
+            case NUMERIC:
+                // Check if it's a date
+                if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getDateCellValue().toString();
+                }
+                // Return numeric value without scientific notation
+                double numericValue = cell.getNumericCellValue();
+                if (numericValue == Math.floor(numericValue)) {
+                    return String.valueOf((long) numericValue);
+                }
+                return String.valueOf(numericValue);
+                
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+                
+            case BLANK:
+            default:
+                return "";
+        }
     }
     
     /**

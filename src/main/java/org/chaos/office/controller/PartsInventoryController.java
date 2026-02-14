@@ -128,7 +128,7 @@ public class PartsInventoryController {
         } else {
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Please select a part to edit"
+                LocaleManager.getString("parts.select.to.edit")
             );
         }
     }
@@ -286,7 +286,7 @@ public class PartsInventoryController {
                     return part;
                 } catch (Exception e) {
                     AlertHelper.showError(LocaleManager.getString("error.title"), 
-                        String.format(LocaleManager.getString("error.part.save.failed"), e.getMessage()));
+                        java.text.MessageFormat.format(LocaleManager.getString("error.part.save.failed"), e.getMessage()));
                     return null;
                 }
             }
@@ -300,20 +300,20 @@ public class PartsInventoryController {
                     partService.savePart(part);
                     AlertHelper.showInfo(
                         LocaleManager.getString("success.title"),
-                        "Part added successfully"
+                        LocaleManager.getString("parts.added.successfully")
                     );
                 } else {
                     partService.updatePart(part);
                     AlertHelper.showInfo(
                         LocaleManager.getString("success.title"),
-                        "Part updated successfully"
+                        LocaleManager.getString("parts.updated.successfully")
                     );
                 }
                 loadParts();
             } catch (Exception e) {
                 AlertHelper.showError(
                     LocaleManager.getString("error.title"),
-                    "Failed to save part: " + e.getMessage()
+                    java.text.MessageFormat.format(LocaleManager.getString("parts.save.failed"), e.getMessage())
                 );
             }
         });
@@ -437,58 +437,122 @@ public class PartsInventoryController {
     }
     
     /**
-     * Handles the download template button action by opening a file chooser
-     * and saving the CSV template to the selected location.
+     * Handles the download template button action by exporting the entire
+     * parts database to an Excel file.
      * Requirements: 8.3
      */
     private void handleDownloadTemplate() {
         // Create and configure FileChooser for saving
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save CSV Template");
-        fileChooser.setInitialFileName("parts_import_template.csv");
+        fileChooser.setTitle(LocaleManager.getString("parts.export.database"));
+        fileChooser.setInitialFileName("parts_database_export.xlsx");
         
-        // Configure file type filter for CSV
+        // Configure file type filter for Excel
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+            new FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
         );
         
         // Show save dialog
         File saveFile = fileChooser.showSaveDialog(view.getScene().getWindow());
         
-        // Save the template if a location was selected
+        // Export the database if a location was selected
         if (saveFile != null) {
             try {
-                // Load the template from resources
-                java.io.InputStream templateStream = getClass()
-                    .getResourceAsStream("/templates/parts_import_template.csv");
+                // Get all parts and categories from the database
+                var allParts = partService.getAllParts();
+                var allCategories = categoryService.getAllCategories();
                 
-                if (templateStream == null) {
-                    AlertHelper.showError(
-                        LocaleManager.getString("error.title"),
-                        "Template file not found in application resources."
-                    );
-                    return;
+                // Create Excel workbook
+                org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+                
+                // ===== PARTS SHEET =====
+                org.apache.poi.ss.usermodel.Sheet partsSheet = workbook.createSheet("Parts");
+                
+                // Create header row for parts
+                org.apache.poi.ss.usermodel.Row partsHeaderRow = partsSheet.createRow(0);
+                String[] partsHeaders = {
+                    LocaleManager.getString("parts.name"),
+                    LocaleManager.getString("parts.maker"),
+                    LocaleManager.getString("parts.description"),
+                    LocaleManager.getString("parts.price"),
+                    LocaleManager.getString("parts.quantity"),
+                    LocaleManager.getString("parts.category")
+                };
+                
+                // Style for header
+                org.apache.poi.ss.usermodel.CellStyle headerStyle = workbook.createCellStyle();
+                org.apache.poi.ss.usermodel.Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerStyle.setFont(headerFont);
+                
+                for (int i = 0; i < partsHeaders.length; i++) {
+                    org.apache.poi.ss.usermodel.Cell cell = partsHeaderRow.createCell(i);
+                    cell.setCellValue(partsHeaders[i]);
+                    cell.setCellStyle(headerStyle);
                 }
                 
-                // Copy the template to the selected file
-                java.nio.file.Files.copy(
-                    templateStream,
-                    saveFile.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
-                );
+                // Add parts data rows (without ID column)
+                int rowNum = 1;
+                for (Part part : allParts) {
+                    org.apache.poi.ss.usermodel.Row row = partsSheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(part.getName());
+                    row.createCell(1).setCellValue(part.getMaker());
+                    row.createCell(2).setCellValue(part.getDescription());
+                    row.createCell(3).setCellValue(part.getPrice());
+                    row.createCell(4).setCellValue(part.getQuantity());
+                    row.createCell(5).setCellValue(part.getCategory() != null ? part.getCategory().getName() : "");
+                }
                 
-                templateStream.close();
+                // Auto-size columns for parts
+                for (int i = 0; i < partsHeaders.length; i++) {
+                    partsSheet.autoSizeColumn(i);
+                }
+                
+                // ===== CATEGORIES SHEET =====
+                org.apache.poi.ss.usermodel.Sheet categoriesSheet = workbook.createSheet("Categories");
+                
+                // Create header row for categories
+                org.apache.poi.ss.usermodel.Row categoriesHeaderRow = categoriesSheet.createRow(0);
+                String[] categoriesHeaders = {
+                    LocaleManager.getString("categories.name"),
+                    LocaleManager.getString("categories.description")
+                };
+                
+                for (int i = 0; i < categoriesHeaders.length; i++) {
+                    org.apache.poi.ss.usermodel.Cell cell = categoriesHeaderRow.createCell(i);
+                    cell.setCellValue(categoriesHeaders[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Add categories data rows
+                rowNum = 1;
+                for (org.chaos.office.model.Category category : allCategories) {
+                    org.apache.poi.ss.usermodel.Row row = categoriesSheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(category.getName());
+                    row.createCell(1).setCellValue(category.getDescription());
+                }
+                
+                // Auto-size columns for categories
+                for (int i = 0; i < categoriesHeaders.length; i++) {
+                    categoriesSheet.autoSizeColumn(i);
+                }
+                
+                // Write to file
+                try (java.io.FileOutputStream fileOut = new java.io.FileOutputStream(saveFile)) {
+                    workbook.write(fileOut);
+                }
+                workbook.close();
                 
                 // Show success message
                 AlertHelper.showInfo(
                     LocaleManager.getString("success.title"),
-                    "Template downloaded successfully to:\n" + saveFile.getAbsolutePath()
+                    java.text.MessageFormat.format(LocaleManager.getString("parts.export.database.success"), saveFile.getAbsolutePath())
                 );
                 
-            } catch (java.io.IOException e) {
+            } catch (Exception e) {
                 AlertHelper.showError(
                     LocaleManager.getString("error.title"),
-                    "Failed to save template: " + e.getMessage()
+                    java.text.MessageFormat.format(LocaleManager.getString("parts.export.database.failed"), e.getMessage())
                 );
             }
         }

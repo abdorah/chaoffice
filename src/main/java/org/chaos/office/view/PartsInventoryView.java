@@ -130,12 +130,12 @@ public class PartsInventoryView extends BorderPane {
         Button edit = new Button(LocaleManager.getString("parts.edit"));
         Button delete = new Button(LocaleManager.getString("parts.delete"));
         Button importBtn = new Button(LocaleManager.getString("parts.import"));
-        Button downloadTemplate = new Button(LocaleManager.getString("parts.download.template"));
+        Button downloadTemplate = new Button(LocaleManager.getString("parts.export.database"));
         
         // Add upload icon to import button
         importBtn.setGraphic(createUploadIcon());
         
-        // Add download icon to template button
+        // Add download icon to export button
         downloadTemplate.setGraphic(createDownloadIcon());
         
         // Add help tooltip explaining file format
@@ -154,13 +154,13 @@ public class PartsInventoryView extends BorderPane {
         importTooltip.setShowDelay(javafx.util.Duration.millis(300));
         importBtn.setTooltip(importTooltip);
         
-        // Add tooltip to download template button
-        Tooltip templateTooltip = new Tooltip(
-            "Download a CSV template file with example data\n" +
-            "to help you format your import file correctly."
+        // Add tooltip to export database button
+        Tooltip exportTooltip = new Tooltip(
+            LocaleManager.getString("parts.export.database") + "\n" +
+            "Export all parts from the database to an Excel file"
         );
-        templateTooltip.setShowDelay(javafx.util.Duration.millis(300));
-        downloadTemplate.setTooltip(templateTooltip);
+        exportTooltip.setShowDelay(javafx.util.Duration.millis(300));
+        downloadTemplate.setTooltip(exportTooltip);
         
         // Create progress indicator (initially hidden)
         ProgressIndicator progress = new ProgressIndicator();

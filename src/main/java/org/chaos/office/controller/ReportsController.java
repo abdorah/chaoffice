@@ -140,7 +140,7 @@ public class ReportsController {
         } catch (Exception e) {
             logger.error("Error generating report preview", e);
             AlertHelper.showError(LocaleManager.getString("dialog.title.reports.error"), 
-                String.format(LocaleManager.getString("error.reports.generate.failed"), e.getMessage()));
+                java.text.MessageFormat.format(LocaleManager.getString("error.reports.generate.failed"), e.getMessage()));
         }
     }
     

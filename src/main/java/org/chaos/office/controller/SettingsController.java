@@ -146,7 +146,7 @@ public class SettingsController {
                 view.getCustomSymbolField().setDisable(true);
             } else {
                 // Custom symbol
-                view.getCurrencySymbolComboBox().setValue("Custom");
+                view.getCurrencySymbolComboBox().setValue(LocaleManager.getString("settings.currency.custom.option"));
                 view.getCustomSymbolField().setText(symbol);
                 view.getCustomSymbolField().setDisable(false);
             }
@@ -376,7 +376,7 @@ public class SettingsController {
             String symbol;
             String selectedSymbol = view.getCurrencySymbolComboBox().getValue();
             
-            if ("Custom".equals(selectedSymbol)) {
+            if (LocaleManager.getString("settings.currency.custom.option").equals(selectedSymbol)) {
                 // Use custom symbol from text field
                 symbol = view.getCustomSymbolField().getText();
                 

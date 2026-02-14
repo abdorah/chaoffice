@@ -83,7 +83,7 @@ public class BillingController {
     private void handleAddPart() {
         Part selectedPart = view.getPartSearchComponent().getResultsView().getSelectionModel().getSelectedItem();
         if (selectedPart == null) {
-            ToastNotification.showWarning("Please select a part from the search results");
+            ToastNotification.showWarning(LocaleManager.getString("billing.select.part"));
             return;
         }
         
@@ -91,7 +91,7 @@ public class BillingController {
         if (selectedPart.getQuantity() <= 0) {
             AlertHelper.showError(
                 LocaleManager.getString("parts.out.of.stock.title"),
-                String.format(LocaleManager.getString("parts.out.of.stock.message.short"), 
+                java.text.MessageFormat.format(LocaleManager.getString("parts.out.of.stock.message.short"), 
                     selectedPart.getName())
             );
             logger.warn("Attempted to add zero-stock part: {}", selectedPart.getName());
@@ -102,7 +102,7 @@ public class BillingController {
         
         // Validate quantity
         if (quantity <= 0) {
-            ToastNotification.showError("Quantity must be positive");
+            ToastNotification.showError(LocaleManager.getString("billing.quantity.positive"));
             return;
         }
         
@@ -158,7 +158,10 @@ public class BillingController {
         view.getQuantitySpinner().getValueFactory().setValue(1);
         
         // Show success feedback
-        ToastNotification.showSuccess(String.format("Added %d × %s to bill", quantity, selectedPart.getName()));
+        ToastNotification.showSuccess(
+            java.text.MessageFormat.format(LocaleManager.getString("billing.part.added"), 
+                quantity, selectedPart.getName())
+        );
         
         logger.info("Added part {} with quantity {} to bill", selectedPart.getName(), quantity);
     }
@@ -208,8 +211,10 @@ public class BillingController {
         updateTotals();
         
         // Show success feedback
-        ToastNotification.showSuccess(String.format("Updated price for %s: $%.2f → $%.2f", 
-            command.getPartName(), oldPrice, newPrice));
+        ToastNotification.showSuccess(
+            java.text.MessageFormat.format(LocaleManager.getString("billing.price.updated"), 
+                command.getPartName(), oldPrice, newPrice)
+        );
         
         logger.info("Updated price for {} from ${} to ${}", command.getPartName(), oldPrice, newPrice);
     }
@@ -344,7 +349,7 @@ public class BillingController {
                                 String.format("Discount cannot exceed subtotal of $%.2f", subtotal));
                             AlertHelper.showError(
                                 LocaleManager.getString("dialog.title.invalid.discount"),
-                                String.format(LocaleManager.getString("error.billing.discount.fixed.exceeds"), subtotal)
+                                java.text.MessageFormat.format(LocaleManager.getString("error.billing.discount.fixed.exceeds"), subtotal)
                             );
                             return;
                         }
@@ -384,13 +389,30 @@ public class BillingController {
             
             // Show success notification
             ToastNotification.showSuccess(
-                String.format("Sale completed successfully! Total: $%.2f", finalTotal)
+                java.text.MessageFormat.format(LocaleManager.getString("billing.sale.completed"), 
+                    finalTotal)
             );
+            
+            // Localize payment method
+            String localizedPaymentMethod = LocaleManager.getString("payment.method." + paymentMethod.toLowerCase());
+            
+            // Show appropriate message based on whether client name is provided
+            String successMessage;
+            if (clientName == null || clientName.trim().isEmpty()) {
+                successMessage = java.text.MessageFormat.format(
+                    LocaleManager.getString("success.billing.completed.no.client"), 
+                    finalTotal, localizedPaymentMethod
+                );
+            } else {
+                successMessage = java.text.MessageFormat.format(
+                    LocaleManager.getString("success.billing.completed"), 
+                    clientName, finalTotal, localizedPaymentMethod
+                );
+            }
             
             AlertHelper.showInfo(
                 LocaleManager.getString("dialog.title.sale.completed"),
-                String.format(LocaleManager.getString("success.billing.completed"), 
-                    clientName, finalTotal, paymentMethod)
+                successMessage
             );
             
             // Clear form
@@ -414,7 +436,7 @@ public class BillingController {
             
             AlertHelper.showError(
                 LocaleManager.getString("dialog.title.cannot.complete.sale"),
-                String.format(LocaleManager.getString("error.billing.cannot.complete"), 
+                java.text.MessageFormat.format(LocaleManager.getString("error.billing.cannot.complete"), 
                     e.getMessage())
             );
             
@@ -435,9 +457,9 @@ public class BillingController {
             } else if (errorMsg.contains("CHECK constraint") || errorMsg.contains("check constraint")) {
                 userMessage = LocaleManager.getString("error.billing.save.invalid");
             } else if (errorMsg.contains("database") || errorMsg.contains("Database")) {
-                userMessage = String.format(LocaleManager.getString("error.billing.save.database"), errorMsg);
+                userMessage = java.text.MessageFormat.format(LocaleManager.getString("error.billing.save.database"), errorMsg);
             } else {
-                userMessage = String.format(LocaleManager.getString("error.billing.save.general"), errorMsg);
+                userMessage = java.text.MessageFormat.format(LocaleManager.getString("error.billing.save.general"), errorMsg);
             }
             
             AlertHelper.showError(LocaleManager.getString("dialog.title.error.saving.bill"), userMessage);
@@ -448,7 +470,7 @@ public class BillingController {
             
             AlertHelper.showError(
                 LocaleManager.getString("dialog.title.unexpected.error"),
-                String.format(LocaleManager.getString("error.billing.unexpected"), 
+                java.text.MessageFormat.format(LocaleManager.getString("error.billing.unexpected"), 
                     e.getMessage())
             );
         }

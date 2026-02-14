@@ -119,7 +119,7 @@ public class SettingsView extends BorderPane {
         
         Label currencySymbolLabel = new Label(LocaleManager.getString("settings.currency.symbol"));
         currencySymbolComboBox = new ComboBox<>();
-        currencySymbolComboBox.getItems().addAll("$", "€", "£", "¥", "₹", "Custom");
+        currencySymbolComboBox.getItems().addAll("$", "€", "£", "¥", "₹", LocaleManager.getString("settings.currency.custom.option"));
         currencySymbolComboBox.setValue("$");
         currencySymbolComboBox.setMaxWidth(Double.MAX_VALUE);
         
@@ -131,7 +131,7 @@ public class SettingsView extends BorderPane {
         
         // Enable/disable custom symbol field based on ComboBox selection
         currencySymbolComboBox.setOnAction(e -> {
-            boolean isCustom = "Custom".equals(currencySymbolComboBox.getValue());
+            boolean isCustom = LocaleManager.getString("settings.currency.custom.option").equals(currencySymbolComboBox.getValue());
             customSymbolField.setDisable(!isCustom);
         });
         

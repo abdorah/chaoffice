@@ -50,7 +50,7 @@ public class SalesAnalyticsController {
         if (startDate == null || endDate == null) {
             AlertHelper.showError(
                 LocaleManager.getString("error.title"),
-                "Please select both start and end dates"
+                LocaleManager.getString("date.select.both")
             );
             return;
         }

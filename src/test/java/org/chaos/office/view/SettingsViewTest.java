@@ -5,6 +5,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import org.chaos.office.util.LocaleManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -109,7 +110,7 @@ class SettingsViewTest {
         assertTrue(comboBox.getItems().contains("£"), "Should contain £ symbol");
         assertTrue(comboBox.getItems().contains("¥"), "Should contain ¥ symbol");
         assertTrue(comboBox.getItems().contains("₹"), "Should contain ₹ symbol");
-        assertTrue(comboBox.getItems().contains("Custom"), "Should contain Custom option");
+        assertTrue(comboBox.getItems().contains(LocaleManager.getString("settings.currency.custom.option")), "Should contain Custom option");
         assertEquals("$", comboBox.getValue(), "Default value should be $");
     }
     
@@ -132,7 +133,7 @@ class SettingsViewTest {
         TextField customSymbolField = view.getCustomSymbolField();
         
         // When: Custom is selected
-        comboBox.setValue("Custom");
+        comboBox.setValue(LocaleManager.getString("settings.currency.custom.option"));
         comboBox.getOnAction().handle(null);
         
         // Then: Custom symbol field should be enabled
@@ -146,7 +147,7 @@ class SettingsViewTest {
         ComboBox<String> comboBox = view.getCurrencySymbolComboBox();
         TextField customSymbolField = view.getCustomSymbolField();
         
-        comboBox.setValue("Custom");
+        comboBox.setValue(LocaleManager.getString("settings.currency.custom.option"));
         comboBox.getOnAction().handle(null);
         
         // When: A standard symbol is selected
