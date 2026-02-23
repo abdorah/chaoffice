@@ -8,6 +8,7 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.*;
 import javafx.util.converter.FloatStringConverter;
 import org.chaos.office.model.Command;
+import org.chaos.office.util.CurrencyFormatter;
 import org.chaos.office.util.LocaleManager;
 
 /**
@@ -226,16 +227,16 @@ public class BillingView extends BorderPane {
         VBox totalsBox = new VBox(5);
         totalsBox.setAlignment(Pos.CENTER_RIGHT);
         
-        subtotalLabel = new Label(LocaleManager.getString("billing.subtotal") + ": $0.00");
+        subtotalLabel = new Label(LocaleManager.getString("billing.subtotal") + ": " + CurrencyFormatter.format(0));
         subtotalLabel.getStyleClass().add("label-subtitle");
         
-        this.discountLabel = new Label(LocaleManager.getString("billing.discount.amount") + ": -$0.00");
+        this.discountLabel = new Label(LocaleManager.getString("billing.discount.amount") + ": -" + CurrencyFormatter.format(0));
         this.discountLabel.getStyleClass().add("label-subtitle");
         
         Separator totalSeparator = new Separator();
         totalSeparator.setPrefWidth(200);
         
-        totalLabel = new Label(LocaleManager.getString("billing.total") + ": $0.00");
+        totalLabel = new Label(LocaleManager.getString("billing.total") + ": " + CurrencyFormatter.format(0));
         totalLabel.getStyleClass().add("label-headline");
         
         totalsBox.getChildren().addAll(
@@ -356,9 +357,9 @@ public class BillingView extends BorderPane {
      * @param total the final total after discount
      */
     public void updateTotals(float subtotal, float discountAmount, float total) {
-        subtotalLabel.setText(String.format("%s: $%.2f", LocaleManager.getString("billing.subtotal"), subtotal));
-        discountLabel.setText(String.format("%s: -$%.2f", LocaleManager.getString("billing.discount.amount"), discountAmount));
-        totalLabel.setText(String.format("%s: $%.2f", LocaleManager.getString("billing.total"), total));
+        subtotalLabel.setText(String.format("%s: %s", LocaleManager.getString("billing.subtotal"), CurrencyFormatter.format(subtotal)));
+        discountLabel.setText(String.format("%s: -%s", LocaleManager.getString("billing.discount.amount"), CurrencyFormatter.format(discountAmount)));
+        totalLabel.setText(String.format("%s: %s", LocaleManager.getString("billing.total"), CurrencyFormatter.format(total)));
     }
     
     /**

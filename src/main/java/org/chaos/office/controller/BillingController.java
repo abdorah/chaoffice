@@ -109,8 +109,9 @@ public class BillingController {
         // Check for insufficient stock (Requirement 9.2)
         if (quantity > selectedPart.getQuantity()) {
             AlertHelper.showError(
-                "Insufficient Stock",
-                String.format("Cannot add %d units of '%s'.\n\nAvailable stock: %d units\n\nPlease reduce the quantity or select a different part.", 
+                LocaleManager.getString("error.insufficient.stock.title"),
+                java.text.MessageFormat.format(
+                    LocaleManager.getString("error.insufficient.stock.message"),
                     quantity, selectedPart.getName(), selectedPart.getQuantity())
             );
             logger.warn("Insufficient stock for part {}: requested {}, available {}", 
@@ -126,8 +127,9 @@ public class BillingController {
                 int newQuantity = cmd.getQuantity() + quantity;
                 if (newQuantity > selectedPart.getQuantity()) {
                     AlertHelper.showError(
-                        "Insufficient Stock",
-                        String.format("Cannot add %d more units of '%s'.\n\nCurrent quantity in bill: %d\nRequested total: %d\nAvailable stock: %d\n\nPlease reduce the quantity.", 
+                        LocaleManager.getString("error.insufficient.stock.title"),
+                        java.text.MessageFormat.format(
+                            LocaleManager.getString("error.insufficient.stock.update.message"),
                             quantity, selectedPart.getName(), cmd.getQuantity(), newQuantity, selectedPart.getQuantity())
                     );
                     logger.warn("Insufficient stock for part {}: current {}, requested {}, available {}", 

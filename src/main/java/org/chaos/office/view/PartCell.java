@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import org.chaos.office.model.Part;
+import org.chaos.office.util.CurrencyFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,6 @@ import java.io.ByteArrayInputStream;
 public class PartCell extends ListCell<Part> {
     private static final Logger logger = LoggerFactory.getLogger(PartCell.class);
     private static final int IMAGE_SIZE = 50;
-    private static final String CURRENCY_SYMBOL = "$";
     
     // UI Components (reused for performance)
     private final HBox container;
@@ -187,7 +187,7 @@ public class PartCell extends ListCell<Part> {
      * @return formatted price string
      */
     private String formatPrice(float price) {
-        return String.format(java.util.Locale.US, "%s%.2f", CURRENCY_SYMBOL, price);
+        return CurrencyFormatter.format(price);
     }
     
     /**

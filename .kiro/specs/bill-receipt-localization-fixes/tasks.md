@@ -427,16 +427,16 @@ payment.method.check=Check / شيك / Chèque
 **Description**: Generate and verify PDFs in all languages with all features.
 
 **Subtasks**:
-- [~] 15.1 Generate bill receipt in English
-- [~] 15.2 Generate bill receipt in Arabic
-- [~] 15.3 Generate bill receipt in French
-- [~] 15.4 Generate inventory report in English
-- [~] 15.5 Generate inventory report in Arabic (verify stock status)
-- [~] 15.6 Generate inventory report in French (verify stock status)
-- [~] 15.7 Generate sales report in English
-- [~] 15.8 Generate sales report in Arabic (verify payment methods)
-- [~] 15.9 Generate sales report in French (verify payment methods)
-- [~] 15.10 Open all PDFs in multiple viewers and verify rendering
+- [x] 15.1 Generate bill receipt in English
+- [x] 15.2 Generate bill receipt in Arabic
+- [x] 15.3 Generate bill receipt in French
+- [x] 15.4 Generate inventory report in English
+- [x] 15.5 Generate inventory report in Arabic (verify stock status)
+- [x] 15.6 Generate inventory report in French (verify stock status)
+- [-] 15.7 Generate sales report in English
+- [-] 15.8 Generate sales report in Arabic (verify payment methods)
+- [-] 15.9 Generate sales report in French (verify payment methods)
+- [-] 15.10 Open all PDFs in multiple viewers and verify rendering
 
 **Acceptance Criteria**:
 - All PDFs generate without errors
@@ -458,14 +458,14 @@ payment.method.check=Check / شيك / Chèque
 **Description**: Test all dialogs in all languages.
 
 **Subtasks**:
-- [~] 16.1 Test delete part confirmation in English
-- [~] 16.2 Test delete part confirmation in Arabic
-- [~] 16.3 Test delete part confirmation in French
-- [~] 16.4 Test delete category confirmation in all languages
-- [~] 16.5 Test error dialogs in all languages
-- [~] 16.6 Test info dialogs in all languages
-- [~] 16.7 Test out-of-stock alert in all languages
-- [~] 16.8 Verify button functionality in all cases
+- [ ] 16.1 Test delete part confirmation in English
+- [ ] 16.2 Test delete part confirmation in Arabic
+- [ ] 16.3 Test delete part confirmation in French
+- [ ] 16.4 Test delete category confirmation in all languages
+- [ ] 16.5 Test error dialogs in all languages
+- [ ] 16.6 Test info dialogs in all languages
+- [ ] 16.7 Test out-of-stock alert in all languages
+- [ ] 16.8 Verify button functionality in all cases
 
 **Acceptance Criteria**:
 - All dialogs display correct language
@@ -482,14 +482,14 @@ payment.method.check=Check / شيك / Chèque
 **Description**: Test Excel and CSV exports with localized enum values.
 
 **Subtasks**:
-- [~] 17.1 Export inventory report to Excel in English
-- [~] 17.2 Export inventory report to Excel in Arabic
-- [~] 17.3 Export inventory report to Excel in French
-- [~] 17.4 Export sales report to CSV in English
-- [~] 17.5 Export sales report to CSV in Arabic
-- [~] 17.6 Export sales report to CSV in French
-- [~] 17.7 Open all files and verify enum values are localized
-- [~] 17.8 Verify no encoding issues with Arabic text
+- [ ] 17.1 Export inventory report to Excel in English
+- [ ] 17.2 Export inventory report to Excel in Arabic
+- [ ] 17.3 Export inventory report to Excel in French
+- [ ] 17.4 Export sales report to CSV in English
+- [ ] 17.5 Export sales report to CSV in Arabic
+- [ ] 17.6 Export sales report to CSV in French
+- [ ] 17.7 Open all files and verify enum values are localized
+- [ ] 17.8 Verify no encoding issues with Arabic text
 
 **Acceptance Criteria**:
 - All exports complete successfully
@@ -509,9 +509,9 @@ payment.method.check=Check / شيك / Chèque
 **Subtasks**:
 - [x] 18.1 Run `mvn clean test`
 - [x] 18.2 Verify all tests pass
-- [~] 18.3 Check test coverage report
-- [~] 18.4 Fix any failing tests
-- [~] 18.5 Re-run tests to confirm fixes
+- [ ] 18.3 Check test coverage report
+- [ ] 18.4 Fix any failing tests
+- [ ] 18.5 Re-run tests to confirm fixes
 
 **Acceptance Criteria**:
 - 100% test pass rate
@@ -531,13 +531,13 @@ payment.method.check=Check / شيك / Chèque
 **Description**: Add/update JavaDoc comments for all modified code.
 
 **Subtasks**:
-- [~] 19.1 Review `EnumLocalizer` JavaDoc
-- [~] 19.2 Review `AlertHelper` JavaDoc
-- [~] 19.3 Review `ReportService` JavaDoc
-- [~] 19.4 Add comments explaining font fallback logic
-- [~] 19.5 Add comments explaining button localization
-- [~] 19.6 Ensure all public methods have JavaDoc
-- [~] 19.7 Run JavaDoc generation and check for warnings
+- [ ] 19.1 Review `EnumLocalizer` JavaDoc
+- [ ] 19.2 Review `AlertHelper` JavaDoc
+- [ ] 19.3 Review `ReportService` JavaDoc
+- [ ] 19.4 Add comments explaining font fallback logic
+- [ ] 19.5 Add comments explaining button localization
+- [ ] 19.6 Ensure all public methods have JavaDoc
+- [ ] 19.7 Run JavaDoc generation and check for warnings
 
 **Acceptance Criteria**:
 - All public methods have JavaDoc
@@ -555,12 +555,12 @@ payment.method.check=Check / شيك / Chèque
 **Description**: Document all changes for release notes.
 
 **Subtasks**:
-- [~] 20.1 List all bug fixes
-- [~] 20.2 List all new features
-- [~] 20.3 Document font requirements
-- [~] 20.4 Document known limitations
-- [~] 20.5 Add upgrade instructions (if any)
-- [~] 20.6 Review and finalize
+- [ ] 20.1 List all bug fixes
+- [ ] 20.2 List all new features
+- [ ] 20.3 Document font requirements
+- [ ] 20.4 Document known limitations
+- [ ] 20.5 Add upgrade instructions (if any)
+- [ ] 20.6 Review and finalize
 
 **Acceptance Criteria**:
 - Release notes are complete
@@ -580,11 +580,11 @@ payment.method.check=Check / شيك / Chèque
 **Description**: Update user-facing documentation with localization information.
 
 **Subtasks**:
-- [~] 21.1 Document language selection process
-- [~] 21.2 Document font requirements for Arabic
-- [~] 21.3 Add troubleshooting section for PDF rendering issues
-- [~] 21.4 Update screenshots if needed
-- [~] 21.5 Review and finalize
+- [ ] 21.1 Document language selection process
+- [ ] 21.2 Document font requirements for Arabic
+- [ ] 21.3 Add troubleshooting section for PDF rendering issues
+- [ ] 21.4 Update screenshots if needed
+- [ ] 21.5 Review and finalize
 
 **Acceptance Criteria**:
 - Documentation is accurate
@@ -601,14 +601,14 @@ payment.method.check=Check / شيك / Chèque
 **Description**: Final code review and cleanup before merge.
 
 **Subtasks**:
-- [~] 22.1 Remove any commented-out code
-- [~] 22.2 Remove debug print statements
-- [~] 22.3 Verify consistent code style
-- [~] 22.4 Run code formatter
-- [~] 22.5 Check for unused imports
-- [~] 22.6 Verify no compiler warnings
-- [~] 22.7 Run static analysis (if available)
-- [~] 22.8 Address any code quality issues
+- [ ] 22.1 Remove any commented-out code
+- [ ] 22.2 Remove debug print statements
+- [ ] 22.3 Verify consistent code style
+- [ ] 22.4 Run code formatter
+- [ ] 22.5 Check for unused imports
+- [ ] 22.6 Verify no compiler warnings
+- [ ] 22.7 Run static analysis (if available)
+- [ ] 22.8 Address any code quality issues
 
 **Acceptance Criteria**:
 - Code is clean and consistent

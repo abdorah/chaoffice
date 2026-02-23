@@ -152,13 +152,24 @@ public class BrandingService {
     
     /**
      * Gets the default application logo.
-     * Currently returns null as no default logo resource is configured.
+     * Attempts to load the default logo from resources/icons/app-icon.png.
      * 
      * @return the default logo Image, or null if no default logo exists
      */
     private Image getDefaultLogo() {
-        // No default logo resource configured in the application
-        // Return null to indicate no logo should be displayed
-        return null;
+        try {
+            // Try to load default icon from resources
+            var iconStream = getClass().getResourceAsStream("/icons/app-icon.png");
+            if (iconStream != null) {
+                logger.debug("Loading default application icon from resources");
+                return new Image(iconStream);
+            } else {
+                logger.debug("No default application icon found in resources");
+                return null;
+            }
+        } catch (Exception e) {
+            logger.warn("Error loading default application icon", e);
+            return null;
+        }
     }
 }
