@@ -303,13 +303,13 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - Create `SweetLabApp.kt` application class initializing `SweetLabCore`
     - _Requirements: Technical Context_
 
-  - [-] 19.2 Set up Compose navigation with role-based routing
+  - [x] 19.2 Set up Compose navigation with role-based routing
     - Create NavGraph with Admin, Chef, and Representative navigation sub-graphs
     - Implement role-based redirect after login (Admin → AdminDashboard, Chef → ProductionScreen, Rep → SalesScreen)
     - Implement offline indicator composable shown across all screens
     - _Requirements: 1.3, 2.4, 2.5, 2.6, 13.4_
 
-  - [~] 19.3 Implement login screen
+  - [x] 19.3 Implement login screen
     - Compose login form with username/password fields
     - Error display for invalid credentials (generic message per Req 1.2)
     - Loading state during authentication
@@ -321,31 +321,31 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - **Validates: Requirements 1.3, 2.4, 2.5, 2.6**
 
 - [ ] 20. Android app — Admin screens
-  - [~] 20.1 Implement Admin Dashboard
+  - [x] 20.1 Implement Admin Dashboard
     - Overview cards for wallet balances, active debts, low-stock alerts
     - Navigation to all admin modules
     - _Requirements: 2.6_
 
-  - [~] 20.2 Implement User Management screen
+  - [x] 20.2 Implement User Management screen
     - List users, create user form, role update — calls `SweetLabCore.create_user()`, `update_user_role()`
     - _Requirements: 2.2, 2.3_
 
-  - [~] 20.3 Implement Inventory screens (raw materials + finished goods)
+  - [x] 20.3 Implement Inventory screens (raw materials + finished goods)
     - List view with name, unit, quantity, last-updated for raw materials
     - List view with name, quantity, unit price, last-updated for finished goods
     - _Requirements: 3.5, 6.5_
 
-  - [~] 20.4 Implement Recipe Management screen
+  - [x] 20.4 Implement Recipe Management screen
     - Recipe list, create/edit form with ingredient picker (1-10 ingredients)
     - Delete with production log protection warning
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [~] 20.5 Implement Wallet Summary screen
+  - [x] 20.5 Implement Wallet Summary screen
     - Wallet list with balances, transaction history per wallet
     - Fund transfer dialog
     - _Requirements: 9.1, 9.2, 9.6_
 
-  - [~] 20.6 Implement Reporting screens
+  - [x] 20.6 Implement Reporting screens
     - Financial summary with date range picker
     - Inventory report with low-stock highlights
     - Debt aging report sorted by overdue days
@@ -354,40 +354,40 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - _Requirements: 10.2, 11.4, 12.1, 12.2, 12.4_
 
 - [ ] 21. Android app — Chef screens
-  - [~] 21.1 Implement Production screen
+  - [x] 21.1 Implement Production screen
     - Recipe list with availability status (max_producible per recipe)
     - Production execution form (select recipe, enter quantity) — calls `SweetLabCore.execute_production()`
     - Production history log
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
 - [ ] 22. Android app — Representative screens
-  - [~] 22.1 Implement Sales screen
+  - [x] 22.1 Implement Sales screen
     - Sale creation form: customer picker, line item builder, payment entry, wallet selector
     - Sale total auto-calculation
     - Receipt generation and print — calls `SweetLabCore.generate_receipt()`
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [~] 22.2 Implement Customer Management screen
+  - [x] 22.2 Implement Customer Management screen
     - Customer list with search (name, city, mobile)
     - Customer profile with debt summary and reliability rating
     - Create/edit customer form
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [~] 22.3 Implement Expense Recording screen
+  - [x] 22.3 Implement Expense Recording screen
     - Expense form: description, amount, category, wallet selector
     - Expense history list
     - _Requirements: 11.1, 11.2, 11.3_
 
-  - [~] 22.4 Implement Customer Payment screen
+  - [x] 22.4 Implement Customer Payment screen
     - Payment form: customer picker, amount, wallet selector
     - Display current debt summary for selected customer
     - _Requirements: 9.5, 10.3, 10.4_
 
-- [ ] 23. Checkpoint — Android app complete
+- [x] 23. Checkpoint — Android app complete
   - Build APK, test on device/emulator, ensure all flows work end-to-end.
 
 - [ ] 24. Desktop app (Slint)
-  - [~] 24.1 Set up Slint desktop project
+  - [-] 24.1 Set up Slint desktop project
     - Create `desktop/Cargo.toml` with slint dependency + core crate dependency
     - Create `desktop/src/main.rs` — initialize `SweetLabCore` and Slint app
     - Create `desktop/ui/app.slint` — main window with navigation
