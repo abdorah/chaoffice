@@ -1,0 +1,92 @@
+syntax = "proto3";
+package sweetlab.services;
+
+import "sweetlab/models.proto";
+import "google/protobuf/timestamp.proto";
+
+// Inventory
+message AddPurchaseRequest {
+    string material_id = 1;
+    double quantity = 2;
+}
+
+message DeductMaterialsRequest {
+    map<string, double> deductions = 1;
+}
+
+// Recipes
+message CreateRecipeRequest {
+    string name = 1;
+    string finished_good_id = 2;
+    repeated sweetlab.models.RecipeIngredient ingredients = 3;
+}
+
+// Production
+message ExecuteProductionRequest {
+    string recipe_id = 1;
+    int32 quantity = 2;
+    string chef_id = 3;
+}
+
+// Sales
+message CreateSaleRequest {
+    string customer_id = 1;
+    repeated sweetlab.models.SaleLineItem line_items = 2;
+    double amount_paid = 3;
+    string wallet_id = 4;
+}
+
+// Wallets
+message TransferFundsRequest {
+    string source_wallet_id = 1;
+    string destination_wallet_id = 2;
+    double amount = 3;
+}
+
+// Debt
+message RecordPaymentRequest {
+    string customer_id = 1;
+    double amount = 2;
+    string wallet_id = 3;
+}
+
+// Expenses
+message RecordExpenseRequest {
+    string description = 1;
+    double amount = 2;
+    sweetlab.models.ExpenseCategory category = 3;
+    string wallet_id = 4;
+    string recorded_by = 5;
+}
+
+// Reports
+message DateRangeRequest {
+    google.protobuf.Timestamp start_date = 1;
+    google.protobuf.Timestamp end_date = 2;
+}
+
+message InventoryReportRequest {
+    double low_stock_threshold = 1;
+}
+
+message FinancialSummary {
+    double total_revenue = 1;
+    double total_expenses = 2;
+    double net_profit = 3;
+    repeated sweetlab.models.Wallet wallet_balances = 4;
+    google.protobuf.Timestamp start_date = 5;
+    google.protobuf.Timestamp end_date = 6;
+}
+
+message Invoice {
+    string business_name = 1;
+    string customer_name = 2;
+    string customer_city = 3;
+    string customer_mobile = 4;
+    repeated sweetlab.models.SaleLineItem line_items = 5;
+    double total_amount = 6;
+    double amount_paid = 7;
+    double remaining_balance = 8;
+    string date = 9;
+    string invoice_number = 10;
+}

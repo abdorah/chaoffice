@@ -1,0 +1,169 @@
+syntax = "proto3";
+package sweetlab.models;
+
+import "google/protobuf/timestamp.proto";
+
+enum UserRole {
+    USER_ROLE_UNSPECIFIED = 0;
+    USER_ROLE_ADMIN = 1;
+    USER_ROLE_CHEF = 2;
+    USER_ROLE_REPRESENTATIVE = 3;
+}
+
+enum WalletType {
+    WALLET_TYPE_UNSPECIFIED = 0;
+    WALLET_TYPE_BANK = 1;
+    WALLET_TYPE_CASH = 2;
+    WALLET_TYPE_REPRESENTATIVE = 3;
+}
+
+enum ExpenseCategory {
+    EXPENSE_CATEGORY_UNSPECIFIED = 0;
+    EXPENSE_CATEGORY_PURCHASE = 1;
+    EXPENSE_CATEGORY_OPERATING_COST = 2;
+}
+
+enum SyncStatus {
+    SYNC_STATUS_UNSPECIFIED = 0;
+    SYNC_STATUS_SYNCED = 1;
+    SYNC_STATUS_PENDING = 2;
+    SYNC_STATUS_CONFLICT = 3;
+}
+
+message AppUser {
+    string id = 1;
+    string username = 2;
+    string full_name = 3;
+    UserRole role = 4;
+    string password_hash = 5;
+}
+
+message RawMaterial {
+    string id = 1;
+    string name = 2;
+    string unit = 3;
+    double current_quantity = 4;
+    google.protobuf.Timestamp last_updated = 5;
+}
+
+message FinishedGood {
+    string id = 1;
+    string name = 2;
+    double current_quantity = 3;
+    double unit_price = 4;
+    google.protobuf.Timestamp last_updated = 5;
+}
+
+message RecipeIngredient {
+    string raw_material_id = 1;
+    string raw_material_name = 2;
+    double required_quantity = 3;
+}
+
+message Recipe {
+    string id = 1;
+    string name = 2;
+    string finished_good_id = 3;
+    string finished_good_name = 4;
+    repeated RecipeIngredient ingredients = 5;
+}
+
+message ProductionLog {
+    string id = 1;
+    string recipe_id = 2;
+    string recipe_name = 3;
+    string chef_id = 4;
+    string chef_name = 5;
+    int32 production_quantity = 6;
+    map<string, double> materials_consumed = 7;
+    string finished_good_id = 8;
+    google.protobuf.Timestamp timestamp = 9;
+}
+
+message Customer {
+    string id = 1;
+    string name = 2;
+    string city = 3;
+    string mobile = 4;
+    int32 reliability_rating = 5;
+    double total_debt = 6;
+    int32 overdue_days = 7;
+}
+
+message SaleLineItem {
+    string finished_good_id = 1;
+    string finished_good_name = 2;
+    int32 quantity = 3;
+    double unit_price = 4;
+}
+
+message Sale {
+    string id = 1;
+    string customer_id = 2;
+    string customer_name = 3;
+    repeated SaleLineItem line_items = 4;
+    double total_amount = 5;
+    double amount_paid = 6;
+    string payment_wallet_id = 7;
+    google.protobuf.Timestamp timestamp = 8;
+}
+
+message Wallet {
+    string id = 1;
+    string name = 2;
+    WalletType wallet_type = 3;
+    double current_balance = 4;
+}
+
+message WalletTransaction {
+    string id = 1;
+    string wallet_id = 2;
+    double amount = 3;
+    string description = 4;
+    string related_entity_id = 5;
+    google.protobuf.Timestamp timestamp = 6;
+}
+
+message DebtRecord {
+    string id = 1;
+    string customer_id = 2;
+    string customer_name = 3;
+    string sale_id = 4;
+    double original_amount = 5;
+    double remaining_amount = 6;
+    google.protobuf.Timestamp sale_date = 7;
+    int32 overdue_days = 8;
+    bool is_critical = 9;
+    bool is_settled = 10;
+}
+
+message Expense {
+    string id = 1;
+    string description = 2;
+    double amount = 3;
+    ExpenseCategory category = 4;
+    string wallet_id = 5;
+    string wallet_name = 6;
+    string recorded_by = 7;
+    google.protobuf.Timestamp timestamp = 8;
+}
+
+message SyncQueueItem {
+    string id = 1;
+    string entity_type = 2;
+    string entity_id = 3;
+    string operation = 4;
+    string payload = 5;
+    google.protobuf.Timestamp created_at = 6;
+    SyncStatus status = 7;
+}
+
+message ConflictLog {
+    string id = 1;
+    string entity_type = 2;
+    string entity_id = 3;
+    string local_version = 4;
+    string remote_version = 5;
+    string resolved_with = 6;
+    google.protobuf.Timestamp timestamp = 7;
+}

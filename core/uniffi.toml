@@ -1,0 +1,7 @@
+[bindings.kotlin]
+package_name = "org.sweetlab.core"
+cdylib_name = "sweet_lab_core"
+
+[bindings.swift]
+module_name = "SweetLabCore"
+cdylib_name = "sweet_lab_core"

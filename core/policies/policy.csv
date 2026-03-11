@@ -1,0 +1,37 @@
+p, admin, admin_dashboard, view
+p, admin, users, manage
+p, admin, recipes, manage
+p, admin, inventory, view
+p, admin, inventory, manage
+p, admin, production, view
+p, admin, sales, view
+p, admin, sales, create
+p, admin, customers, manage
+p, admin, wallets, manage
+p, admin, wallets, view
+p, admin, funds, transfer
+p, admin, expenses, view
+p, admin, expenses, record
+p, admin, debts, view
+p, admin, debts, collect
+p, admin, reports, view
+p, admin, reports, export
+
+p, chef, production, execute
+p, chef, production, view
+p, chef, inventory, view
+
+p, representative, sales, create
+p, representative, sales, view
+p, representative, customers, manage
+p, representative, wallets, view
+p, representative, expenses, record
+p, representative, expenses, view
+p, representative, debts, view
+p, representative, debts, collect
+p, representative, inventory, view
+p, representative, inventory, manage
+
+g, admin, admin
+g, chef, chef
+g, representative, representative

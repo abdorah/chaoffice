@@ -2,44 +2,58 @@
 
 ## Introduction
 
-Sweet Lab ERP is a specialized ERP-lite Kotlin Multiplatform application (Android + Desktop) for a confectionery factory called "Sweet Lab". It transforms the existing "Mohasib Soft" (ChaOffice) JavaFX desktop application into a multiplatform, cloud-synced system supporting production management (recipe-based raw material to finished goods conversion), multi-role access control, sales and financial tracking with wallet-based fund management, customer debt aging, and offline-capable operation for 3–5 concurrent employees.
+Sweet Lab ERP is a specialized ERP-lite system for a confectionery factory called "Sweet Lab". It transforms the existing "Mohasib Soft" (ChaOffice) JavaFX desktop application into a polyglot, multi-platform, cloud-synced system supporting production management (recipe-based raw material to finished goods conversion), multi-role access control, sales and financial tracking with wallet-based fund management, customer debt aging, and offline-capable operation for 3–5 concurrent employees.
+
+The architecture follows a shared-core pattern: Protocol Buffers define the canonical data schema, a Rust library crate (`sweet-lab-core`) implements all business logic and persistence, and thin platform-specific UI shells (Android via Kotlin/Compose + UniFFI bindings, Desktop via Slint) consume the core through well-defined APIs.
 
 ## Technical Context
 
-- **Platform**: Kotlin Multiplatform (Android + Desktop)
-- **UI Framework**: Compose Multiplatform (shared composables where possible, platform-specific where needed)
-- **Architecture**: MVVM + Clean Architecture
-- **Local Database**: SQLDelight (multiplatform SQLite)
-- **Cloud Database**: Supabase (PostgreSQL with Row-Level Security)
-- **Authentication**: Supabase Auth
-- **Real-time Sync**: Supabase Realtime
-- **Dependency Injection**: Koin (multiplatform)
-- **Serialization**: Kotlinx Serialization
-- **Date/Time**: kotlinx-datetime
-- **Validation**: konform
-- **PDF Generation**: OpenPDF (JVM — shared between Android and Desktop)
-- **Logging**: Kermit
-- **Testing**: JUnit 5 + Kotest (property-based testing)
-- **HTTP Client**: Ktor Client (multiplatform)
-- **Transition Strategy**: The existing JavaFX project serves as the reference MVP. Core business logic (billing, inventory, categories, authentication) is re-implemented in Kotlin Multiplatform with equivalent data models and service layers. The SQLite schema maps to SQLDelight tables. Development occurs on a separate branch (`feature/sweet-lab-erp`).
+- **Schema Layer**: Protocol Buffers (`.proto` files) as the single source of truth for all data models; `prost` generates Rust structs, `wire` (Square) generates Kotlin data classes; codegen via `buf` or `protoc`
+- **Core Engine**: Pure Rust library crate (`sweet-lab-core`) — no platform dependencies
+- **Business Logic**: Recipe execution, inventory conservation, debt FIFO allocation, wallet atomicity, sale orchestration — all in Rust
+- **RBAC**: Casbin-RS with declarative policy files (`model.conf` + `policy.csv`), SQLite adapter for policy storage
+- **Persistence**: SQLx with SQLite (compile-time checked queries), versioned migrations from day one
+- **Report Generation**: `genpdf` for PDF, `rust_xlsxwriter` for Excel
+- **Sync Client**: PowerSync or Supabase REST client via `reqwest`
+- **FFI Bindings**: UniFFI generates Kotlin bindings (Android/JNI) and Swift bindings (future iOS)
+- **Android App**: Kotlin + Jetpack Compose + Material Design 3; calls Rust core via UniFFI-generated Kotlin bindings
+- **Desktop App**: Slint UI framework (Rust-native); calls Rust core directly (no FFI needed)
+- **Serialization**: `serde` + `serde_json` for JSON, `prost` for protobuf wire format
+- **Error Handling**: `thiserror` for typed error enums
+- **Async Runtime**: `tokio`
+- **Logging**: `tracing` for structured logging, audit logging for every mutation
+- **Testing**: `proptest` for property-based testing, `cargo test` for unit tests
+- **Date/Time**: `chrono` for date/time operations and debt aging
+- **IDs**: `uuid` for entity identifiers
+- **Password Hashing**: `argon2`
+- **Localization**: Arabic RTL support, currency formatting (i18n)
+- **Backup/Restore**: Local SQLite backup + cloud backup
+- **Future Extensibility**: Web client via Axum HTTP server (REST/gRPC), iOS client via UniFFI Swift bindings — core never changes, only new thin UI shells added
+- **Transition Strategy**: The existing JavaFX project (ChaOffice) serves as the reference MVP. Core business logic is re-implemented in Rust with equivalent data models and service layers. The SQLite schema maps to SQLx migrations. Development occurs on a separate branch.
 
 ## Glossary
 
-- **Sweet_Lab_App**: The Kotlin Multiplatform (Android + Desktop) application built with Compose Multiplatform, serving as the primary user interface for all Sweet Lab ERP operations.
-- **Auth_Service**: The Supabase Auth-backed service responsible for user authentication, session management, and role-based access control enforcement.
-- **Inventory_Service**: The backend service managing raw material stock levels and finished goods quantities.
-- **Recipe_Engine**: The component that defines and executes material-to-product transformation logic based on predefined recipes.
-- **Sales_Service**: The backend service handling sales transactions, customer management, and invoice generation.
-- **Wallet_Service**: The backend service managing financial wallets (Bank, Cash, Representative) and fund transfers between them.
-- **Debt_Tracker**: The component that monitors customer payment obligations, calculates overdue durations, and flags late payments.
-- **Sync_Engine**: The component responsible for data synchronization between the local SQLDelight database and Supabase PostgreSQL, using Supabase Realtime for live updates and a local queue for offline writes.
-- **Report_Generator**: The component that produces financial summaries, inventory reports, debt aging reports, and printable invoices.
+- **Sweet_Lab_App**: The multi-platform application (Android + Desktop) serving as the user interface for all Sweet Lab ERP operations. Android uses Kotlin/Compose, Desktop uses Slint.
+- **Core_Engine**: The pure Rust library crate (`sweet-lab-core`) containing all business logic, persistence, RBAC, and report generation. Platform UIs call into the Core_Engine via UniFFI (Android) or direct Rust calls (Desktop).
+- **Schema_Layer**: The Protocol Buffers (`.proto`) definitions that serve as the single source of truth for all data models. `prost` generates Rust structs, `wire` generates Kotlin data classes.
+- **Auth_Module**: The Rust module within the Core_Engine responsible for user authentication (argon2 password hashing), session management, and Casbin-RS RBAC enforcement.
+- **Casbin_RBAC**: The Casbin-RS integration providing declarative role-based access control via `model.conf` (policy model) and `policy.csv` (policy rules), with a SQLite adapter for policy storage.
+- **Inventory_Service**: The Rust module managing raw material stock levels and finished goods quantities, with atomic transactional operations via SQLx.
+- **Recipe_Engine**: The Rust module that defines and executes material-to-product transformation logic based on predefined recipes.
+- **Sales_Service**: The Rust module handling sales transactions, customer management, and invoice generation.
+- **Wallet_Service**: The Rust module managing financial wallets (Bank, Cash, Representative) and fund transfers between them, with atomic SQLx transactions.
+- **Debt_Tracker**: The Rust module that monitors customer payment obligations, calculates overdue durations using `chrono`, and flags late payments.
+- **Sync_Engine**: The Rust module responsible for data synchronization between the local SQLite database and the cloud (PowerSync/Supabase), using `reqwest` for HTTP and a local queue for offline writes.
+- **Report_Generator**: The Rust module that produces financial summaries, inventory reports, debt aging reports, and printable invoices using `genpdf` (PDF) and `rust_xlsxwriter` (Excel).
+- **UniFFI_Bindings**: The auto-generated Kotlin (and future Swift) bindings produced by UniFFI from the Core_Engine's public API, enabling Android (and future iOS) apps to call Rust functions via JNI.
 - **Raw_Material**: An ingredient used in confectionery production (e.g., milk, cream, cheese, sugar).
 - **Finished_Good**: A completed product (e.g., a "Sweet Box") produced by combining raw materials according to a recipe.
 - **Recipe**: A predefined formula specifying the quantities of raw materials required to produce one unit of a finished good.
 - **Wallet**: A named financial account (Bank, Cash, or Representative Wallet) used to track fund balances and transfers.
 - **Debt_Record**: A record tracking an unpaid customer balance, including the amount owed and the number of days overdue.
-- **RBAC**: Role-Based Access Control — a method of restricting system access based on user roles (Admin, Chef, Representative).
+- **RBAC**: Role-Based Access Control — a method of restricting system access based on user roles (Admin, Chef, Representative), enforced via Casbin-RS in the Core_Engine.
+- **SQLx**: The async Rust SQL toolkit used for compile-time checked queries against the local SQLite database.
+- **Slint**: The Rust-native UI framework used for the Desktop application, providing cross-platform rendering (Windows/Linux/macOS).
 
 ## Requirements
 
@@ -49,11 +63,11 @@ Sweet Lab ERP is a specialized ERP-lite Kotlin Multiplatform application (Androi
 
 #### Acceptance Criteria
 
-1. WHEN an employee submits valid credentials, THE Auth_Service SHALL authenticate the user and create a session with the corresponding role (Admin, Chef, or Representative).
-2. WHEN an employee submits invalid credentials, THE Auth_Service SHALL reject the login attempt and display a descriptive error message without revealing which field is incorrect.
+1. WHEN an employee submits valid credentials, THE Auth_Module SHALL authenticate the user and create a session with the corresponding role (Admin, Chef, or Representative).
+2. WHEN an employee submits invalid credentials, THE Auth_Module SHALL reject the login attempt and display a descriptive error message without revealing which field is incorrect.
 3. WHEN a session is created, THE Sweet_Lab_App SHALL redirect the user to the role-specific dashboard (Admin Dashboard, Chef Production Screen, or Representative Sales Screen).
-4. WHEN a user session exceeds 8 hours of inactivity, THE Auth_Service SHALL expire the session and require re-authentication.
-5. IF a user attempts to access a resource outside their role permissions, THEN THE Auth_Service SHALL deny the request and return an authorization error.
+4. WHEN a user session exceeds 8 hours of inactivity, THE Auth_Module SHALL expire the session and require re-authentication.
+5. IF a user attempts to access a resource outside their role permissions, THEN THE Auth_Module SHALL deny the request and return an authorization error.
 
 ### Requirement 2: Role-Based Access Control
 
@@ -61,9 +75,9 @@ Sweet Lab ERP is a specialized ERP-lite Kotlin Multiplatform application (Androi
 
 #### Acceptance Criteria
 
-1. THE Auth_Service SHALL enforce three distinct roles: Admin (full access), Chef (production-only access), and Representative (sales, purchases, expenses, and customer management access).
-2. WHEN an Admin creates a new user account, THE Auth_Service SHALL require a username, password, full name, and role assignment.
-3. WHEN an Admin updates a user role, THE Auth_Service SHALL apply the new permissions on the user's next login.
+1. THE Auth_Module SHALL enforce three distinct roles: Admin (full access), Chef (production-only access), and Representative (sales, purchases, expenses, and customer management access).
+2. WHEN an Admin creates a new user account, THE Auth_Module SHALL require a username, password, full name, and role assignment.
+3. WHEN an Admin updates a user role, THE Auth_Module SHALL apply the new permissions on the user's next login.
 4. WHEN a Chef user logs in, THE Sweet_Lab_App SHALL display only the production interface with recipe execution and production logging capabilities.
 5. WHEN a Representative user logs in, THE Sweet_Lab_App SHALL display the sales interface with access to sales logging, purchase recording, expense management, and customer management.
 6. WHEN an Admin user logs in, THE Sweet_Lab_App SHALL display the full admin dashboard with access to financial reports, inventory management, user management, and all other modules.
@@ -185,7 +199,7 @@ Sweet Lab ERP is a specialized ERP-lite Kotlin Multiplatform application (Androi
 1. WHEN an admin requests a financial summary, THE Report_Generator SHALL calculate and display total sales revenue, total expenses, net profit, and wallet balances for the selected date range.
 2. WHEN an admin requests an inventory report, THE Report_Generator SHALL display all raw materials and finished goods with current quantities, values, and low-stock alerts for items below a configurable threshold.
 3. WHEN a user generates an invoice, THE Report_Generator SHALL produce a formatted document containing the business name, customer details, itemized products with quantities and prices, total amount, payment status, and date.
-4. THE Report_Generator SHALL support exporting reports in PDF format.
+4. THE Report_Generator SHALL support exporting reports in PDF format using `genpdf` and Excel format using `rust_xlsxwriter`.
 5. WHEN real-time totals are displayed on any screen, THE Sweet_Lab_App SHALL recalculate totals within 1 second of any underlying data change.
 
 ### Requirement 13: Offline Mode and Data Synchronization
@@ -206,7 +220,7 @@ Sweet Lab ERP is a specialized ERP-lite Kotlin Multiplatform application (Androi
 
 #### Acceptance Criteria
 
-1. WHEN storing data locally for offline use, THE Sync_Engine SHALL serialize application objects to JSON format.
-2. WHEN reading locally cached data, THE Sync_Engine SHALL deserialize JSON data back into application objects, producing equivalent objects to the originals.
+1. WHEN storing data locally, THE Core_Engine SHALL serialize application objects using `serde` to JSON format and `prost` for protobuf wire format.
+2. WHEN reading locally cached data, THE Core_Engine SHALL deserialize data back into application objects, producing equivalent objects to the originals.
 3. FOR ALL valid application objects, serializing to JSON then deserializing SHALL produce an object equivalent to the original (round-trip property).
-4. THE Sync_Engine SHALL validate the schema of deserialized data before accepting it into the application state.
+4. THE Core_Engine SHALL validate the schema of deserialized data before accepting it into the application state.
