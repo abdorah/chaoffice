@@ -387,32 +387,32 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
   - Build APK, test on device/emulator, ensure all flows work end-to-end.
 
 - [ ] 24. Desktop app (Slint)
-  - [-] 24.1 Set up Slint desktop project
+  - [x] 24.1 Set up Slint desktop project
     - Create `desktop/Cargo.toml` with slint dependency + core crate dependency
     - Create `desktop/src/main.rs` — initialize `SweetLabCore` and Slint app
     - Create `desktop/ui/app.slint` — main window with navigation
     - _Requirements: Technical Context (Slint desktop)_
 
-  - [~] 24.2 Implement Slint login screen
+  - [x] 24.2 Implement Slint login screen
     - Create `desktop/ui/login.slint` — username/password form
     - Wire to `SweetLabCore.login()` via direct Rust calls
     - Role-based navigation after login
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [~] 24.3 Implement Slint Admin screens
+  - [x] 24.3 Implement Slint Admin screens
     - Create `desktop/ui/admin/` — dashboard, user management, inventory, recipes, wallets, reports
     - All screens call `SweetLabCore` methods directly (no FFI needed)
     - _Requirements: 2.6, 3.5, 4.1-4.5, 6.5, 9.1-9.6, 10.2, 11.4, 12.1-12.4_
 
-  - [~] 24.4 Implement Slint Chef screens
+  - [x] 24.4 Implement Slint Chef screens
     - Create `desktop/ui/chef/` — production screen with recipe availability and execution
     - _Requirements: 5.1-5.5_
 
-  - [~] 24.5 Implement Slint Representative screens
+  - [x] 24.5 Implement Slint Representative screens
     - Create `desktop/ui/representative/` — sales, customers, expenses, payments
     - _Requirements: 7.1-7.5, 8.1-8.5, 9.5, 10.3-10.4, 11.1-11.3_
 
-- [ ] 25. Checkpoint — Desktop app complete
+- [x] 25. Checkpoint — Desktop app complete
   - Build desktop binary, test all flows, ensure parity with Android app.
 
 - [ ] 26. Integration and end-to-end testing

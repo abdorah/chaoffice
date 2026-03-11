@@ -1,0 +1,108 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox } from "std-widgets.slint";
+
+// User Management — Req 2.2, 2.3
+// List users, create user form, role update
+// Will be wired to SweetLabCore.create_user(), update_user_role()
+export component UserManagementView inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "إدارة المستخدمين";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "إنشاء وتعديل حسابات المستخدمين وصلاحياتهم";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+
+            // Create user form — SweetLabCore.create_user()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-width: 320px;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "➕ إنشاء مستخدم جديد"; font-size: 16px; font-weight: 600; }
+
+                    Text { text: "اسم المستخدم"; font-size: 13px; }
+                    username-input := LineEdit {
+                        placeholder-text: "أدخل اسم المستخدم";
+                    }
+
+                    Text { text: "كلمة المرور"; font-size: 13px; }
+                    password-input := LineEdit {
+                        placeholder-text: "أدخل كلمة المرور";
+                        input-type: password;
+                    }
+
+                    Text { text: "الاسم الكامل"; font-size: 13px; }
+                    fullname-input := LineEdit {
+                        placeholder-text: "أدخل الاسم الكامل";
+                    }
+
+                    Text { text: "الدور"; font-size: 13px; }
+                    role-combo := ComboBox {
+                        model: ["مدير", "شيف", "مندوب"];
+                        current-index: 0;
+                        current-value: "مدير";
+                    }
+
+                    Button {
+                        text: "إنشاء المستخدم";
+                        // TODO: Call SweetLabCore.create_user(username, password, fullname, role)
+                    }
+                }
+            }
+
+            // User list — SweetLabCore list_users (via get from auth)
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "👥 قائمة المستخدمين"; font-size: 16px; font-weight: 600; }
+
+                    // Table header
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "الاسم"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "اسم المستخدم"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "الدور"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "إجراء"; font-size: 13px; font-weight: 600; width: 100px; }
+                    }
+
+                    Rectangle { height: 1px; background: #bdc3c7; }
+
+                    // Placeholder rows — TODO: populate from SweetLabCore
+                    Rectangle {
+                        min-height: 200px;
+                        vertical-stretch: 1;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "— سيتم تحميل المستخدمين من SweetLabCore —";
+                                font-size: 13px;
+                                color: #95a5a6;
+                            }
+                            // TODO: ListView of users with role update buttons
+                            // Each row: full_name | username | role | [update role button]
+                            // SweetLabCore.update_user_role(user_id, new_role)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

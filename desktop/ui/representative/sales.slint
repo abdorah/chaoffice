@@ -1,0 +1,212 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+
+// Representative Sales Screen — Req 8.1, 8.2, 8.3, 8.4, 8.5
+// Sale creation form, sale total auto-calculation, sales history, receipt generation
+// Will be wired to SweetLabCore.create_sale(), get_sales_history(), generate_receipt()
+export component RepresentativeSalesView inherits Rectangle {
+    // TODO: Wire callbacks to SweetLabCore via Rust main.rs
+    // callback create-sale(string /* customer_id */, string /* line_items_json */, float /* amount_paid */, string /* wallet_id */);
+    // callback generate-receipt(string /* sale_id */);
+
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "🛒 شاشة المبيعات";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "تسجيل عمليات البيع وإصدار الإيصالات";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+
+            // ── Left panel: Sale creation form (Req 8.1) ──
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-width: 360px;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "➕ عملية بيع جديدة"; font-size: 16px; font-weight: 600; }
+
+                    // Customer picker — Req 8.1
+                    Text { text: "العميل"; font-size: 13px; }
+                    customer-input := LineEdit {
+                        placeholder-text: "اختر العميل";
+                        // TODO: Replace with customer picker from SweetLabCore.search_customers()
+                    }
+
+                    // Line item builder — Req 8.1
+                    Text { text: "المنتجات"; font-size: 13px; font-weight: 600; }
+                    Rectangle {
+                        background: white;
+                        border-radius: 4px;
+                        min-height: 100px;
+                        VerticalLayout {
+                            padding: 8px;
+                            spacing: 4px;
+                            Text {
+                                text: "— سيتم إضافة محدد المنتجات من SweetLabCore —";
+                                font-size: 12px;
+                                color: #95a5a6;
+                            }
+                            // TODO: Dynamic line item list
+                            // Each item: finished_good picker + quantity + unit_price
+                            // SweetLabCore.get_finished_goods() for picker options
+                        }
+                    }
+
+                    // Req 8.4: Sale total auto-calculation = sum(qty × unit_price)
+                    HorizontalLayout {
+                        spacing: 4px;
+                        Text { text: "الإجمالي:"; font-size: 14px; font-weight: 600; }
+                        Text {
+                            text: "0.00";
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: #27ae60;
+                            // TODO: Auto-calculate total from line items
+                        }
+                    }
+
+                    // Payment entry — Req 8.1, 8.2, 8.3
+                    Text { text: "المبلغ المدفوع"; font-size: 13px; }
+                    amount-paid-input := LineEdit {
+                        placeholder-text: "أدخل المبلغ المدفوع";
+                        input-type: decimal;
+                    }
+
+                    // Wallet selector — Req 8.1
+                    Text { text: "المحفظة"; font-size: 13px; }
+                    wallet-input := LineEdit {
+                        placeholder-text: "اختر المحفظة";
+                        // TODO: Replace with wallet picker from SweetLabCore.get_wallets()
+                    }
+
+                    // Remaining balance note — Req 8.3
+                    Rectangle {
+                        background: #fef9e7;
+                        border-radius: 4px;
+                        min-height: 30px;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "ملاحظة: المبلغ المتبقي سيُسجل كدين على العميل";
+                                font-size: 12px;
+                                color: #7d6608;
+                            }
+                            // TODO: Show remaining = total - amount_paid
+                            // Req 8.3: Create debt record if partial payment
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            text: "تسجيل البيع";
+                            // TODO: Call SweetLabCore.create_sale(customer_id, line_items, amount_paid, wallet_id)
+                            // Req 8.2: Credit wallet + deduct inventory
+                            // Req 8.3: Create debt if partial payment
+                        }
+                        Button {
+                            text: "مسح";
+                        }
+                    }
+                }
+            }
+
+            // ── Right panel: Sales history + Receipt ──
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 16px;
+
+                // Sales history list — SweetLabCore.get_sales_history()
+                Rectangle {
+                    background: #ecf0f1;
+                    border-radius: 8px;
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 10px;
+
+                        Text { text: "📜 سجل المبيعات"; font-size: 16px; font-weight: 600; }
+
+                        // Table header
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Text { text: "العميل"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                            Text { text: "الإجمالي"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                            Text { text: "المدفوع"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                            Text { text: "التاريخ"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                            Text { text: "إيصال"; font-size: 13px; font-weight: 600; width: 80px; }
+                        }
+
+                        Rectangle { height: 1px; background: #bdc3c7; }
+
+                        // Placeholder — TODO: populate from SweetLabCore.get_sales_history()
+                        Rectangle {
+                            min-height: 120px;
+                            vertical-stretch: 1;
+                            VerticalLayout {
+                                padding: 8px;
+                                Text {
+                                    text: "— سيتم تحميل سجل المبيعات من SweetLabCore —";
+                                    font-size: 13px;
+                                    color: #95a5a6;
+                                }
+                                // TODO: ListView of Sale items
+                                // Each row: customer_name | total_amount | amount_paid | timestamp | [receipt btn]
+                            }
+                        }
+                    }
+                }
+
+                // Receipt preview — Req 8.5
+                Rectangle {
+                    background: #ecf0f1;
+                    border-radius: 8px;
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 10px;
+
+                        Text { text: "🧾 معاينة الإيصال"; font-size: 16px; font-weight: 600; }
+
+                        // Req 8.5: Receipt with customer name, items, total, paid, remaining, date
+                        Rectangle {
+                            background: white;
+                            border-radius: 4px;
+                            min-height: 150px;
+                            vertical-stretch: 1;
+                            VerticalLayout {
+                                padding: 12px;
+                                spacing: 6px;
+                                Text {
+                                    text: "— اختر عملية بيع لعرض الإيصال —";
+                                    font-size: 13px;
+                                    color: #95a5a6;
+                                }
+                                // TODO: Display receipt from SweetLabCore.generate_receipt(sale_id)
+                                // Fields: customer_name, itemized list, total, amount_paid,
+                                //         remaining_balance, formatted_date, business_name
+                            }
+                        }
+
+                        Button {
+                            text: "🖨️ طباعة الإيصال";
+                            // TODO: Call SweetLabCore.generate_receipt() then print/export
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

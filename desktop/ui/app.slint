@@ -1,0 +1,179 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, GridBox, ListView } from "std-widgets.slint";
+import { LoginPanel } from "login.slint";
+import { AdminDashboardView } from "admin/dashboard.slint";
+import { UserManagementView } from "admin/user_management.slint";
+import { InventoryView } from "admin/inventory.slint";
+import { RecipesView } from "admin/recipes.slint";
+import { WalletsView } from "admin/wallets.slint";
+import { ReportsView } from "admin/reports.slint";
+import { ChefProductionView } from "chef/production.slint";
+import { RepresentativeSalesView } from "representative/sales.slint";
+import { RepresentativeCustomersView } from "representative/customers.slint";
+import { RepresentativeExpensesView } from "representative/expenses.slint";
+import { RepresentativePaymentsView } from "representative/payments.slint";
+
+// Active view enumeration
+enum ActiveView {
+    Login,
+    AdminDashboard,
+    ChefProduction,
+    RepresentativeSales,
+}
+
+// Role after login
+enum UserRole {
+    None,
+    Admin,
+    Chef,
+    Representative,
+}
+
+// ── Sidebar Navigation ───────────────────────────────────────────────
+component Sidebar inherits Rectangle {
+    callback navigate(int /* view index */);
+    callback logout();
+
+    in property <UserRole> role;
+    in property <int> active-index: 0;
+
+    width: 220px;
+    background: #2c3e50;
+
+    VerticalLayout {
+        padding: 12px;
+        spacing: 8px;
+
+        Text {
+            text: "Sweet Lab";
+            font-size: 20px;
+            color: white;
+            horizontal-alignment: center;
+            font-weight: 700;
+        }
+
+        Rectangle { height: 1px; background: #4a6278; }
+
+        // Admin nav items
+        if role == UserRole.Admin: Button {
+            text: "📊 لوحة التحكم";
+            clicked => { root.navigate(0); }
+        }
+        if role == UserRole.Admin: Button {
+            text: "👥 إدارة المستخدمين";
+            clicked => { root.navigate(1); }
+        }
+        if role == UserRole.Admin: Button {
+            text: "📦 المخزون";
+            clicked => { root.navigate(2); }
+        }
+        if role == UserRole.Admin: Button {
+            text: "📋 الوصفات";
+            clicked => { root.navigate(3); }
+        }
+        if role == UserRole.Admin: Button {
+            text: "💰 المحافظ";
+            clicked => { root.navigate(4); }
+        }
+        if role == UserRole.Admin: Button {
+            text: "📈 التقارير";
+            clicked => { root.navigate(5); }
+        }
+
+        // Chef nav items
+        if role == UserRole.Chef: Button {
+            text: "🏭 الإنتاج";
+            clicked => { root.navigate(0); }
+        }
+        if role == UserRole.Chef: Button {
+            text: "📦 المخزون";
+            clicked => { root.navigate(1); }
+        }
+
+        // Representative nav items
+        if role == UserRole.Representative: Button {
+            text: "🛒 المبيعات";
+            clicked => { root.navigate(0); }
+        }
+        if role == UserRole.Representative: Button {
+            text: "👤 العملاء";
+            clicked => { root.navigate(1); }
+        }
+        if role == UserRole.Representative: Button {
+            text: "💸 المصروفات";
+            clicked => { root.navigate(2); }
+        }
+        if role == UserRole.Representative: Button {
+            text: "💳 تحصيل الديون";
+            clicked => { root.navigate(3); }
+        }
+
+        // Spacer
+        Rectangle { vertical-stretch: 1; }
+
+        Rectangle { height: 1px; background: #4a6278; }
+
+        Button {
+            text: "🚪 تسجيل الخروج";
+            clicked => { root.logout(); }
+        }
+    }
+}
+
+// ── Main Window ──────────────────────────────────────────────────────
+export component AppWindow inherits Window {
+    title: "Sweet Lab - مصنع الحلويات";
+    width: 1024px;
+    height: 700px;
+
+    // Callbacks from Rust
+    callback login(string, string);
+    callback logout();
+    callback navigate(int);
+
+    // Properties set from Rust
+    in-out property <ActiveView> current-view: ActiveView.Login;
+    in-out property <UserRole> current-role: UserRole.None;
+    in-out property <string> login-error: "";
+    in-out property <bool> login-loading: false;
+    in-out property <int> nav-index: 0;
+
+    if current-view == ActiveView.Login: LoginPanel {
+        error-message: root.login-error;
+        is-loading: root.login-loading;
+        login(u, p) => { root.login(u, p); }
+    }
+
+    if current-view != ActiveView.Login: HorizontalLayout {
+        Sidebar {
+            role: root.current-role;
+            active-index: root.nav-index;
+            navigate(idx) => { root.navigate(idx); }
+            logout => { root.logout(); }
+        }
+
+        Rectangle {
+            horizontal-stretch: 1;
+            background: #f5f6fa;
+
+            // Admin screens — nav_index-based switching
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 0: AdminDashboardView {}
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 1: UserManagementView {}
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 2: InventoryView {}
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 3: RecipesView {}
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 4: WalletsView {}
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 5: ReportsView {}
+
+            // Chef screens — nav_index-based switching (task 24.4)
+            // nav_index 0 → Production, nav_index 1 → Inventory (read-only)
+            if root.current-view == ActiveView.ChefProduction && root.nav-index == 0: ChefProductionView {}
+            if root.current-view == ActiveView.ChefProduction && root.nav-index == 1: InventoryView {}
+
+            // Representative screens — nav_index-based switching (task 24.5)
+            // nav_index 0 → Sales, nav_index 1 → Customers, nav_index 2 → Expenses, nav_index 3 → Payments
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 0: RepresentativeSalesView {}
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 1: RepresentativeCustomersView {}
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 2: RepresentativeExpensesView {}
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 3: RepresentativePaymentsView {}
+        }
+    }
+}

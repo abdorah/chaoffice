@@ -1,0 +1,201 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, SpinBox } from "std-widgets.slint";
+
+// Chef Production Screen — Req 5.1, 5.2, 5.3, 5.4, 5.5
+// Recipe availability list, production execution form, production history log
+// Will be wired to SweetLabCore.get_recipe_availability(), execute_production(), get_production_history()
+export component ChefProductionView inherits Rectangle {
+    // TODO: Wire callbacks to SweetLabCore via Rust main.rs
+    // callback execute-production(string /* recipe_id */, int /* quantity */);
+
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "🏭 شاشة الإنتاج";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "اختر وصفة وحدد الكمية لبدء الإنتاج";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+
+            // ── Left panel: Production execution form (Req 5.1) ──
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-width: 340px;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "▶ تنفيذ الإنتاج"; font-size: 16px; font-weight: 600; }
+
+                    // Recipe selection — Req 5.5
+                    Text { text: "الوصفة"; font-size: 13px; }
+                    recipe-input := LineEdit {
+                        placeholder-text: "اختر الوصفة";
+                        // TODO: Replace with picker from SweetLabCore.get_recipe_availability()
+                    }
+
+                    // Production quantity — Req 5.1
+                    Text { text: "كمية الإنتاج"; font-size: 13px; }
+                    quantity-input := LineEdit {
+                        placeholder-text: "أدخل الكمية المطلوبة";
+                        // TODO: Wire to SpinBox or validated numeric input
+                    }
+
+                    // Calculated raw material requirements display — Req 5.1
+                    Text { text: "المواد الخام المطلوبة:"; font-size: 13px; font-weight: 600; }
+                    Rectangle {
+                        background: white;
+                        border-radius: 4px;
+                        min-height: 80px;
+                        VerticalLayout {
+                            padding: 8px;
+                            spacing: 4px;
+                            Text {
+                                text: "— سيتم حساب المتطلبات تلقائياً عند اختيار الوصفة والكمية —";
+                                font-size: 12px;
+                                color: #95a5a6;
+                            }
+                            // TODO: Populate from recipe.ingredients × quantity
+                            // SweetLabCore.get_recipe_availability() provides ingredient details
+                            // Display: material_name: required_quantity × production_quantity = total
+                        }
+                    }
+
+                    // Insufficient materials warning — Req 5.3
+                    Rectangle {
+                        background: #fdecea;
+                        border-radius: 4px;
+                        min-height: 40px;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "⚠️ تحذير المواد غير الكافية";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #c0392b;
+                            }
+                            Text {
+                                text: "— سيظهر هنا تفاصيل المواد الناقصة عند الحاجة —";
+                                font-size: 12px;
+                                color: #e74c3c;
+                            }
+                            // TODO: Show insufficient_materials list from RecipeAvailability
+                            // Req 5.3: Reject production if insufficient stock, list materials
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            text: "تنفيذ الإنتاج";
+                            // TODO: Call SweetLabCore.execute_production(recipe_id, quantity, chef_id)
+                            // Req 5.2: Atomic deduction of raw materials + increment finished goods
+                        }
+                        Button {
+                            text: "مسح";
+                        }
+                    }
+                }
+            }
+
+            // ── Right panel: Recipe availability + Production history ──
+            VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 16px;
+
+                // Recipe availability list — Req 5.5
+                Rectangle {
+                    background: #ecf0f1;
+                    border-radius: 8px;
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 10px;
+
+                        Text { text: "📋 الوصفات المتاحة"; font-size: 16px; font-weight: 600; }
+
+                        // Table header
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Text { text: "الوصفة"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                            Text { text: "المنتج النهائي"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                            Text { text: "أقصى كمية"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                            Text { text: "الحالة"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        }
+
+                        Rectangle { height: 1px; background: #bdc3c7; }
+
+                        // Placeholder — TODO: populate from SweetLabCore.get_recipe_availability()
+                        Rectangle {
+                            min-height: 120px;
+                            vertical-stretch: 1;
+                            VerticalLayout {
+                                padding: 8px;
+                                Text {
+                                    text: "— سيتم تحميل الوصفات المتاحة من SweetLabCore —";
+                                    font-size: 13px;
+                                    color: #95a5a6;
+                                }
+                                // TODO: ListView of RecipeAvailability items
+                                // Each row: recipe_name | finished_good_name | max_producible | status
+                                // Req 5.5: Display available recipes with current availability status
+                                // Color-code: green if max_producible > 0, red if insufficient materials
+                            }
+                        }
+                    }
+                }
+
+                // Production history log — Req 5.4
+                Rectangle {
+                    background: #ecf0f1;
+                    border-radius: 8px;
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 10px;
+
+                        Text { text: "📜 سجل الإنتاج"; font-size: 16px; font-weight: 600; }
+
+                        // Table header — Req 5.4: chef, recipe, quantity, timestamp, materials
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Text { text: "الوصفة"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                            Text { text: "الطاهي"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                            Text { text: "الكمية"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                            Text { text: "التاريخ"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                            Text { text: "المواد المستهلكة"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                        }
+
+                        Rectangle { height: 1px; background: #bdc3c7; }
+
+                        // Placeholder — TODO: populate from SweetLabCore.get_production_history()
+                        Rectangle {
+                            min-height: 120px;
+                            vertical-stretch: 1;
+                            VerticalLayout {
+                                padding: 8px;
+                                Text {
+                                    text: "— سيتم تحميل سجل الإنتاج من SweetLabCore —";
+                                    font-size: 13px;
+                                    color: #95a5a6;
+                                }
+                                // TODO: ListView of ProductionLog items
+                                // Each row: recipe_name | chef_name | quantity | timestamp | materials_consumed
+                                // Req 5.4: Log with chef identity, recipe, quantity, timestamp, materials
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

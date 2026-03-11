@@ -1,0 +1,96 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+
+// Inventory Management — Req 3.5, 6.5
+// Raw materials list + Finished goods list
+// Will be wired to SweetLabCore.get_raw_materials(), get_finished_goods()
+export component InventoryView inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "إدارة المخزون";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "متابعة المواد الخام والمنتجات النهائية";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        // Raw Materials section — SweetLabCore.get_raw_materials()
+        Rectangle {
+            background: #ecf0f1;
+            border-radius: 8px;
+            vertical-stretch: 1;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 10px;
+
+                Text { text: "📦 المواد الخام"; font-size: 16px; font-weight: 600; }
+
+                // Table header — Req 3.5: name, unit, quantity, last-updated
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text { text: "الاسم"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                    Text { text: "الوحدة"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "الكمية"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "آخر تحديث"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                }
+
+                Rectangle { height: 1px; background: #bdc3c7; }
+
+                // Placeholder — TODO: populate from SweetLabCore.get_raw_materials()
+                Rectangle {
+                    min-height: 120px;
+                    VerticalLayout {
+                        padding: 8px;
+                        Text {
+                            text: "— سيتم تحميل المواد الخام من SweetLabCore —";
+                            font-size: 13px;
+                            color: #95a5a6;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Finished Goods section — SweetLabCore.get_finished_goods()
+        Rectangle {
+            background: #ecf0f1;
+            border-radius: 8px;
+            vertical-stretch: 1;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 10px;
+
+                Text { text: "🎁 المنتجات النهائية"; font-size: 16px; font-weight: 600; }
+
+                // Table header — Req 6.5: name, quantity, unit price, last-updated
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text { text: "الاسم"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                    Text { text: "الكمية"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "سعر الوحدة"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "آخر تحديث"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                }
+
+                Rectangle { height: 1px; background: #bdc3c7; }
+
+                // Placeholder — TODO: populate from SweetLabCore.get_finished_goods()
+                Rectangle {
+                    min-height: 120px;
+                    VerticalLayout {
+                        padding: 8px;
+                        Text {
+                            text: "— سيتم تحميل المنتجات النهائية من SweetLabCore —";
+                            font-size: 13px;
+                            color: #95a5a6;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

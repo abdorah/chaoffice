@@ -1,0 +1,147 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+
+// Wallet Management — Req 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+// Wallet list with balances, transaction history, fund transfer
+// Will be wired to SweetLabCore.get_wallets(), get_transaction_history(), transfer_funds()
+export component WalletsView inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "إدارة المحافظ";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "عرض الأرصدة وسجل المعاملات وتحويل الأموال";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        // Wallet balances — SweetLabCore.get_wallets()
+        HorizontalLayout {
+            spacing: 16px;
+
+            // Req 9.1: Bank, Cash, Representative wallets
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-height: 90px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 4px;
+                    Text { text: "🏦 محفظة البنك"; font-size: 14px; font-weight: 600; }
+                    Text { text: "الرصيد: —"; font-size: 13px; color: #7f8c8d; }
+                    // TODO: Display balance from SweetLabCore.get_wallets()
+                }
+            }
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-height: 90px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 4px;
+                    Text { text: "💵 محفظة النقد"; font-size: 14px; font-weight: 600; }
+                    Text { text: "الرصيد: —"; font-size: 13px; color: #7f8c8d; }
+                    // TODO: Display balance from SweetLabCore.get_wallets()
+                }
+            }
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-height: 90px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 4px;
+                    Text { text: "👤 محفظة المندوب"; font-size: 14px; font-weight: 600; }
+                    Text { text: "الرصيد: —"; font-size: 13px; color: #7f8c8d; }
+                    // TODO: Display balance from SweetLabCore.get_wallets()
+                }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+
+            // Fund transfer form — SweetLabCore.transfer_funds()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-width: 300px;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "💸 تحويل أموال"; font-size: 16px; font-weight: 600; }
+
+                    Text { text: "من محفظة"; font-size: 13px; }
+                    source-input := LineEdit {
+                        placeholder-text: "اختر المحفظة المصدر";
+                        // TODO: Replace with wallet picker
+                    }
+
+                    Text { text: "إلى محفظة"; font-size: 13px; }
+                    dest-input := LineEdit {
+                        placeholder-text: "اختر المحفظة الهدف";
+                        // TODO: Replace with wallet picker
+                    }
+
+                    Text { text: "المبلغ"; font-size: 13px; }
+                    amount-input := LineEdit {
+                        placeholder-text: "أدخل المبلغ";
+                        input-type: decimal;
+                    }
+
+                    Button {
+                        text: "تنفيذ التحويل";
+                        // TODO: Call SweetLabCore.transfer_funds(source_id, dest_id, amount)
+                        // Req 9.2: Atomic debit source + credit destination
+                        // Req 9.3: Reject if amount > source balance
+                    }
+                }
+            }
+
+            // Transaction history — SweetLabCore.get_transaction_history()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "📜 سجل المعاملات"; font-size: 16px; font-weight: 600; }
+
+                    // Req 9.6: Transaction history per wallet
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "التاريخ"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "الوصف"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                        Text { text: "المبلغ"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                    }
+
+                    Rectangle { height: 1px; background: #bdc3c7; }
+
+                    // Placeholder — TODO: populate from SweetLabCore.get_transaction_history()
+                    Rectangle {
+                        min-height: 200px;
+                        vertical-stretch: 1;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "— سيتم تحميل سجل المعاملات من SweetLabCore —";
+                                font-size: 13px;
+                                color: #95a5a6;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

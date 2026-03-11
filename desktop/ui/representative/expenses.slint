@@ -1,0 +1,141 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox } from "std-widgets.slint";
+
+// Representative Expense Recording Screen — Req 11.1, 11.2, 11.3
+// Expense form, expense history list, wallet balance validation
+// Will be wired to SweetLabCore.record_expense(), get_expenses()
+export component RepresentativeExpensesView inherits Rectangle {
+    // TODO: Wire callbacks to SweetLabCore via Rust main.rs
+    // callback record-expense(string /* description */, float /* amount */, string /* category */, string /* wallet_id */);
+
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "💸 تسجيل المصروفات";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "تسجيل المشتريات والتكاليف التشغيلية من المحفظة";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+
+            // ── Left panel: Expense form (Req 11.1) ──
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-width: 340px;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "➕ تسجيل مصروف جديد"; font-size: 16px; font-weight: 600; }
+
+                    // Req 11.1: description, amount, category, wallet source
+                    Text { text: "الوصف"; font-size: 13px; }
+                    description-input := LineEdit {
+                        placeholder-text: "أدخل وصف المصروف";
+                    }
+
+                    Text { text: "المبلغ"; font-size: 13px; }
+                    amount-input := LineEdit {
+                        placeholder-text: "أدخل المبلغ";
+                        input-type: decimal;
+                    }
+
+                    // Req 11.1: Category — Purchase or OperatingCost
+                    Text { text: "الفئة"; font-size: 13px; }
+                    category-combo := ComboBox {
+                        model: ["مشتريات", "تكاليف تشغيلية"];
+                        current-index: 0;
+                        current-value: "مشتريات";
+                        // Purchase = "مشتريات", OperatingCost = "تكاليف تشغيلية"
+                    }
+
+                    // Wallet selector — Req 11.1, 11.3
+                    Text { text: "المحفظة"; font-size: 13px; }
+                    wallet-input := LineEdit {
+                        placeholder-text: "اختر المحفظة";
+                        // TODO: Replace with wallet picker from SweetLabCore.get_wallets()
+                    }
+
+                    // Wallet balance display — Req 11.3
+                    Rectangle {
+                        background: #fef9e7;
+                        border-radius: 4px;
+                        min-height: 30px;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "رصيد المحفظة: —";
+                                font-size: 12px;
+                                color: #7d6608;
+                            }
+                            // TODO: Display selected wallet balance
+                            // Req 11.3: Reject if amount > wallet balance
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            text: "تسجيل المصروف";
+                            // TODO: Call SweetLabCore.record_expense(description, amount, category, wallet_id, user_id)
+                            // Req 11.2: Debit wallet by expense amount
+                            // Req 11.3: Reject if insufficient funds
+                        }
+                        Button {
+                            text: "مسح";
+                        }
+                    }
+                }
+            }
+
+            // ── Right panel: Expense history ──
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "📜 سجل المصروفات"; font-size: 16px; font-weight: 600; }
+
+                    // Table header
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "الوصف"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                        Text { text: "المبلغ"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "الفئة"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "المحفظة"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "التاريخ"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                    }
+
+                    Rectangle { height: 1px; background: #bdc3c7; }
+
+                    // Placeholder — TODO: populate from SweetLabCore.get_expenses()
+                    Rectangle {
+                        min-height: 300px;
+                        vertical-stretch: 1;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "— سيتم تحميل سجل المصروفات من SweetLabCore —";
+                                font-size: 13px;
+                                color: #95a5a6;
+                            }
+                            // TODO: ListView of Expense items
+                            // Each row: description | amount | category | wallet_name | timestamp
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

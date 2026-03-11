@@ -1,0 +1,115 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, SpinBox } from "std-widgets.slint";
+
+// Recipe Management — Req 4.1, 4.2, 4.3, 4.4, 4.5
+// Recipe list, create/edit form with ingredients
+// Will be wired to SweetLabCore.get_recipes(), create_recipe(), delete_recipe()
+export component RecipesView inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "إدارة الوصفات";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "تعريف وتعديل وصفات تحويل المواد الخام إلى منتجات نهائية";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+
+            // Create/Edit recipe form — SweetLabCore.create_recipe()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-width: 340px;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "➕ إنشاء وصفة جديدة"; font-size: 16px; font-weight: 600; }
+
+                    Text { text: "اسم الوصفة"; font-size: 13px; }
+                    recipe-name := LineEdit {
+                        placeholder-text: "أدخل اسم الوصفة";
+                    }
+
+                    Text { text: "المنتج النهائي"; font-size: 13px; }
+                    finished-good-input := LineEdit {
+                        placeholder-text: "اختر المنتج النهائي";
+                        // TODO: Replace with picker from SweetLabCore.get_finished_goods()
+                    }
+
+                    Text { text: "المكونات (1-10)"; font-size: 13px; font-weight: 600; }
+                    Text {
+                        text: "— سيتم إضافة محدد المكونات من SweetLabCore —";
+                        font-size: 12px;
+                        color: #95a5a6;
+                    }
+                    // TODO: Dynamic ingredient list (1-10 items)
+                    // Each ingredient: raw_material picker + required_quantity SpinBox
+                    // SweetLabCore.get_raw_materials() for picker options
+                    // Req 4.1: 1-10 ingredients per recipe
+                    // Req 4.2: Validate all materials exist
+                    // Req 4.4: Reject missing materials
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            text: "حفظ الوصفة";
+                            // TODO: Call SweetLabCore.create_recipe(name, finished_good_id, ingredients)
+                        }
+                        Button {
+                            text: "مسح";
+                        }
+                    }
+                }
+            }
+
+            // Recipe list — SweetLabCore.get_recipes()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 10px;
+
+                    Text { text: "📋 قائمة الوصفات"; font-size: 16px; font-weight: 600; }
+
+                    // Table header
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: "الاسم"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                        Text { text: "المنتج النهائي"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                        Text { text: "عدد المكونات"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                        Text { text: "إجراءات"; font-size: 13px; font-weight: 600; width: 120px; }
+                    }
+
+                    Rectangle { height: 1px; background: #bdc3c7; }
+
+                    // Placeholder — TODO: populate from SweetLabCore.get_recipes()
+                    Rectangle {
+                        min-height: 200px;
+                        vertical-stretch: 1;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "— سيتم تحميل الوصفات من SweetLabCore —";
+                                font-size: 13px;
+                                color: #95a5a6;
+                            }
+                            // TODO: ListView of recipes
+                            // Each row: name | finished_good_name | ingredient count | [edit] [delete]
+                            // Req 4.5: delete_recipe() blocked if production logs exist
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

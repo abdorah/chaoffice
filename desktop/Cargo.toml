@@ -3,4 +3,10 @@ name = "sweet-lab-desktop"
 version = "0.1.0"
 edition = "2021"
 
-# Placeholder — full setup in task 24.1
+[dependencies]
+sweet-lab-core = { path = "../core" }
+slint = "1.9"
+tokio = { version = "1", features = ["full"] }
+
+[build-dependencies]
+slint-build = "1.9"

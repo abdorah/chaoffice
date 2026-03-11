@@ -1,0 +1,87 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+// Admin Dashboard — Req 2.6
+// Overview cards: wallet balances, active debts, low-stock alerts
+// Will be wired to SweetLabCore.get_wallets(), get_debt_aging_report(), get_inventory_report()
+export component AdminDashboardView inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        Text {
+            text: "لوحة تحكم المدير";
+            font-size: 24px;
+            font-weight: 700;
+        }
+        Text {
+            text: "مرحباً بك في نظام إدارة مصنع الحلويات";
+            font-size: 15px;
+            color: #7f8c8d;
+        }
+
+        // Overview cards row
+        HorizontalLayout {
+            spacing: 16px;
+
+            // Wallet balances card — SweetLabCore.get_wallets()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-height: 110px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 6px;
+                    Text { text: "💰 أرصدة المحافظ"; font-size: 15px; font-weight: 600; }
+                    Text { text: "— سيتم ربطها بـ SweetLabCore —"; font-size: 12px; color: #95a5a6; }
+                    // TODO: Display wallet balances from SweetLabCore.get_wallets()
+                }
+            }
+
+            // Active debts card — SweetLabCore.get_debt_aging_report()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-height: 110px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 6px;
+                    Text { text: "📊 الديون النشطة"; font-size: 15px; font-weight: 600; }
+                    Text { text: "— سيتم ربطها بـ SweetLabCore —"; font-size: 12px; color: #95a5a6; }
+                    // TODO: Display active debt count from SweetLabCore.get_debt_aging_report()
+                }
+            }
+
+            // Low-stock alerts card — SweetLabCore.get_inventory_report()
+            Rectangle {
+                background: #ecf0f1;
+                border-radius: 8px;
+                min-height: 110px;
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 6px;
+                    Text { text: "⚠️ تنبيهات المخزون"; font-size: 15px; font-weight: 600; }
+                    Text { text: "— سيتم ربطها بـ SweetLabCore —"; font-size: 12px; color: #95a5a6; }
+                    // TODO: Display low-stock alerts from SweetLabCore.get_inventory_report()
+                }
+            }
+        }
+
+        // Recent activity placeholder
+        Rectangle {
+            background: #ecf0f1;
+            border-radius: 8px;
+            min-height: 200px;
+            vertical-stretch: 1;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
+                Text { text: "📋 النشاط الأخير"; font-size: 16px; font-weight: 600; }
+                Text { text: "آخر العمليات والأحداث في النظام"; font-size: 13px; color: #7f8c8d; }
+                // TODO: Display recent activity log
+            }
+        }
+    }
+}
