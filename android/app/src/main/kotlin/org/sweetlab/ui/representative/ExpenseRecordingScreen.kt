@@ -28,7 +28,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -54,7 +53,7 @@ import kotlinx.coroutines.launch
 
 // ── Placeholder data classes until UniFFI bindings are generated ──
 
-private data class WalletItem(
+private data class ExpenseWalletItem(
     val id: String,
     val name: String,
     val walletType: String,
@@ -94,7 +93,7 @@ fun ExpenseRecordingScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
 
     // Data lists
-    val wallets = remember { mutableStateListOf<WalletItem>() }
+    val wallets = remember { mutableStateListOf<ExpenseWalletItem>() }
     val expenseHistory = remember { mutableStateListOf<ExpenseItem>() }
 
     // Dialog state
@@ -105,7 +104,7 @@ fun ExpenseRecordingScreen(
     LaunchedEffect(Unit) {
         // TODO: Replace with SweetLabCore calls
         // val walletList = SweetLabApp.core?.getWallets() ?: emptyList()
-        // wallets.addAll(walletList.map { WalletItem(it.id, it.name, it.walletType.name, it.currentBalance) })
+        // wallets.addAll(walletList.map { ExpenseWalletItem(it.id, it.name, it.walletType.name, it.currentBalance) })
         // val expenses = SweetLabApp.core?.getExpenses(startDate, endDate) ?: emptyList()
         // expenseHistory.addAll(expenses.map { ExpenseItem(it.id, it.description, it.amount, it.category.name, it.walletName, it.timestamp.toString()) })
     }
@@ -239,7 +238,7 @@ fun ExpenseRecordingScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpenseFormTab(
-    wallets: List<WalletItem>,
+    wallets: List<ExpenseWalletItem>,
     onRecordExpense: (description: String, amount: Double, category: String, walletId: String) -> Unit
 ) {
     // Form state
@@ -247,7 +246,7 @@ private fun ExpenseFormTab(
     var amountText by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
-    var selectedWallet by remember { mutableStateOf<WalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<ExpenseWalletItem?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
     val amount = amountText.toDoubleOrNull() ?: 0.0
@@ -309,7 +308,7 @@ private fun ExpenseFormTab(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .menuAnchor()
             )
             ExposedDropdownMenu(
                 expanded = categoryExpanded,
@@ -341,7 +340,7 @@ private fun ExpenseFormTab(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = walletExpanded) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .menuAnchor()
             )
             ExposedDropdownMenu(
                 expanded = walletExpanded,
@@ -488,7 +487,7 @@ private fun ExpenseHistoryCard(expense: ExpenseItem) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateExpenseDialog(
-    wallets: List<WalletItem>,
+    wallets: List<ExpenseWalletItem>,
     onDismiss: () -> Unit,
     onConfirm: (description: String, amount: Double, category: String, walletId: String) -> Unit
 ) {
@@ -496,7 +495,7 @@ private fun CreateExpenseDialog(
     var amountText by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
-    var selectedWallet by remember { mutableStateOf<WalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<ExpenseWalletItem?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
     val amount = amountText.toDoubleOrNull() ?: 0.0
@@ -554,7 +553,7 @@ private fun CreateExpenseDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = categoryExpanded,
@@ -585,7 +584,7 @@ private fun CreateExpenseDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = walletExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = walletExpanded,

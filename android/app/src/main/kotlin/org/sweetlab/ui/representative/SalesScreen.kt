@@ -31,7 +31,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -72,7 +71,7 @@ private data class FinishedGoodItem(
     val unitPrice: Double
 )
 
-private data class WalletItem(
+private data class SalesWalletItem(
     val id: String,
     val name: String,
     val walletType: String,
@@ -139,7 +138,7 @@ fun SalesScreen(
     // Data lists
     val customers = remember { mutableStateListOf<CustomerItem>() }
     val finishedGoods = remember { mutableStateListOf<FinishedGoodItem>() }
-    val wallets = remember { mutableStateListOf<WalletItem>() }
+    val wallets = remember { mutableStateListOf<SalesWalletItem>() }
     val salesHistory = remember { mutableStateListOf<SaleItem>() }
 
     // Dialog state
@@ -155,7 +154,7 @@ fun SalesScreen(
         // val goods = SweetLabApp.core?.getFinishedGoods() ?: emptyList()
         // finishedGoods.addAll(goods.map { FinishedGoodItem(it.id, it.name, it.currentQuantity, it.unitPrice) })
         // val walletList = SweetLabApp.core?.getWallets() ?: emptyList()
-        // wallets.addAll(walletList.map { WalletItem(it.id, it.name, it.walletType.name, it.currentBalance) })
+        // wallets.addAll(walletList.map { SalesWalletItem(it.id, it.name, it.walletType.name, it.currentBalance) })
         // val sales = SweetLabApp.core?.getSalesHistory() ?: emptyList()
         // salesHistory.addAll(sales.map { SaleItem(it.id, it.customerName, it.totalAmount, it.amountPaid, it.timestamp.toString(), it.lineItems.size) })
     }
@@ -324,7 +323,7 @@ fun SalesScreen(
 private fun SaleCreationTab(
     customers: List<CustomerItem>,
     finishedGoods: List<FinishedGoodItem>,
-    wallets: List<WalletItem>,
+    wallets: List<SalesWalletItem>,
     onCreateSale: (customerId: String, lineItems: List<LineItemEntry>, amountPaid: Double, walletId: String) -> Unit
 ) {
     // Form state
@@ -332,7 +331,7 @@ private fun SaleCreationTab(
     var customerExpanded by remember { mutableStateOf(false) }
     val lineItems = remember { mutableStateListOf<LineItemEntry>() }
     var amountPaidText by remember { mutableStateOf("") }
-    var selectedWallet by remember { mutableStateOf<WalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<SalesWalletItem?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
     // Line item builder state
@@ -373,7 +372,7 @@ private fun SaleCreationTab(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = customerExpanded) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .menuAnchor()
             )
             ExposedDropdownMenu(
                 expanded = customerExpanded,
@@ -418,7 +417,7 @@ private fun SaleCreationTab(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = goodExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = goodExpanded,
@@ -583,7 +582,7 @@ private fun SaleCreationTab(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = walletExpanded) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .menuAnchor()
             )
             ExposedDropdownMenu(
                 expanded = walletExpanded,
@@ -802,7 +801,7 @@ private fun SaleHistoryCard(
 private fun CreateSaleDialog(
     customers: List<CustomerItem>,
     finishedGoods: List<FinishedGoodItem>,
-    wallets: List<WalletItem>,
+    wallets: List<SalesWalletItem>,
     onDismiss: () -> Unit,
     onConfirm: (customerId: String, lineItems: List<LineItemEntry>, amountPaid: Double, walletId: String) -> Unit
 ) {
@@ -810,7 +809,7 @@ private fun CreateSaleDialog(
     var customerExpanded by remember { mutableStateOf(false) }
     val lineItems = remember { mutableStateListOf<LineItemEntry>() }
     var amountPaidText by remember { mutableStateOf("") }
-    var selectedWallet by remember { mutableStateOf<WalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<SalesWalletItem?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
     // Line item builder state
@@ -849,7 +848,7 @@ private fun CreateSaleDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = customerExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = customerExpanded,
@@ -883,7 +882,7 @@ private fun CreateSaleDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = goodExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = goodExpanded,
@@ -997,7 +996,7 @@ private fun CreateSaleDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = walletExpanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .menuAnchor()
                     )
                     ExposedDropdownMenu(
                         expanded = walletExpanded,

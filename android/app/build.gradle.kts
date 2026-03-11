@@ -76,7 +76,7 @@ android {
 
 dependencies {
     // Compose BOM — single version for all Compose libraries
-    val composeBom = platform("androidx.compose:compose-bom:2024.01.00")
+    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
     implementation(composeBom)
 
     // Compose UI

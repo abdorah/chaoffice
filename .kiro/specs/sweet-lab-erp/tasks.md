@@ -416,14 +416,14 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
   - Build desktop binary, test all flows, ensure parity with Android app.
 
 - [ ] 26. Integration and end-to-end testing
-  - [ ]* 26.1 Write integration tests for critical flows
+  - [x]* 26.1 Write integration tests for critical flows
     - Test full production flow: create recipe → execute production → verify inventory changes
     - Test full sale flow: create sale → verify inventory + wallet + debt changes
     - Test full payment flow: record payment → verify wallet + debt FIFO allocation
     - All tests use in-memory SQLite via SQLx
     - _Requirements: 5.2, 8.2, 8.3, 9.5, 10.3_
 
-- [ ] 27. Final checkpoint — Full integration
+- [x] 27. Final checkpoint — Full integration
   - Run `cargo test` for core, build Android APK, build Desktop binary. Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

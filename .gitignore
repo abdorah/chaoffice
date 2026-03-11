@@ -26,6 +26,11 @@ modules.xml
 ## VSCODE ##
 .vscode/
 
+.idea
+android/.gradle
+android/build
+android/app/build
+
 ## Reference Repository ##
 partsinventory-reference/
 ChaOffice

@@ -19,7 +19,7 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 argon2 = "0.5"
 rand_core = { version = "0.6", features = ["std"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 genpdf = "0.2"
 rust_xlsxwriter = "0.79"
 tracing = "0.1"
