@@ -1,3 +1,4 @@
+pub mod api;
 pub mod auth;
 pub mod debt;
 pub mod error;

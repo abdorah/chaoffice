@@ -280,30 +280,30 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - **Property 37: Conflict resolution logging** — last-write-wins applied, conflict logged
     - **Validates: Requirements 13.1, 13.2, 13.3**
 
-- [-] 17. Checkpoint — Rust core complete
+- [x] 17. Checkpoint — Rust core complete
   - Run `cargo test` — ensure all tests pass, ask the user if questions arise.
 
 - [ ] 18. UniFFI public API and Kotlin bindings
-  - [~] 18.1 Implement UniFFI public API surface
+  - [x] 18.1 Implement UniFFI public API surface
     - Create `core/src/api.rs` with `SweetLabCore` struct wrapping all services
     - Export all public methods via `#[uniffi::export]` as defined in the design
     - Implement `SweetLabCore::new(db_path, policies_dir)` — runs migrations, initializes Casbin, creates all services
     - _Requirements: Technical Context (UniFFI bindings)_
 
-  - [~] 18.2 Generate and verify Kotlin bindings
+  - [x] 18.2 Generate and verify Kotlin bindings
     - Run `uniffi-bindgen generate` to produce Kotlin bindings
     - Verify generated Kotlin classes match the Rust API surface
     - Create `android/app/src/main/kotlin/org/sweetlab/bindings/` with generated files
     - _Requirements: Technical Context (Android integration)_
 
 - [ ] 19. Android app — Navigation and auth screens
-  - [~] 19.1 Set up Android project with Compose and UniFFI native library
+  - [x] 19.1 Set up Android project with Compose and UniFFI native library
     - Create `android/build.gradle.kts` with Compose, Kotlin Coroutines, Navigation Compose dependencies
     - Configure NDK to load the Rust shared library (.so)
     - Create `SweetLabApp.kt` application class initializing `SweetLabCore`
     - _Requirements: Technical Context_
 
-  - [~] 19.2 Set up Compose navigation with role-based routing
+  - [-] 19.2 Set up Compose navigation with role-based routing
     - Create NavGraph with Admin, Chef, and Representative navigation sub-graphs
     - Implement role-based redirect after login (Admin → AdminDashboard, Chef → ProductionScreen, Rep → SalesScreen)
     - Implement offline indicator composable shown across all screens
