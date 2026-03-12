@@ -46,13 +46,13 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - Implement JSON schema validation for deserialized data
     - _Requirements: 14.1, 14.2, 14.4_
 
-  - [ ]* 2.2 Write property test: JSON serialization round-trip
+  - [x] 2.2 Write property test: JSON serialization round-trip
     - **Property 38: JSON serialization round-trip**
     - Create `core/tests/generators.rs` with proptest strategies for all domain objects
     - Test serde_json serialize→deserialize produces equivalent object for each entity type
     - **Validates: Requirements 14.1, 14.2, 14.3**
 
-  - [ ]* 2.3 Write property test: Schema validation rejects malformed data
+  - [x] 2.3 Write property test: Schema validation rejects malformed data
     - **Property 39: Schema validation rejects malformed data**
     - Generate malformed JSON (missing fields, wrong types, out-of-range values) and verify `AppError::Serialization`
     - **Validates: Requirements 14.4**
@@ -70,14 +70,14 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - Create `core/src/persistence/queries/users.rs` with SQLx queries: insert_user, get_user_by_username, get_user_by_id, update_role, list_users
     - _Requirements: 1.1, 2.2, 2.3_
 
-  - [ ]* 3.3 Write property tests for authentication
+  - [x] 3.3 Write property tests for authentication
     - **Property 2: Role permission enforcement** — for any role/resource combination, Casbin result matches expected permission set
     - **Property 3: Invalid credentials rejection** — error message does not reveal which field is wrong
     - **Property 4: User creation field validation** — missing fields rejected, complete fields accepted
     - **Property 5: Role update applies on next login**
     - **Validates: Requirements 1.2, 1.5, 2.1, 2.2, 2.3**
 
-  - [ ]* 3.4 Write unit tests for auth edge cases
+  - [x] 3.4 Write unit tests for auth edge cases
     - Test session expiry at exactly 8 hours
     - Test login with empty username/password
     - Test role update for non-existent user
@@ -100,13 +100,13 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - SQLx queries: insert, update_quantity, get_by_id, list_all, deduct_atomic
     - _Requirements: 3.1, 6.1_
 
-  - [ ]* 5.3 Write property tests for inventory
+  - [x] 5.3 Write property tests for inventory
     - **Property 6: Raw material purchase increases quantity**
     - **Property 7: Insufficient raw material stock rejection**
     - **Property 15: Finished good insufficient stock rejection**
     - **Validates: Requirements 3.2, 3.4, 6.4**
 
-  - [ ]* 5.4 Write unit tests for inventory edge cases
+  - [x] 5.4 Write unit tests for inventory edge cases
     - Test deduction of exactly available quantity (boundary)
     - Test deduction of zero quantity
     - Test concurrent deductions within a transaction
@@ -126,7 +126,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - SQLx queries: insert_recipe, insert_ingredients, get_with_ingredients (JOIN), delete_recipe, count_production_logs_for_recipe
     - _Requirements: 4.1_
 
-  - [ ]* 6.3 Write property tests for recipes
+  - [x] 6.3 Write property tests for recipes
     - **Property 12: Recipe ingredient count bounds** — accept 1-10, reject 0 or 11+
     - **Property 13: Recipe material existence validation** — reject recipes with non-existent materials
     - **Property 14: Recipe deletion protection** — block deletion if production logs exist
@@ -140,7 +140,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - Implement `get_production_history()` query
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 7.2 Write property tests for production
+  - [x] 7.2 Write property tests for production
     - **Property 8: Production run inventory conservation** — raw materials decrease by recipe×qty, finished good increases by qty
     - **Property 9: Production run rejection on insufficient stock** — entire run rejected, no quantities change
     - **Property 10: Production log completeness** — log contains all required fields
@@ -163,7 +163,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - SQLx queries: insert, update_rating, search (LIKE on name/city/mobile), get_by_id, get_by_mobile
     - _Requirements: 7.1, 7.3, 7.4_
 
-  - [ ]* 9.3 Write property tests for customers
+  - [x] 9.3 Write property tests for customers
     - **Property 16: Customer initial reliability rating** — new customers have rating 0
     - **Property 17: Customer reliability rating bounds** — accept [1,5], reject outside
     - **Property 18: Customer mobile uniqueness** — duplicate mobile rejected
@@ -183,7 +183,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - SQLx queries: get_wallets, get_by_id, update_balance, insert_transaction, get_transactions
     - _Requirements: 9.1_
 
-  - [ ]* 10.3 Write property tests for wallets
+  - [x] 10.3 Write property tests for wallets
     - **Property 23: Wallet transfer conservation** — source decreases, destination increases, total conserved
     - **Property 24: Wallet insufficient funds rejection** — reject debit > balance, balance unchanged
     - **Validates: Requirements 9.2, 9.3, 11.3**
@@ -201,7 +201,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - SQLx queries: insert_sale, insert_line_items, get_sale_with_items (JOIN), list_sales
     - _Requirements: 8.1_
 
-  - [ ]* 11.3 Write property tests for sales
+  - [x] 11.3 Write property tests for sales
     - **Property 20: Sale total calculation** — total = sum(qty × unit_price)
     - **Property 21: Sale financial orchestration** — wallet credited, inventory deducted, debt created if partial
     - **Property 22: Receipt completeness** — receipt contains all required fields
@@ -222,7 +222,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - SQLx queries: insert_debt, get_active_debts_for_customer (ORDER BY sale_date ASC), update_remaining, mark_settled, get_aging_report
     - _Requirements: 10.1_
 
-  - [ ]* 12.3 Write property tests for debt tracking
+  - [x] 12.3 Write property tests for debt tracking
     - **Property 27: Debt overdue days calculation** — overdue_days = (current_date - sale_date) in days
     - **Property 28: Debt aging report sort order** — sorted by overdue days descending
     - **Property 29: Debt payment FIFO allocation** — payment applied oldest first, settled debts marked
@@ -244,7 +244,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - SQLx queries: insert_expense, get_by_date_range, get_grouped_by_category
     - _Requirements: 11.1_
 
-  - [ ]* 14.3 Write property tests for expenses
+  - [x] 14.3 Write property tests for expenses
     - **Property 25: Expense wallet debit** — wallet decreases by amount, expense contains all fields
     - **Property 31: Expense report grouping and totals** — grouped by category, subtotals correct, grand total = sum of subtotals
     - **Validates: Requirements 9.4, 11.1, 11.2, 11.4**
@@ -258,7 +258,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - Implement `generate_invoice()` — formatted invoice with all required fields
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
 
-  - [ ]* 15.2 Write property tests for reporting
+  - [x] 15.2 Write property tests for reporting
     - **Property 32: Financial summary calculation** — revenue = sum(sales), expenses = sum(expenses), net = revenue - expenses
     - **Property 33: Low stock alert accuracy** — flagged iff quantity < threshold
     - **Property 34: Invoice completeness** — invoice contains all required fields
@@ -274,7 +274,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - Use tracing for structured logging of sync events
     - _Requirements: 13.1, 13.2, 13.3, 13.5_
 
-  - [ ]* 16.2 Write property tests for sync
+  - [x] 16.2 Write property tests for sync
     - **Property 35: Offline queue persistence** — modifications stored in queue with correct metadata
     - **Property 36: Sync queue FIFO ordering** — processed in created_at ascending order
     - **Property 37: Conflict resolution logging** — last-write-wins applied, conflict logged
@@ -316,7 +316,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
     - Calls `SweetLabCore.login()` via coroutine
     - _Requirements: 1.1, 1.2_
 
-  - [ ]* 19.4 Write property test for role-based navigation
+  - [x] 19.4 Write property test for role-based navigation
     - **Property 1: Role-based navigation routing** — each role maps to correct screen
     - **Validates: Requirements 1.3, 2.4, 2.5, 2.6**
 
@@ -416,7 +416,7 @@ Incremental implementation of the Sweet Lab ERP as a polyglot system: Protobuf s
   - Build desktop binary, test all flows, ensure parity with Android app.
 
 - [ ] 26. Integration and end-to-end testing
-  - [x]* 26.1 Write integration tests for critical flows
+  - [x] 26.1 Write integration tests for critical flows
     - Test full production flow: create recipe → execute production → verify inventory changes
     - Test full sale flow: create sale → verify inventory + wallet + debt changes
     - Test full payment flow: record payment → verify wallet + debt FIFO allocation

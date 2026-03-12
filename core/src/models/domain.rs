@@ -33,6 +33,19 @@ impl UserRole {
             _ => None,
         }
     }
+
+    /// Return the navigation destination screen for this role after login.
+    ///
+    /// - Admin → "admin_dashboard"
+    /// - Chef → "production_screen"
+    /// - Representative → "sales_screen"
+    pub fn navigation_destination(&self) -> &'static str {
+        match self {
+            UserRole::Admin => "admin_dashboard",
+            UserRole::Chef => "production_screen",
+            UserRole::Representative => "sales_screen",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
