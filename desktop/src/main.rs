@@ -22,7 +22,7 @@ fn main() {
 
         // TODO: Wire to SweetLabCore.login() once core is fully initialized
         // let rt = tokio::runtime::Runtime::new().unwrap();
-        // let core = SweetLabCore::new("sweet_lab.db", "policies").await.unwrap();
+        // let core = SweetLabCore::new("sweet_lab.db").await.unwrap();
         // match rt.block_on(core.login(&username, &password)) {
         //     Ok(session) => {
         //         match session.role {

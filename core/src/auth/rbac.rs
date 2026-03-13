@@ -1,93 +1,110 @@
-use casbin::{CoreApi, DefaultModel, Enforcer, FileAdapter};
+use std::collections::HashSet;
 
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 use crate::models::domain::UserRole;
 
-/// Initialize a Casbin enforcer from model.conf and policy.csv file paths.
-pub async fn init_enforcer(model_path: &str, policy_path: &str) -> AppResult<Enforcer> {
-    let model = DefaultModel::from_file(model_path)
-        .await
-        .map_err(|e| AppError::Unknown(format!("Failed to load Casbin model: {e}")))?;
-
-    let policy_owned = policy_path.to_owned();
-    let adapter = FileAdapter::new(policy_owned);
-
-    Enforcer::new(model, adapter)
-        .await
-        .map_err(|e| AppError::Unknown(format!("Failed to initialize Casbin enforcer: {e}")))
+/// A simple in-memory permission table that replaces Casbin.
+///
+/// Each role maps to a set of (resource, action) pairs.
+/// This is equivalent to the old `policies/policy.csv` but expressed in code.
+pub struct PermissionTable {
+    admin: HashSet<(&'static str, &'static str)>,
+    chef: HashSet<(&'static str, &'static str)>,
+    representative: HashSet<(&'static str, &'static str)>,
 }
 
-/// Check whether a given role has permission to perform `action` on `resource`.
-///
-/// Converts the `UserRole` enum to a lowercase string for Casbin matching
-/// (e.g. `UserRole::Admin` → `"admin"`).
-pub fn check_permission(
-    enforcer: &mut Enforcer,
-    role: &UserRole,
-    resource: &str,
-    action: &str,
-) -> AppResult<bool> {
-    let role_str = match role {
-        UserRole::Admin => "admin",
-        UserRole::Chef => "chef",
-        UserRole::Representative => "representative",
-    };
+impl PermissionTable {
+    /// Build the permission table with all role→(resource, action) mappings.
+    pub fn new() -> Self {
+        Self {
+            admin: HashSet::from([
+                ("admin_dashboard", "view"),
+                ("users", "manage"),
+                ("recipes", "manage"),
+                ("inventory", "view"),
+                ("inventory", "manage"),
+                ("production", "view"),
+                ("sales", "view"),
+                ("sales", "create"),
+                ("customers", "manage"),
+                ("wallets", "manage"),
+                ("wallets", "view"),
+                ("funds", "transfer"),
+                ("expenses", "view"),
+                ("expenses", "record"),
+                ("debts", "view"),
+                ("debts", "collect"),
+                ("reports", "view"),
+                ("reports", "export"),
+            ]),
+            chef: HashSet::from([
+                ("production", "execute"),
+                ("production", "view"),
+                ("inventory", "view"),
+            ]),
+            representative: HashSet::from([
+                ("sales", "create"),
+                ("sales", "view"),
+                ("customers", "manage"),
+                ("wallets", "view"),
+                ("expenses", "record"),
+                ("expenses", "view"),
+                ("debts", "view"),
+                ("debts", "collect"),
+                ("inventory", "view"),
+                ("inventory", "manage"),
+            ]),
+        }
+    }
 
-    enforcer
-        .enforce((role_str, resource, action))
-        .map_err(|e| AppError::Unknown(format!("Casbin enforcement error: {e}")))
+    /// Check whether a given role has permission to perform `action` on `resource`.
+    pub fn check_permission(&self, role: &UserRole, resource: &str, action: &str) -> AppResult<bool> {
+        let permissions = match role {
+            UserRole::Admin => &self.admin,
+            UserRole::Chef => &self.chef,
+            UserRole::Representative => &self.representative,
+        };
+        Ok(permissions.iter().any(|(r, a)| *r == resource && *a == action))
+    }
+}
+
+impl Default for PermissionTable {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// Helper: build an enforcer from the project's policy files.
-    async fn test_enforcer() -> Enforcer {
-        init_enforcer("policies/model.conf", "policies/policy.csv")
-            .await
-            .expect("Failed to load Casbin policies")
+    #[test]
+    fn admin_can_view_admin_dashboard() {
+        let table = PermissionTable::new();
+        assert!(table.check_permission(&UserRole::Admin, "admin_dashboard", "view").unwrap());
     }
 
-    #[tokio::test]
-    async fn admin_can_view_admin_dashboard() {
-        let mut e = test_enforcer().await;
-        let allowed = check_permission(&mut e, &UserRole::Admin, "admin_dashboard", "view")
-            .expect("enforce failed");
-        assert!(allowed);
+    #[test]
+    fn chef_can_execute_production() {
+        let table = PermissionTable::new();
+        assert!(table.check_permission(&UserRole::Chef, "production", "execute").unwrap());
     }
 
-    #[tokio::test]
-    async fn chef_can_execute_production() {
-        let mut e = test_enforcer().await;
-        let allowed = check_permission(&mut e, &UserRole::Chef, "production", "execute")
-            .expect("enforce failed");
-        assert!(allowed);
+    #[test]
+    fn representative_can_create_sales() {
+        let table = PermissionTable::new();
+        assert!(table.check_permission(&UserRole::Representative, "sales", "create").unwrap());
     }
 
-    #[tokio::test]
-    async fn representative_can_create_sales() {
-        let mut e = test_enforcer().await;
-        let allowed =
-            check_permission(&mut e, &UserRole::Representative, "sales", "create")
-                .expect("enforce failed");
-        assert!(allowed);
+    #[test]
+    fn chef_cannot_manage_users() {
+        let table = PermissionTable::new();
+        assert!(!table.check_permission(&UserRole::Chef, "users", "manage").unwrap());
     }
 
-    #[tokio::test]
-    async fn chef_cannot_manage_users() {
-        let mut e = test_enforcer().await;
-        let allowed = check_permission(&mut e, &UserRole::Chef, "users", "manage")
-            .expect("enforce failed");
-        assert!(!allowed);
-    }
-
-    #[tokio::test]
-    async fn representative_cannot_view_admin_dashboard() {
-        let mut e = test_enforcer().await;
-        let allowed =
-            check_permission(&mut e, &UserRole::Representative, "admin_dashboard", "view")
-                .expect("enforce failed");
-        assert!(!allowed);
+    #[test]
+    fn representative_cannot_view_admin_dashboard() {
+        let table = PermissionTable::new();
+        assert!(!table.check_permission(&UserRole::Representative, "admin_dashboard", "view").unwrap());
     }
 }

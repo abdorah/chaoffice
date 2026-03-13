@@ -5,14 +5,11 @@
 //! to the corresponding service.
 
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use sqlx::SqlitePool;
-use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::auth::rbac;
 use crate::auth::service::AuthServiceImpl;
 use crate::debt::tracker::DebtServiceImpl;
 use crate::error::AppResult;
@@ -55,21 +52,13 @@ impl SweetLabCore {
     /// Initialize the core engine.
     ///
     /// 1. Creates a SQLite connection pool and runs migrations.
-    /// 2. Initializes the Casbin-RS enforcer from `policies_dir/model.conf`
-    ///    and `policies_dir/policy.csv`.
-    /// 3. Creates all service implementations.
-    pub async fn new(db_path: &str, policies_dir: &str) -> AppResult<Self> {
+    /// 2. Creates all service implementations with built-in RBAC.
+    pub async fn new(db_path: &str) -> AppResult<Self> {
         // 1. Database
         let pool = db::init_db(db_path).await?;
 
-        // 2. Casbin RBAC
-        let model_path = format!("{}/model.conf", policies_dir);
-        let policy_path = format!("{}/policy.csv", policies_dir);
-        let enforcer = rbac::init_enforcer(&model_path, &policy_path).await?;
-        let enforcer = Arc::new(Mutex::new(enforcer));
-
-        // 3. Services
-        let auth = AuthServiceImpl::new(pool.clone(), enforcer);
+        // 2. Services (RBAC is built into AuthServiceImpl)
+        let auth = AuthServiceImpl::new(pool.clone());
         let raw_materials = RawMaterialService::new(pool.clone());
         let finished_goods = FinishedGoodService::new(pool.clone());
         let recipes = RecipeServiceImpl::new(pool.clone());

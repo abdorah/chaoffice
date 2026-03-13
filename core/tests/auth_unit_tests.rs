@@ -2,15 +2,11 @@
 //!
 //! Validates: Requirements 1.4, 1.5, 2.3
 
-use std::sync::Arc;
-
 use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use argon2::Argon2;
 use chrono::{Duration, Utc};
-use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use sweet_lab_core::auth::rbac;
 use sweet_lab_core::auth::service::AuthServiceImpl;
 use sweet_lab_core::error::AppError;
 use sweet_lab_core::models::domain::{Session, UserRole};
@@ -19,10 +15,7 @@ use sweet_lab_core::persistence::db;
 /// Helper: create an in-memory DB, run migrations, and build an AuthServiceImpl.
 async fn setup() -> AuthServiceImpl {
     let pool = db::init_db(":memory:").await.expect("DB init failed");
-    let enforcer = rbac::init_enforcer("policies/model.conf", "policies/policy.csv")
-        .await
-        .expect("Casbin init failed");
-    AuthServiceImpl::new(pool, Arc::new(Mutex::new(enforcer)))
+    AuthServiceImpl::new(pool)
 }
 
 // ── Session expiry at exactly 8 hours (Req 1.4) ───────────────────────────

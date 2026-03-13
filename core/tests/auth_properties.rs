@@ -5,13 +5,10 @@
 mod generators;
 
 use std::collections::HashSet;
-use std::sync::Arc;
 
 use proptest::prelude::*;
 use tokio::runtime::Runtime;
-use tokio::sync::Mutex;
 
-use sweet_lab_core::auth::rbac;
 use sweet_lab_core::auth::service::AuthServiceImpl;
 use sweet_lab_core::error::AppError;
 use sweet_lab_core::models::domain::UserRole;
@@ -22,10 +19,7 @@ use sweet_lab_core::persistence::db;
 /// Build an AuthServiceImpl backed by an in-memory SQLite DB.
 async fn setup() -> AuthServiceImpl {
     let pool = db::init_db(":memory:").await.expect("DB init failed");
-    let enforcer = rbac::init_enforcer("policies/model.conf", "policies/policy.csv")
-        .await
-        .expect("Casbin init failed");
-    AuthServiceImpl::new(pool, Arc::new(Mutex::new(enforcer)))
+    AuthServiceImpl::new(pool)
 }
 
 /// The complete set of (resource, action) pairs defined in policy.csv.
@@ -105,8 +99,8 @@ fn expected_permissions(role: &UserRole) -> HashSet<(&'static str, &'static str)
 
 // ── Property 2: Role permission enforcement ────────────────────────────────
 //
-// For any role and resource/action combination, Casbin result matches the
-// expected permission set derived from policy.csv.
+// For any role and resource/action combination, the permission check matches the
+// expected permission set derived from the built-in permission table.
 //
 // **Validates: Requirements 1.5, 2.1**
 

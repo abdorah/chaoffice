@@ -11,7 +11,6 @@ name = "sweet_lab_core"
 prost = "0.13"
 prost-types = "0.13"
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "migrate"] }
-casbin = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

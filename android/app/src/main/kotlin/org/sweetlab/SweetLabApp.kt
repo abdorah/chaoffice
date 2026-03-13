@@ -48,38 +48,16 @@ class SweetLabApp : Application() {
                 Log.i(TAG, "Initializing Sweet Lab core engine...")
 
                 val dbPath = getDatabasePath("sweetlab.db").absolutePath
-                val policiesDir = filesDir.resolve("policies").absolutePath
-
-                // Copy bundled policy files to internal storage on first run
-                copyPoliciesIfNeeded(policiesDir)
 
                 // Initialize the Rust core via UniFFI
-                // core = SweetLabCore.new(dbPath, policiesDir)
+                // RBAC permissions are now built into the core — no policy files needed
+                // core = SweetLabCore.new(dbPath)
 
                 isInitialized = true
                 Log.i(TAG, "Sweet Lab core engine initialized successfully")
             } catch (e: Exception) {
                 initError = e.message ?: "Unknown initialization error"
                 Log.e(TAG, "Failed to initialize core engine", e)
-            }
-        }
-    }
-
-    private fun copyPoliciesIfNeeded(policiesDir: String) {
-        val dir = java.io.File(policiesDir)
-        if (!dir.exists()) {
-            dir.mkdirs()
-            // Copy model.conf and policy.csv from assets to internal storage
-            listOf("model.conf", "policy.csv").forEach { filename ->
-                try {
-                    assets.open("policies/$filename").use { input ->
-                        java.io.File(dir, filename).outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Policy file $filename not found in assets, will use defaults")
-                }
             }
         }
     }

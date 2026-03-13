@@ -3,28 +3,27 @@ use std::sync::Arc;
 
 use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use argon2::Argon2;
-use casbin::Enforcer;
 use chrono::{Duration, Utc};
 use sqlx::SqlitePool;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::auth::rbac;
+use crate::auth::rbac::PermissionTable;
 use crate::error::{AppError, AppResult};
 use crate::models::domain::{AppUser, Session, UserRole};
 
 /// Concrete implementation of the AuthService.
 pub struct AuthServiceImpl {
     pool: SqlitePool,
-    enforcer: Arc<Mutex<Enforcer>>,
+    permissions: PermissionTable,
     sessions: Arc<Mutex<HashMap<Uuid, Session>>>,
 }
 
 impl AuthServiceImpl {
-    pub fn new(pool: SqlitePool, enforcer: Arc<Mutex<Enforcer>>) -> Self {
+    pub fn new(pool: SqlitePool) -> Self {
         Self {
             pool,
-            enforcer,
+            permissions: PermissionTable::new(),
             sessions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
@@ -171,15 +170,13 @@ impl AuthServiceImpl {
     }
 
     /// Check whether a role has permission to perform an action on a resource.
-    /// Delegates to the Casbin-RS enforcer.
     pub async fn check_permission(
         &self,
         role: &UserRole,
         resource: &str,
         action: &str,
     ) -> AppResult<bool> {
-        let mut enforcer = self.enforcer.lock().await;
-        rbac::check_permission(&mut enforcer, role, resource, action)
+        self.permissions.check_permission(role, resource, action)
     }
 }
 
@@ -213,10 +210,7 @@ mod tests {
     /// Helper: create an in-memory DB, run migrations, and build an AuthServiceImpl.
     async fn setup() -> AuthServiceImpl {
         let pool = db::init_db(":memory:").await.expect("DB init failed");
-        let enforcer = rbac::init_enforcer("policies/model.conf", "policies/policy.csv")
-            .await
-            .expect("Casbin init failed");
-        AuthServiceImpl::new(pool, Arc::new(Mutex::new(enforcer)))
+        AuthServiceImpl::new(pool)
     }
 
     #[tokio::test]
@@ -336,7 +330,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn check_permission_delegates_to_casbin() {
+    async fn check_permission_uses_permission_table() {
         let svc = setup().await;
 
         assert!(svc
