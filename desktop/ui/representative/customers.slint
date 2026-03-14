@@ -1,13 +1,30 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, LineEdit, ListView } from "std-widgets.slint";
 
-// Representative Customer Management Screen — Req 7.1, 7.2, 7.3, 7.4, 7.5
-// Customer list with search, customer profile with debt summary, create form, rating update
-// Will be wired to SweetLabCore.create_customer(), search_customers(), update_reliability_rating()
+// Data model for a customer row in the list
+export struct CustomerItem {
+    id: string,
+    name: string,
+    city: string,
+    phone: string,
+    reliability-rating: int,
+    total-debt: string,
+}
+
+// Representative Customer Management Screen — Req 24.10
+// Customer list with search, create customer form, rating update
+// Wired to SweetLabCore.search_customers(), create_customer(), update_reliability_rating()
 export component RepresentativeCustomersView inherits Rectangle {
-    // TODO: Wire callbacks to SweetLabCore via Rust main.rs
-    // callback create-customer(string /* name */, string /* city */, string /* mobile */);
-    // callback search-customers(string /* query */);
-    // callback update-rating(string /* customer_id */, int /* rating */);
+    // Data properties populated from Rust
+    in property <[CustomerItem]> customer-list;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+    in property <string> success-message: "";
+
+    // Callbacks to Rust
+    callback search-customers(string /* query */);
+    callback create-customer(string /* name */, string /* city */, string /* mobile */);
+    callback update-rating(string /* customer_id */, int /* rating */);
+    callback refresh-customers();
 
     VerticalLayout {
         padding: 24px;
@@ -24,10 +41,27 @@ export component RepresentativeCustomersView inherits Rectangle {
             color: #7f8c8d;
         }
 
+        // Loading / error / success indicators
+        if root.is-loading: Text {
+            text: "⏳ جاري التحميل...";
+            font-size: 14px;
+            color: #3498db;
+        }
+        if root.error-message != "": Text {
+            text: root.error-message;
+            font-size: 14px;
+            color: #e74c3c;
+        }
+        if root.success-message != "": Text {
+            text: root.success-message;
+            font-size: 14px;
+            color: #27ae60;
+        }
+
         HorizontalLayout {
             spacing: 16px;
 
-            // ── Left panel: Create customer form (Req 7.1) ──
+            // ── Left panel: Create customer form ──
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -38,7 +72,6 @@ export component RepresentativeCustomersView inherits Rectangle {
 
                     Text { text: "➕ إنشاء عميل جديد"; font-size: 16px; font-weight: 600; }
 
-                    // Req 7.1: name, city, mobile
                     Text { text: "اسم العميل"; font-size: 13px; }
                     name-input := LineEdit {
                         placeholder-text: "أدخل اسم العميل";
@@ -52,67 +85,82 @@ export component RepresentativeCustomersView inherits Rectangle {
                     Text { text: "رقم الهاتف"; font-size: 13px; }
                     mobile-input := LineEdit {
                         placeholder-text: "أدخل رقم الهاتف";
-                        // Req 7.3: Mobile must be unique
                     }
 
                     HorizontalLayout {
                         spacing: 8px;
                         Button {
                             text: "إنشاء العميل";
-                            // TODO: Call SweetLabCore.create_customer(name, city, mobile)
-                            // Req 7.1: Initial rating = 0
-                            // Req 7.3: Reject duplicate mobile
+                            enabled: !root.is-loading;
+                            clicked => {
+                                root.create-customer(name-input.text, city-input.text, mobile-input.text);
+                            }
                         }
                         Button {
                             text: "مسح";
+                            clicked => {
+                                name-input.text = "";
+                                city-input.text = "";
+                                mobile-input.text = "";
+                            }
                         }
                     }
 
-                    // ── Rating update section (Req 7.2) ──
+                    // ── Rating update section ──
                     Rectangle { height: 1px; background: #bdc3c7; }
 
                     Text { text: "⭐ تحديث تقييم الموثوقية"; font-size: 16px; font-weight: 600; }
 
-                    Text { text: "العميل"; font-size: 13px; }
+                    Text { text: "معرف العميل"; font-size: 13px; }
                     rating-customer-input := LineEdit {
-                        placeholder-text: "اختر العميل";
-                        // TODO: Replace with customer picker
+                        placeholder-text: "أدخل معرف العميل";
                     }
 
                     Text { text: "التقييم (1-5)"; font-size: 13px; }
                     rating-input := LineEdit {
                         placeholder-text: "أدخل التقييم من 1 إلى 5";
                         input-type: decimal;
-                        // Req 7.2: Accept [1,5] only
                     }
 
                     Button {
                         text: "تحديث التقييم";
-                        // TODO: Call SweetLabCore.update_reliability_rating(customer_id, rating)
+                        enabled: !root.is-loading;
+                        clicked => {
+                            root.update-rating(rating-customer-input.text, max(1, min(5, rating-input.text.to-float())));
+                        }
                     }
                 }
             }
 
-            // ── Right panel: Customer list + profile ──
+            // ── Right panel: Customer list + search ──
             VerticalLayout {
                 horizontal-stretch: 1;
                 spacing: 16px;
 
-                // Search bar — Req 7.4
+                // Search bar
                 HorizontalLayout {
                     spacing: 8px;
                     search-input := LineEdit {
                         horizontal-stretch: 1;
                         placeholder-text: "بحث بالاسم أو المدينة أو رقم الهاتف";
-                        // Req 7.4: Search by name, city, or mobile
                     }
                     Button {
                         text: "🔍 بحث";
-                        // TODO: Call SweetLabCore.search_customers(query)
+                        enabled: !root.is-loading;
+                        clicked => {
+                            root.search-customers(search-input.text);
+                        }
+                    }
+                    Button {
+                        text: "🔄 تحديث";
+                        enabled: !root.is-loading;
+                        clicked => {
+                            root.refresh-customers();
+                        }
                     }
                 }
 
-                // Customer list — SweetLabCore.search_customers() / get_customers()
+                // Customer list table
                 Rectangle {
                     background: #ecf0f1;
                     border-radius: 8px;
@@ -135,79 +183,18 @@ export component RepresentativeCustomersView inherits Rectangle {
 
                         Rectangle { height: 1px; background: #bdc3c7; }
 
-                        // Placeholder — TODO: populate from SweetLabCore
-                        Rectangle {
-                            min-height: 120px;
+                        ListView {
                             vertical-stretch: 1;
-                            VerticalLayout {
-                                padding: 8px;
-                                Text {
-                                    text: "— سيتم تحميل قائمة العملاء من SweetLabCore —";
-                                    font-size: 13px;
-                                    color: #95a5a6;
-                                }
-                                // TODO: ListView of Customer items
-                                // Each row: name | city | mobile | rating (stars) | total_debt
+                            for customer in root.customer-list: HorizontalLayout {
+                                spacing: 8px;
+                                height: 32px;
+                                Text { text: customer.name; font-size: 13px; horizontal-stretch: 2; overflow: elide; }
+                                Text { text: customer.city; font-size: 13px; horizontal-stretch: 1; overflow: elide; }
+                                Text { text: customer.phone; font-size: 13px; horizontal-stretch: 1; overflow: elide; }
+                                Text { text: "⭐ \{customer.reliability-rating}"; font-size: 13px; horizontal-stretch: 1; color: #f39c12; }
+                                Text { text: customer.total-debt; font-size: 13px; horizontal-stretch: 1; color: #e74c3c; }
                             }
                         }
-                    }
-                }
-
-                // Customer profile detail — Req 7.5
-                Rectangle {
-                    background: #ecf0f1;
-                    border-radius: 8px;
-                    min-height: 140px;
-                    VerticalLayout {
-                        padding: 16px;
-                        spacing: 8px;
-
-                        Text { text: "📄 ملف العميل"; font-size: 16px; font-weight: 600; }
-
-                        // Req 7.5: name, city, mobile, rating, total debt, overdue days
-                        HorizontalLayout {
-                            spacing: 16px;
-                            VerticalLayout {
-                                spacing: 4px;
-                                horizontal-stretch: 1;
-                                HorizontalLayout {
-                                    spacing: 4px;
-                                    Text { text: "الاسم:"; font-size: 13px; font-weight: 600; }
-                                    Text { text: "—"; font-size: 13px; color: #7f8c8d; }
-                                }
-                                HorizontalLayout {
-                                    spacing: 4px;
-                                    Text { text: "المدينة:"; font-size: 13px; font-weight: 600; }
-                                    Text { text: "—"; font-size: 13px; color: #7f8c8d; }
-                                }
-                                HorizontalLayout {
-                                    spacing: 4px;
-                                    Text { text: "الهاتف:"; font-size: 13px; font-weight: 600; }
-                                    Text { text: "—"; font-size: 13px; color: #7f8c8d; }
-                                }
-                            }
-                            VerticalLayout {
-                                spacing: 4px;
-                                horizontal-stretch: 1;
-                                HorizontalLayout {
-                                    spacing: 4px;
-                                    Text { text: "التقييم:"; font-size: 13px; font-weight: 600; }
-                                    Text { text: "⭐ —"; font-size: 13px; color: #f39c12; }
-                                }
-                                HorizontalLayout {
-                                    spacing: 4px;
-                                    Text { text: "إجمالي الديون:"; font-size: 13px; font-weight: 600; }
-                                    Text { text: "—"; font-size: 13px; color: #e74c3c; }
-                                }
-                                HorizontalLayout {
-                                    spacing: 4px;
-                                    Text { text: "أيام التأخير:"; font-size: 13px; font-weight: 600; }
-                                    Text { text: "—"; font-size: 13px; color: #e74c3c; }
-                                }
-                            }
-                        }
-                        // TODO: Populate from selected customer in list
-                        // SweetLabCore provides total_debt and overdue_days on Customer struct
                     }
                 }
             }

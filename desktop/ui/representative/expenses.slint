@@ -1,11 +1,36 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox, ListView } from "std-widgets.slint";
 
-// Representative Expense Recording Screen — Req 11.1, 11.2, 11.3
-// Expense form, expense history list, wallet balance validation
-// Will be wired to SweetLabCore.record_expense(), get_expenses()
+// Data model for an expense history item
+export struct ExpenseItem {
+    id: string,
+    description: string,
+    amount: string,
+    category: string,
+    wallet-name: string,
+    timestamp: string,
+}
+
+// Data model for a wallet option in the expense form
+export struct ExpenseWalletItem {
+    id: string,
+    name: string,
+    balance: string,
+}
+
+// Representative Expense Recording Screen — Req 24.11
 export component RepresentativeExpensesView inherits Rectangle {
-    // TODO: Wire callbacks to SweetLabCore via Rust main.rs
-    // callback record-expense(string /* description */, float /* amount */, string /* category */, string /* wallet_id */);
+    // Data properties (populated from Rust)
+    in property <[ExpenseItem]> expenses-list;
+    // Wallet names list for ComboBox (populated from Rust alongside expense-wallet-list)
+    in property <[string]> expense-wallet-names;
+    in property <[ExpenseWalletItem]> expense-wallet-list;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+    in property <string> success-message: "";
+
+    // Callbacks wired to Rust
+    callback record-expense(string /* description */, string /* amount */, string /* category */, string /* wallet_id */);
+    callback refresh-expenses();
 
     VerticalLayout {
         padding: 24px;
@@ -22,10 +47,37 @@ export component RepresentativeExpensesView inherits Rectangle {
             color: #7f8c8d;
         }
 
+        // Status messages
+        if root.error-message != "": Rectangle {
+            background: #fadbd8;
+            border-radius: 4px;
+            min-height: 30px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.error-message; font-size: 13px; color: #c0392b; }
+            }
+        }
+        if root.success-message != "": Rectangle {
+            background: #d5f5e3;
+            border-radius: 4px;
+            min-height: 30px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.success-message; font-size: 13px; color: #27ae60; }
+            }
+        }
+
+        // Loading indicator
+        if root.is-loading: Text {
+            text: "جاري التحميل...";
+            font-size: 14px;
+            color: #3498db;
+        }
+
         HorizontalLayout {
             spacing: 16px;
 
-            // ── Left panel: Expense form (Req 11.1) ──
+            // ── Left panel: Expense form ──
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -36,7 +88,6 @@ export component RepresentativeExpensesView inherits Rectangle {
 
                     Text { text: "➕ تسجيل مصروف جديد"; font-size: 16px; font-weight: 600; }
 
-                    // Req 11.1: description, amount, category, wallet source
                     Text { text: "الوصف"; font-size: 13px; }
                     description-input := LineEdit {
                         placeholder-text: "أدخل وصف المصروف";
@@ -48,36 +99,33 @@ export component RepresentativeExpensesView inherits Rectangle {
                         input-type: decimal;
                     }
 
-                    // Req 11.1: Category — Purchase or OperatingCost
+                    // Category — Purchase or OperatingCost
                     Text { text: "الفئة"; font-size: 13px; }
                     category-combo := ComboBox {
                         model: ["مشتريات", "تكاليف تشغيلية"];
                         current-index: 0;
                         current-value: "مشتريات";
-                        // Purchase = "مشتريات", OperatingCost = "تكاليف تشغيلية"
                     }
 
-                    // Wallet selector — Req 11.1, 11.3
+                    // Wallet selector
                     Text { text: "المحفظة"; font-size: 13px; }
-                    wallet-input := LineEdit {
-                        placeholder-text: "اختر المحفظة";
-                        // TODO: Replace with wallet picker from SweetLabCore.get_wallets()
+                    wallet-combo := ComboBox {
+                        model: root.expense-wallet-names;
+                        current-index: 0;
                     }
 
-                    // Wallet balance display — Req 11.3
-                    Rectangle {
+                    // Wallet balance display
+                    if root.expense-wallet-list.length > 0 && wallet-combo.current-index >= 0 && wallet-combo.current-index < root.expense-wallet-list.length: Rectangle {
                         background: #fef9e7;
                         border-radius: 4px;
                         min-height: 30px;
                         VerticalLayout {
                             padding: 8px;
                             Text {
-                                text: "رصيد المحفظة: —";
+                                text: "رصيد المحفظة: " + root.expense-wallet-list[wallet-combo.current-index].balance;
                                 font-size: 12px;
                                 color: #7d6608;
                             }
-                            // TODO: Display selected wallet balance
-                            // Req 11.3: Reject if amount > wallet balance
                         }
                     }
 
@@ -85,12 +133,30 @@ export component RepresentativeExpensesView inherits Rectangle {
                         spacing: 8px;
                         Button {
                             text: "تسجيل المصروف";
-                            // TODO: Call SweetLabCore.record_expense(description, amount, category, wallet_id, user_id)
-                            // Req 11.2: Debit wallet by expense amount
-                            // Req 11.3: Reject if insufficient funds
+                            enabled: !root.is-loading;
+                            clicked => {
+                                if (root.expense-wallet-list.length > 0 && wallet-combo.current-index >= 0 && wallet-combo.current-index < root.expense-wallet-list.length) {
+                                    root.record-expense(
+                                        description-input.text,
+                                        amount-input.text,
+                                        category-combo.current-value,
+                                        root.expense-wallet-list[wallet-combo.current-index].id,
+                                    );
+                                }
+                            }
                         }
                         Button {
                             text: "مسح";
+                            clicked => {
+                                description-input.text = "";
+                                amount-input.text = "";
+                                category-combo.current-index = 0;
+                            }
+                        }
+                        Button {
+                            text: "🔄 تحديث";
+                            enabled: !root.is-loading;
+                            clicked => { root.refresh-expenses(); }
                         }
                     }
                 }
@@ -119,19 +185,18 @@ export component RepresentativeExpensesView inherits Rectangle {
 
                     Rectangle { height: 1px; background: #bdc3c7; }
 
-                    // Placeholder — TODO: populate from SweetLabCore.get_expenses()
-                    Rectangle {
+                    ListView {
                         min-height: 300px;
                         vertical-stretch: 1;
-                        VerticalLayout {
-                            padding: 8px;
-                            Text {
-                                text: "— سيتم تحميل سجل المصروفات من SweetLabCore —";
-                                font-size: 13px;
-                                color: #95a5a6;
-                            }
-                            // TODO: ListView of Expense items
-                            // Each row: description | amount | category | wallet_name | timestamp
+                        for expense in root.expenses-list: HorizontalLayout {
+                            spacing: 8px;
+                            padding-top: 4px;
+                            padding-bottom: 4px;
+                            Text { text: expense.description; font-size: 13px; horizontal-stretch: 2; overflow: elide; }
+                            Text { text: expense.amount; font-size: 13px; horizontal-stretch: 1; }
+                            Text { text: expense.category; font-size: 13px; horizontal-stretch: 1; }
+                            Text { text: expense.wallet-name; font-size: 13px; horizontal-stretch: 1; }
+                            Text { text: expense.timestamp; font-size: 13px; horizontal-stretch: 2; color: #7f8c8d; }
                         }
                     }
                 }

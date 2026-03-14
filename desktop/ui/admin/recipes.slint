@@ -1,28 +1,81 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit, SpinBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, LineEdit, ListView } from "std-widgets.slint";
 
-// Recipe Management — Req 4.1, 4.2, 4.3, 4.4, 4.5
-// Recipe list, create/edit form with ingredients
-// Will be wired to SweetLabCore.get_recipes(), create_recipe(), delete_recipe()
+// Data struct for a recipe row in the list
+export struct RecipeItem {
+    id: string,
+    name: string,
+    finished-good-name: string,
+    ingredient-count: int,
+}
+
+// Recipe Management — Req 24.6
+// Recipe list, create form, delete action
+// Wired to SweetLabCore.get_recipes(), create_recipe(), delete_recipe()
 export component RecipesView inherits Rectangle {
+    // Data properties populated from Rust via AppWindow
+    in property <[RecipeItem]> recipe-list;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+    in property <string> success-message: "";
+
+    // Callbacks to Rust
+    callback create-recipe(string /* name */, string /* finished_good_id */, string /* ingredients JSON */);
+    callback delete-recipe(string /* recipe_id */);
+    callback refresh-recipes();
+
     VerticalLayout {
         padding: 24px;
         spacing: 16px;
 
-        Text {
-            text: "إدارة الوصفات";
-            font-size: 24px;
-            font-weight: 700;
+        // Header row with title and refresh button
+        HorizontalLayout {
+            spacing: 12px;
+            Text {
+                text: "إدارة الوصفات";
+                font-size: 24px;
+                font-weight: 700;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            Button {
+                text: is-loading ? "⏳ جاري التحديث..." : "🔄 تحديث";
+                enabled: !is-loading;
+                clicked => { root.refresh-recipes(); }
+            }
         }
+
         Text {
             text: "تعريف وتعديل وصفات تحويل المواد الخام إلى منتجات نهائية";
             font-size: 15px;
             color: #7f8c8d;
         }
 
+        // Error message
+        if error-message != "": Rectangle {
+            background: #e74c3c;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.error-message; color: white; font-size: 13px; }
+            }
+        }
+
+        // Success message
+        if success-message != "": Rectangle {
+            background: #27ae60;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.success-message; color: white; font-size: 13px; }
+            }
+        }
+
         HorizontalLayout {
             spacing: 16px;
 
-            // Create/Edit recipe form — SweetLabCore.create_recipe()
+            // Create recipe form
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -38,39 +91,51 @@ export component RecipesView inherits Rectangle {
                         placeholder-text: "أدخل اسم الوصفة";
                     }
 
-                    Text { text: "المنتج النهائي"; font-size: 13px; }
+                    Text { text: "معرف المنتج النهائي"; font-size: 13px; }
                     finished-good-input := LineEdit {
-                        placeholder-text: "اختر المنتج النهائي";
-                        // TODO: Replace with picker from SweetLabCore.get_finished_goods()
+                        placeholder-text: "أدخل معرف المنتج النهائي (UUID)";
                     }
 
-                    Text { text: "المكونات (1-10)"; font-size: 13px; font-weight: 600; }
+                    Text { text: "المكونات (JSON)"; font-size: 13px; }
                     Text {
-                        text: "— سيتم إضافة محدد المكونات من SweetLabCore —";
-                        font-size: 12px;
+                        text: "صيغة: [{\"raw_material_id\":\"UUID\",\"required_quantity\":1.0}, ...]";
+                        font-size: 11px;
                         color: #95a5a6;
                     }
-                    // TODO: Dynamic ingredient list (1-10 items)
-                    // Each ingredient: raw_material picker + required_quantity SpinBox
-                    // SweetLabCore.get_raw_materials() for picker options
-                    // Req 4.1: 1-10 ingredients per recipe
-                    // Req 4.2: Validate all materials exist
-                    // Req 4.4: Reject missing materials
+                    ingredients-input := LineEdit {
+                        placeholder-text: "أدخل المكونات بصيغة JSON";
+                    }
 
                     HorizontalLayout {
                         spacing: 8px;
                         Button {
-                            text: "حفظ الوصفة";
-                            // TODO: Call SweetLabCore.create_recipe(name, finished_good_id, ingredients)
+                            text: root.is-loading ? "⏳ جاري الحفظ..." : "حفظ الوصفة";
+                            enabled: !root.is-loading;
+                            clicked => {
+                                root.create-recipe(
+                                    recipe-name.text,
+                                    finished-good-input.text,
+                                    ingredients-input.text,
+                                );
+                                // Clear form fields after submit
+                                recipe-name.text = "";
+                                finished-good-input.text = "";
+                                ingredients-input.text = "";
+                            }
                         }
                         Button {
                             text: "مسح";
+                            clicked => {
+                                recipe-name.text = "";
+                                finished-good-input.text = "";
+                                ingredients-input.text = "";
+                            }
                         }
                     }
                 }
             }
 
-            // Recipe list — SweetLabCore.get_recipes()
+            // Recipe list
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -87,25 +152,54 @@ export component RecipesView inherits Rectangle {
                         Text { text: "الاسم"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
                         Text { text: "المنتج النهائي"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
                         Text { text: "عدد المكونات"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
-                        Text { text: "إجراءات"; font-size: 13px; font-weight: 600; width: 120px; }
+                        Text { text: "إجراءات"; font-size: 13px; font-weight: 600; width: 80px; }
                     }
 
                     Rectangle { height: 1px; background: #bdc3c7; }
 
-                    // Placeholder — TODO: populate from SweetLabCore.get_recipes()
-                    Rectangle {
+                    if recipe-list.length == 0 && !is-loading: Text {
+                        text: "لا توجد وصفات";
+                        font-size: 13px;
+                        color: #95a5a6;
+                    }
+
+                    ListView {
                         min-height: 200px;
                         vertical-stretch: 1;
-                        VerticalLayout {
-                            padding: 8px;
-                            Text {
-                                text: "— سيتم تحميل الوصفات من SweetLabCore —";
-                                font-size: 13px;
-                                color: #95a5a6;
+                        for recipe[idx] in root.recipe-list: Rectangle {
+                            height: 44px;
+                            background: Math.mod(idx, 2) == 0 ? #ffffff : #f8f9fa;
+                            border-radius: 4px;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                spacing: 8px;
+                                Text {
+                                    text: recipe.name;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 2;
+                                }
+                                Text {
+                                    text: recipe.finished-good-name;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 2;
+                                    color: #7f8c8d;
+                                }
+                                Text {
+                                    text: recipe.ingredient-count;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 1;
+                                    font-weight: 600;
+                                }
+                                Button {
+                                    text: "🗑️";
+                                    width: 80px;
+                                    clicked => { root.delete-recipe(recipe.id); }
+                                }
                             }
-                            // TODO: ListView of recipes
-                            // Each row: name | finished_good_name | ingredient count | [edit] [delete]
-                            // Req 4.5: delete_recipe() blocked if production logs exist
                         }
                     }
                 }

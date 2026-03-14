@@ -1,66 +1,151 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, LineEdit, ListView } from "std-widgets.slint";
 
-// Wallet Management — Req 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+// Data struct for a wallet row
+export struct WalletItem {
+    id: string,
+    name: string,
+    wallet-type: string,
+    balance: string,
+}
+
+// Data struct for a transaction row
+export struct TransactionItem {
+    id: string,
+    wallet-id: string,
+    amount: string,
+    description: string,
+    timestamp: string,
+}
+
+// Wallet Management — Req 24.5
 // Wallet list with balances, transaction history, fund transfer
-// Will be wired to SweetLabCore.get_wallets(), get_transaction_history(), transfer_funds()
+// Wired to SweetLabCore.get_wallets(), get_transaction_history(), transfer_funds()
 export component WalletsView inherits Rectangle {
+    // Data properties populated from Rust via AppWindow
+    in property <[WalletItem]> wallet-list;
+    in property <[TransactionItem]> transaction-list;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+    in property <string> success-message: "";
+
+    // Callbacks to Rust
+    callback transfer-funds(string /* source_wallet_id */, string /* dest_wallet_id */, string /* amount */);
+    callback load-transactions(string /* wallet_id */);
+    callback refresh-wallets();
+
     VerticalLayout {
         padding: 24px;
         spacing: 16px;
 
-        Text {
-            text: "إدارة المحافظ";
-            font-size: 24px;
-            font-weight: 700;
+        // Header row with title and refresh button
+        HorizontalLayout {
+            spacing: 12px;
+            Text {
+                text: "إدارة المحافظ";
+                font-size: 24px;
+                font-weight: 700;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            Button {
+                text: is-loading ? "⏳ جاري التحديث..." : "🔄 تحديث";
+                enabled: !is-loading;
+                clicked => { root.refresh-wallets(); }
+            }
         }
+
         Text {
             text: "عرض الأرصدة وسجل المعاملات وتحويل الأموال";
             font-size: 15px;
             color: #7f8c8d;
         }
 
-        // Wallet balances — SweetLabCore.get_wallets()
-        HorizontalLayout {
-            spacing: 16px;
+        // Error message
+        if error-message != "": Rectangle {
+            background: #e74c3c;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.error-message; color: white; font-size: 13px; }
+            }
+        }
 
-            // Req 9.1: Bank, Cash, Representative wallets
-            Rectangle {
-                background: #ecf0f1;
-                border-radius: 8px;
-                min-height: 90px;
-                horizontal-stretch: 1;
-                VerticalLayout {
-                    padding: 16px;
-                    spacing: 4px;
-                    Text { text: "🏦 محفظة البنك"; font-size: 14px; font-weight: 600; }
-                    Text { text: "الرصيد: —"; font-size: 13px; color: #7f8c8d; }
-                    // TODO: Display balance from SweetLabCore.get_wallets()
-                }
+        // Success message
+        if success-message != "": Rectangle {
+            background: #27ae60;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.success-message; color: white; font-size: 13px; }
             }
-            Rectangle {
-                background: #ecf0f1;
-                border-radius: 8px;
-                min-height: 90px;
-                horizontal-stretch: 1;
-                VerticalLayout {
-                    padding: 16px;
-                    spacing: 4px;
-                    Text { text: "💵 محفظة النقد"; font-size: 14px; font-weight: 600; }
-                    Text { text: "الرصيد: —"; font-size: 13px; color: #7f8c8d; }
-                    // TODO: Display balance from SweetLabCore.get_wallets()
+        }
+
+        // Wallet balances list
+        Rectangle {
+            background: #ecf0f1;
+            border-radius: 8px;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 10px;
+
+                Text { text: "💰 أرصدة المحافظ"; font-size: 16px; font-weight: 600; }
+
+                // Table header
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text { text: "الاسم"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
+                    Text { text: "النوع"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "الرصيد"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "المعاملات"; font-size: 13px; font-weight: 600; width: 100px; }
                 }
-            }
-            Rectangle {
-                background: #ecf0f1;
-                border-radius: 8px;
-                min-height: 90px;
-                horizontal-stretch: 1;
-                VerticalLayout {
-                    padding: 16px;
-                    spacing: 4px;
-                    Text { text: "👤 محفظة المندوب"; font-size: 14px; font-weight: 600; }
-                    Text { text: "الرصيد: —"; font-size: 13px; color: #7f8c8d; }
-                    // TODO: Display balance from SweetLabCore.get_wallets()
+
+                Rectangle { height: 1px; background: #bdc3c7; }
+
+                if wallet-list.length == 0 && !is-loading: Text {
+                    text: "لا توجد محافظ";
+                    font-size: 13px;
+                    color: #95a5a6;
+                }
+
+                ListView {
+                    min-height: 100px;
+                    for wallet[idx] in root.wallet-list: Rectangle {
+                        height: 44px;
+                        background: Math.mod(idx, 2) == 0 ? #ffffff : #f8f9fa;
+                        border-radius: 4px;
+                        HorizontalLayout {
+                            padding-left: 8px;
+                            padding-right: 8px;
+                            spacing: 8px;
+                            Text {
+                                text: wallet.name;
+                                font-size: 13px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 2;
+                            }
+                            Text {
+                                text: wallet.wallet-type;
+                                font-size: 13px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                color: #7f8c8d;
+                            }
+                            Text {
+                                text: wallet.balance;
+                                font-size: 13px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                font-weight: 600;
+                            }
+                            Button {
+                                text: "📜";
+                                width: 100px;
+                                clicked => { root.load-transactions(wallet.id); }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -68,7 +153,7 @@ export component WalletsView inherits Rectangle {
         HorizontalLayout {
             spacing: 16px;
 
-            // Fund transfer form — SweetLabCore.transfer_funds()
+            // Fund transfer form
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -79,16 +164,14 @@ export component WalletsView inherits Rectangle {
 
                     Text { text: "💸 تحويل أموال"; font-size: 16px; font-weight: 600; }
 
-                    Text { text: "من محفظة"; font-size: 13px; }
+                    Text { text: "معرف المحفظة المصدر"; font-size: 13px; }
                     source-input := LineEdit {
-                        placeholder-text: "اختر المحفظة المصدر";
-                        // TODO: Replace with wallet picker
+                        placeholder-text: "أدخل معرف المحفظة المصدر (UUID)";
                     }
 
-                    Text { text: "إلى محفظة"; font-size: 13px; }
+                    Text { text: "معرف المحفظة الهدف"; font-size: 13px; }
                     dest-input := LineEdit {
-                        placeholder-text: "اختر المحفظة الهدف";
-                        // TODO: Replace with wallet picker
+                        placeholder-text: "أدخل معرف المحفظة الهدف (UUID)";
                     }
 
                     Text { text: "المبلغ"; font-size: 13px; }
@@ -97,16 +180,35 @@ export component WalletsView inherits Rectangle {
                         input-type: decimal;
                     }
 
-                    Button {
-                        text: "تنفيذ التحويل";
-                        // TODO: Call SweetLabCore.transfer_funds(source_id, dest_id, amount)
-                        // Req 9.2: Atomic debit source + credit destination
-                        // Req 9.3: Reject if amount > source balance
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            text: root.is-loading ? "⏳ جاري التحويل..." : "تنفيذ التحويل";
+                            enabled: !root.is-loading;
+                            clicked => {
+                                root.transfer-funds(
+                                    source-input.text,
+                                    dest-input.text,
+                                    amount-input.text,
+                                );
+                                source-input.text = "";
+                                dest-input.text = "";
+                                amount-input.text = "";
+                            }
+                        }
+                        Button {
+                            text: "مسح";
+                            clicked => {
+                                source-input.text = "";
+                                dest-input.text = "";
+                                amount-input.text = "";
+                            }
+                        }
                     }
                 }
             }
 
-            // Transaction history — SweetLabCore.get_transaction_history()
+            // Transaction history
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -117,7 +219,7 @@ export component WalletsView inherits Rectangle {
 
                     Text { text: "📜 سجل المعاملات"; font-size: 16px; font-weight: 600; }
 
-                    // Req 9.6: Transaction history per wallet
+                    // Table header
                     HorizontalLayout {
                         spacing: 8px;
                         Text { text: "التاريخ"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
@@ -127,16 +229,43 @@ export component WalletsView inherits Rectangle {
 
                     Rectangle { height: 1px; background: #bdc3c7; }
 
-                    // Placeholder — TODO: populate from SweetLabCore.get_transaction_history()
-                    Rectangle {
+                    if transaction-list.length == 0 && !is-loading: Text {
+                        text: "اختر محفظة لعرض المعاملات";
+                        font-size: 13px;
+                        color: #95a5a6;
+                    }
+
+                    ListView {
                         min-height: 200px;
                         vertical-stretch: 1;
-                        VerticalLayout {
-                            padding: 8px;
-                            Text {
-                                text: "— سيتم تحميل سجل المعاملات من SweetLabCore —";
-                                font-size: 13px;
-                                color: #95a5a6;
+                        for tx[idx] in root.transaction-list: Rectangle {
+                            height: 40px;
+                            background: Math.mod(idx, 2) == 0 ? #ffffff : #f8f9fa;
+                            border-radius: 4px;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                spacing: 8px;
+                                Text {
+                                    text: tx.timestamp;
+                                    font-size: 12px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 1;
+                                    color: #7f8c8d;
+                                }
+                                Text {
+                                    text: tx.description;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 2;
+                                }
+                                Text {
+                                    text: tx.amount;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 1;
+                                    font-weight: 600;
+                                }
                             }
                         }
                     }

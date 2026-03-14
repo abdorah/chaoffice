@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::auth::rbac::PermissionTable;
 use crate::error::{AppError, AppResult};
-use crate::models::domain::{AppUser, Session, UserRole};
+use crate::models::domain::{AppUser, SafeUser, Session, UserRole};
 use crate::persistence::queries::sessions as session_queries;
 use crate::persistence::queries::users as user_queries;
 
@@ -190,6 +190,24 @@ impl AuthServiceImpl {
         }
 
         Ok(())
+    }
+
+    /// List all users as SafeUser (no password hash exposed).
+    pub async fn list_users(&self) -> AppResult<Vec<SafeUser>> {
+        let rows = user_queries::list_users(&self.pool).await?;
+        let users = rows
+            .into_iter()
+            .filter_map(|row| {
+                let role = UserRole::from_str_value(&row.role)?;
+                Some(SafeUser {
+                    id: Uuid::parse_str(&row.id).ok()?,
+                    username: row.username,
+                    full_name: row.full_name,
+                    role,
+                })
+            })
+            .collect();
+        Ok(users)
     }
 
     /// Check whether a role has permission to perform an action on a resource.

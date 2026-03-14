@@ -1,42 +1,71 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, LineEdit, ListView } from "std-widgets.slint";
 
-// Reports — Req 10.2, 11.4, 12.1, 12.2, 12.3, 12.4
-// Financial summary, inventory report, debt aging, expense report
-// Will be wired to SweetLabCore report methods
+// Data struct for a debt aging row
+export struct DebtAgingItem {
+    customer-name: string,
+    amount: string,
+    overdue-days: int,
+    is-critical: bool,
+}
+
+// Data struct for an inventory report row (raw material or finished good)
+export struct InventoryReportItem {
+    name: string,
+    quantity: string,
+    is-low-stock: bool,
+}
+
+// Reports — Req 24.7
+// Financial summary, inventory report, debt aging
+// Wired to SweetLabCore report methods
 export component ReportsView inherits Rectangle {
+    // Data properties populated from Rust via AppWindow
+    in property <string> total-revenue: "—";
+    in property <string> total-expenses: "—";
+    in property <string> net-profit: "—";
+    in property <[InventoryReportItem]> report-raw-materials;
+    in property <[InventoryReportItem]> report-finished-goods;
+    in property <[DebtAgingItem]> debt-aging-list;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+
+    // Callbacks to Rust
+    callback refresh-reports();
+
     VerticalLayout {
         padding: 24px;
         spacing: 16px;
 
-        Text {
-            text: "التقارير";
-            font-size: 24px;
-            font-weight: 700;
+        // Header row with title and refresh button
+        HorizontalLayout {
+            spacing: 12px;
+            Text {
+                text: "التقارير";
+                font-size: 24px;
+                font-weight: 700;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            Button {
+                text: is-loading ? "⏳ جاري التحديث..." : "🔄 تحديث";
+                enabled: !is-loading;
+                clicked => { root.refresh-reports(); }
+            }
         }
         Text {
-            text: "التقارير المالية وتقارير المخزون والديون والمصروفات";
+            text: "التقارير المالية وتقارير المخزون والديون";
             font-size: 15px;
             color: #7f8c8d;
         }
 
-        // Date range filter
-        HorizontalLayout {
-            spacing: 12px;
-            alignment: start;
-
-            Text { text: "من تاريخ:"; font-size: 13px; vertical-alignment: center; }
-            start-date := LineEdit {
-                placeholder-text: "YYYY-MM-DD";
-                width: 140px;
-            }
-            Text { text: "إلى تاريخ:"; font-size: 13px; vertical-alignment: center; }
-            end-date := LineEdit {
-                placeholder-text: "YYYY-MM-DD";
-                width: 140px;
-            }
-            Button {
-                text: "تحديث";
-                // TODO: Refresh reports with selected date range
+        // Error message
+        if error-message != "": Rectangle {
+            background: #e74c3c;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.error-message; color: white; font-size: 13px; }
             }
         }
 
@@ -44,8 +73,7 @@ export component ReportsView inherits Rectangle {
         HorizontalLayout {
             spacing: 16px;
 
-            // Financial summary — Req 12.1
-            // SweetLabCore.get_financial_summary(start, end)
+            // Financial summary — Req 24.7
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -60,26 +88,22 @@ export component ReportsView inherits Rectangle {
                     HorizontalLayout {
                         spacing: 4px;
                         Text { text: "إجمالي الإيرادات:"; font-size: 13px; }
-                        Text { text: "—"; font-size: 13px; color: #27ae60; }
-                        // TODO: total_revenue from SweetLabCore.get_financial_summary()
+                        Text { text: root.total-revenue; font-size: 13px; color: #27ae60; font-weight: 600; }
                     }
                     HorizontalLayout {
                         spacing: 4px;
                         Text { text: "إجمالي المصروفات:"; font-size: 13px; }
-                        Text { text: "—"; font-size: 13px; color: #e74c3c; }
-                        // TODO: total_expenses from SweetLabCore.get_financial_summary()
+                        Text { text: root.total-expenses; font-size: 13px; color: #e74c3c; font-weight: 600; }
                     }
                     HorizontalLayout {
                         spacing: 4px;
                         Text { text: "صافي الربح:"; font-size: 13px; font-weight: 600; }
-                        Text { text: "—"; font-size: 13px; font-weight: 600; }
-                        // TODO: net_profit from SweetLabCore.get_financial_summary()
+                        Text { text: root.net-profit; font-size: 13px; font-weight: 700; }
                     }
                 }
             }
 
-            // Inventory report — Req 12.2
-            // SweetLabCore.get_inventory_report(threshold)
+            // Inventory report — low stock items
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -95,97 +119,153 @@ export component ReportsView inherits Rectangle {
                         font-size: 12px;
                         color: #7f8c8d;
                     }
-                    // TODO: Display raw materials + finished goods with low-stock highlights
-                    // SweetLabCore.get_inventory_report(low_stock_threshold)
-                    Text {
-                        text: "— سيتم تحميل تقرير المخزون من SweetLabCore —";
+
+                    // Raw materials sub-header
+                    Text { text: "المواد الخام:"; font-size: 12px; font-weight: 600; }
+
+                    if report-raw-materials.length == 0 && !is-loading: Text {
+                        text: "لا توجد مواد خام";
                         font-size: 12px;
                         color: #95a5a6;
+                    }
+
+                    ListView {
+                        min-height: 60px;
+                        for item[idx] in root.report-raw-materials: HorizontalLayout {
+                            spacing: 4px;
+                            height: 22px;
+                            Text {
+                                text: item.is-low-stock ? "⚠️" : "✅";
+                                font-size: 12px;
+                                vertical-alignment: center;
+                                width: 24px;
+                            }
+                            Text {
+                                text: item.name;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 2;
+                                color: item.is-low-stock ? #e74c3c : #2c3e50;
+                            }
+                            Text {
+                                text: item.quantity;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                font-weight: 600;
+                            }
+                        }
+                    }
+
+                    // Finished goods sub-header
+                    Text { text: "المنتجات النهائية:"; font-size: 12px; font-weight: 600; }
+
+                    if report-finished-goods.length == 0 && !is-loading: Text {
+                        text: "لا توجد منتجات نهائية";
+                        font-size: 12px;
+                        color: #95a5a6;
+                    }
+
+                    ListView {
+                        min-height: 60px;
+                        for item[idx] in root.report-finished-goods: HorizontalLayout {
+                            spacing: 4px;
+                            height: 22px;
+                            Text {
+                                text: item.is-low-stock ? "⚠️" : "✅";
+                                font-size: 12px;
+                                vertical-alignment: center;
+                                width: 24px;
+                            }
+                            Text {
+                                text: item.name;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 2;
+                                color: item.is-low-stock ? #e74c3c : #2c3e50;
+                            }
+                            Text {
+                                text: item.quantity;
+                                font-size: 12px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                font-weight: 600;
+                            }
+                        }
                     }
                 }
             }
         }
 
-        HorizontalLayout {
-            spacing: 16px;
+        // Debt aging report
+        Rectangle {
+            background: #ecf0f1;
+            border-radius: 8px;
+            vertical-stretch: 1;
+            VerticalLayout {
+                padding: 16px;
+                spacing: 8px;
 
-            // Debt aging report — Req 10.2
-            // SweetLabCore.get_debt_aging_report()
-            Rectangle {
-                background: #ecf0f1;
-                border-radius: 8px;
-                horizontal-stretch: 1;
-                vertical-stretch: 1;
-                VerticalLayout {
-                    padding: 16px;
+                Text { text: "📊 تقرير أعمار الديون"; font-size: 16px; font-weight: 600; }
+
+                // Table header
+                HorizontalLayout {
                     spacing: 8px;
+                    Text { text: "العميل"; font-size: 12px; font-weight: 600; horizontal-stretch: 2; }
+                    Text { text: "المبلغ"; font-size: 12px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "أيام التأخير"; font-size: 12px; font-weight: 600; horizontal-stretch: 1; }
+                    Text { text: "الحالة"; font-size: 12px; font-weight: 600; horizontal-stretch: 1; }
+                }
+                Rectangle { height: 1px; background: #bdc3c7; }
 
-                    Text { text: "📊 تقرير أعمار الديون"; font-size: 16px; font-weight: 600; }
+                if debt-aging-list.length == 0 && !is-loading: Text {
+                    text: "لا توجد ديون مستحقة";
+                    font-size: 13px;
+                    color: #95a5a6;
+                }
 
-                    // Table header — sorted by overdue days descending
-                    HorizontalLayout {
-                        spacing: 8px;
-                        Text { text: "العميل"; font-size: 12px; font-weight: 600; horizontal-stretch: 2; }
-                        Text { text: "المبلغ"; font-size: 12px; font-weight: 600; horizontal-stretch: 1; }
-                        Text { text: "أيام التأخير"; font-size: 12px; font-weight: 600; horizontal-stretch: 1; }
-                        Text { text: "الحالة"; font-size: 12px; font-weight: 600; horizontal-stretch: 1; }
-                    }
-                    Rectangle { height: 1px; background: #bdc3c7; }
-
-                    // TODO: populate from SweetLabCore.get_debt_aging_report()
-                    // Sorted by overdue_days descending, critical flag for > 30 days
-                    Text {
-                        text: "— سيتم تحميل تقرير الديون من SweetLabCore —";
-                        font-size: 12px;
-                        color: #95a5a6;
+                ListView {
+                    min-height: 120px;
+                    vertical-stretch: 1;
+                    for debt[idx] in root.debt-aging-list: Rectangle {
+                        height: 36px;
+                        background: Math.mod(idx, 2) == 0 ? #ffffff : #f8f9fa;
+                        border-radius: 4px;
+                        HorizontalLayout {
+                            padding-left: 8px;
+                            padding-right: 8px;
+                            spacing: 8px;
+                            Text {
+                                text: debt.customer-name;
+                                font-size: 13px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 2;
+                            }
+                            Text {
+                                text: debt.amount;
+                                font-size: 13px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                font-weight: 600;
+                            }
+                            Text {
+                                text: debt.overdue-days;
+                                font-size: 13px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                color: debt.is-critical ? #e74c3c : #7f8c8d;
+                            }
+                            Text {
+                                text: debt.is-critical ? "⚠️ حرج" : "عادي";
+                                font-size: 13px;
+                                vertical-alignment: center;
+                                horizontal-stretch: 1;
+                                color: debt.is-critical ? #e74c3c : #27ae60;
+                                font-weight: 600;
+                            }
+                        }
                     }
                 }
-            }
-
-            // Expense report — Req 11.4
-            // SweetLabCore.get_expenses_by_category()
-            Rectangle {
-                background: #ecf0f1;
-                border-radius: 8px;
-                horizontal-stretch: 1;
-                vertical-stretch: 1;
-                VerticalLayout {
-                    padding: 16px;
-                    spacing: 8px;
-
-                    Text { text: "💸 تقرير المصروفات"; font-size: 16px; font-weight: 600; }
-
-                    // Grouped by category with subtotals
-                    HorizontalLayout {
-                        spacing: 8px;
-                        Text { text: "الفئة"; font-size: 12px; font-weight: 600; horizontal-stretch: 2; }
-                        Text { text: "المجموع الفرعي"; font-size: 12px; font-weight: 600; horizontal-stretch: 1; }
-                    }
-                    Rectangle { height: 1px; background: #bdc3c7; }
-
-                    // TODO: populate from SweetLabCore expenses grouped by category
-                    // Req 11.4: grouped by category, subtotals, grand total
-                    Text {
-                        text: "— سيتم تحميل تقرير المصروفات من SweetLabCore —";
-                        font-size: 12px;
-                        color: #95a5a6;
-                    }
-                }
-            }
-        }
-
-        // Export buttons — Req 12.4
-        HorizontalLayout {
-            spacing: 12px;
-            alignment: start;
-
-            Button {
-                text: "📄 تصدير PDF";
-                // TODO: Call SweetLabCore.export_to_pdf()
-            }
-            Button {
-                text: "📊 تصدير Excel";
-                // TODO: Call SweetLabCore.export_to_excel()
             }
         }
     }

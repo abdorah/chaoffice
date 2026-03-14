@@ -182,6 +182,12 @@ impl SweetLabCore {
         self.auth.update_user_role(user_id, new_role).await
     }
 
+    /// List all users (requires valid session). Returns SafeUser (no password hash).
+    pub async fn list_users(&self, session_token: Uuid) -> AppResult<Vec<SafeUser>> {
+        self.authorize(session_token, "users", "manage").await?;
+        self.auth.list_users().await
+    }
+
     pub async fn check_permission(
         &self,
         role: UserRole,

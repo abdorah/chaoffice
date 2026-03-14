@@ -1,16 +1,16 @@
 import { Button, VerticalBox, HorizontalBox, LineEdit, GridBox, ListView } from "std-widgets.slint";
 import { LoginPanel } from "login.slint";
-import { AdminDashboardView } from "admin/dashboard.slint";
-import { UserManagementView } from "admin/user_management.slint";
-import { InventoryView } from "admin/inventory.slint";
-import { RecipesView } from "admin/recipes.slint";
-import { WalletsView } from "admin/wallets.slint";
-import { ReportsView } from "admin/reports.slint";
-import { ChefProductionView } from "chef/production.slint";
-import { RepresentativeSalesView } from "representative/sales.slint";
-import { RepresentativeCustomersView } from "representative/customers.slint";
-import { RepresentativeExpensesView } from "representative/expenses.slint";
-import { RepresentativePaymentsView } from "representative/payments.slint";
+import { AdminDashboardView, WalletBalanceItem } from "admin/dashboard.slint";
+import { UserManagementView, UserItem } from "admin/user_management.slint";
+import { InventoryView, RawMaterialItem, FinishedGoodItem } from "admin/inventory.slint";
+import { RecipesView, RecipeItem } from "admin/recipes.slint";
+import { WalletsView, WalletItem, TransactionItem } from "admin/wallets.slint";
+import { ReportsView, DebtAgingItem, InventoryReportItem } from "admin/reports.slint";
+import { ChefProductionView, RecipeAvailabilityItem } from "chef/production.slint";
+import { RepresentativeSalesView, SalesCustomerItem, SalesFinishedGoodItem, SalesWalletItem, SaleHistoryItem } from "representative/sales.slint";
+import { RepresentativeCustomersView, CustomerItem } from "representative/customers.slint";
+import { RepresentativeExpensesView, ExpenseItem, ExpenseWalletItem } from "representative/expenses.slint";
+import { RepresentativePaymentsView, DebtItem, PaymentWalletItem, PaymentCustomerItem } from "representative/payments.slint";
 
 // Active view enumeration
 enum ActiveView {
@@ -129,6 +129,7 @@ export component AppWindow inherits Window {
     callback login(string, string);
     callback logout();
     callback navigate(int);
+    callback refresh-dashboard();
 
     // Properties set from Rust
     in-out property <ActiveView> current-view: ActiveView.Login;
@@ -136,6 +137,130 @@ export component AppWindow inherits Window {
     in-out property <string> login-error: "";
     in-out property <bool> login-loading: false;
     in-out property <int> nav-index: 0;
+
+    // Dashboard data properties (populated from Rust)
+    in-out property <[WalletBalanceItem]> dashboard-wallet-balances;
+    in-out property <int> dashboard-active-debts-count: 0;
+    in-out property <int> dashboard-low-stock-count: 0;
+    in-out property <bool> dashboard-loading: false;
+    in-out property <string> dashboard-error: "";
+
+    // User management data properties (populated from Rust)
+    in-out property <[UserItem]> user-list;
+    in-out property <bool> user-mgmt-loading: false;
+    in-out property <string> user-mgmt-error: "";
+    in-out property <string> user-mgmt-success: "";
+
+    // User management callbacks
+    callback create-user(string, string, string, string);
+    callback update-user-role(string, string);
+    callback refresh-users();
+
+    // Inventory data properties (populated from Rust)
+    in-out property <[RawMaterialItem]> inventory-raw-materials;
+    in-out property <[FinishedGoodItem]> inventory-finished-goods;
+    in-out property <bool> inventory-loading: false;
+    in-out property <string> inventory-error: "";
+
+    // Inventory callbacks
+    callback refresh-inventory();
+
+    // Recipe data properties (populated from Rust)
+    in-out property <[RecipeItem]> recipe-list;
+    in-out property <bool> recipes-loading: false;
+    in-out property <string> recipes-error: "";
+    in-out property <string> recipes-success: "";
+
+    // Recipe callbacks
+    callback create-recipe(string, string, string);
+    callback delete-recipe(string);
+    callback refresh-recipes();
+
+    // Wallet data properties (populated from Rust)
+    in-out property <[WalletItem]> wallet-list;
+    in-out property <[TransactionItem]> wallet-transaction-list;
+    in-out property <bool> wallets-loading: false;
+    in-out property <string> wallets-error: "";
+    in-out property <string> wallets-success: "";
+
+    // Wallet callbacks
+    callback transfer-funds(string, string, string);
+    callback load-wallet-transactions(string);
+    callback refresh-wallets();
+
+    // Reports data properties (populated from Rust)
+    in-out property <string> reports-total-revenue: "—";
+    in-out property <string> reports-total-expenses: "—";
+    in-out property <string> reports-net-profit: "—";
+    in-out property <[InventoryReportItem]> reports-raw-materials;
+    in-out property <[InventoryReportItem]> reports-finished-goods;
+    in-out property <[DebtAgingItem]> reports-debt-aging;
+    in-out property <bool> reports-loading: false;
+    in-out property <string> reports-error: "";
+
+    // Reports callbacks
+    callback refresh-reports();
+
+    // Chef production data properties (populated from Rust)
+    in-out property <[RecipeAvailabilityItem]> production-recipe-availability;
+    in-out property <bool> production-loading: false;
+    in-out property <string> production-error: "";
+    in-out property <string> production-success: "";
+
+    // Chef production callbacks
+    callback execute-production(string, int);
+    callback refresh-production();
+
+    // Representative sales data properties (populated from Rust)
+    in-out property <[SalesCustomerItem]> sales-customer-list;
+    in-out property <[SalesFinishedGoodItem]> sales-finished-goods-list;
+    in-out property <[SalesWalletItem]> sales-wallet-list;
+    in-out property <[SaleHistoryItem]> sales-history;
+    in-out property <bool> sales-loading: false;
+    in-out property <string> sales-error: "";
+    in-out property <string> sales-success: "";
+
+    // Representative sales callbacks
+    callback create-sale(string, string, string, string);
+    callback refresh-sales();
+
+    // Representative customers data properties (populated from Rust — Req 24.10)
+    in-out property <[CustomerItem]> customers-list;
+    in-out property <bool> customers-loading: false;
+    in-out property <string> customers-error: "";
+    in-out property <string> customers-success: "";
+
+    // Representative customers callbacks
+    callback search-customers(string);
+    callback create-customer(string, string, string);
+    callback update-customer-rating(string, int);
+    callback refresh-customers();
+
+    // Representative expenses data properties (populated from Rust — Req 24.11)
+    in-out property <[ExpenseItem]> expenses-list;
+    in-out property <[ExpenseWalletItem]> expense-wallet-list;
+    in-out property <[string]> expense-wallet-names;
+    in-out property <bool> expenses-loading: false;
+    in-out property <string> expenses-error: "";
+    in-out property <string> expenses-success: "";
+
+    // Representative expenses callbacks
+    callback record-expense(string, string, string, string);
+    callback refresh-expenses();
+
+    // Representative payments data properties (populated from Rust — Req 24.12)
+    in-out property <[DebtItem]> payments-debts-list;
+    in-out property <[PaymentWalletItem]> payment-wallet-list;
+    in-out property <[string]> payment-wallet-names;
+    in-out property <[PaymentCustomerItem]> payment-customer-list;
+    in-out property <[string]> payment-customer-names;
+    in-out property <bool> payments-loading: false;
+    in-out property <string> payments-error: "";
+    in-out property <string> payments-success: "";
+
+    // Representative payments callbacks
+    callback record-payment(string, string, string);
+    callback refresh-payments();
 
     if current-view == ActiveView.Login: LoginPanel {
         error-message: root.login-error;
@@ -156,24 +281,124 @@ export component AppWindow inherits Window {
             background: #f5f6fa;
 
             // Admin screens — nav_index-based switching
-            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 0: AdminDashboardView {}
-            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 1: UserManagementView {}
-            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 2: InventoryView {}
-            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 3: RecipesView {}
-            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 4: WalletsView {}
-            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 5: ReportsView {}
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 0: AdminDashboardView {
+                wallet-balances: root.dashboard-wallet-balances;
+                active-debts-count: root.dashboard-active-debts-count;
+                low-stock-count: root.dashboard-low-stock-count;
+                is-loading: root.dashboard-loading;
+                error-message: root.dashboard-error;
+                refresh => { root.refresh-dashboard(); }
+            }
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 1: UserManagementView {
+                user-list: root.user-list;
+                is-loading: root.user-mgmt-loading;
+                error-message: root.user-mgmt-error;
+                success-message: root.user-mgmt-success;
+                create-user(u, p, f, r) => { root.create-user(u, p, f, r); }
+                update-role(id, role) => { root.update-user-role(id, role); }
+                refresh-users => { root.refresh-users(); }
+            }
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 2: InventoryView {
+                raw-materials: root.inventory-raw-materials;
+                finished-goods: root.inventory-finished-goods;
+                is-loading: root.inventory-loading;
+                error-message: root.inventory-error;
+                refresh => { root.refresh-inventory(); }
+            }
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 3: RecipesView {
+                recipe-list: root.recipe-list;
+                is-loading: root.recipes-loading;
+                error-message: root.recipes-error;
+                success-message: root.recipes-success;
+                create-recipe(name, fg-id, ingredients) => { root.create-recipe(name, fg-id, ingredients); }
+                delete-recipe(id) => { root.delete-recipe(id); }
+                refresh-recipes => { root.refresh-recipes(); }
+            }
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 4: WalletsView {
+                wallet-list: root.wallet-list;
+                transaction-list: root.wallet-transaction-list;
+                is-loading: root.wallets-loading;
+                error-message: root.wallets-error;
+                success-message: root.wallets-success;
+                transfer-funds(src, dst, amt) => { root.transfer-funds(src, dst, amt); }
+                load-transactions(wid) => { root.load-wallet-transactions(wid); }
+                refresh-wallets => { root.refresh-wallets(); }
+            }
+            if root.current-view == ActiveView.AdminDashboard && root.nav-index == 5: ReportsView {
+                total-revenue: root.reports-total-revenue;
+                total-expenses: root.reports-total-expenses;
+                net-profit: root.reports-net-profit;
+                report-raw-materials: root.reports-raw-materials;
+                report-finished-goods: root.reports-finished-goods;
+                debt-aging-list: root.reports-debt-aging;
+                is-loading: root.reports-loading;
+                error-message: root.reports-error;
+                refresh-reports => { root.refresh-reports(); }
+            }
 
             // Chef screens — nav_index-based switching (task 24.4)
             // nav_index 0 → Production, nav_index 1 → Inventory (read-only)
-            if root.current-view == ActiveView.ChefProduction && root.nav-index == 0: ChefProductionView {}
-            if root.current-view == ActiveView.ChefProduction && root.nav-index == 1: InventoryView {}
+            if root.current-view == ActiveView.ChefProduction && root.nav-index == 0: ChefProductionView {
+                recipe-availability-list: root.production-recipe-availability;
+                is-loading: root.production-loading;
+                error-message: root.production-error;
+                success-message: root.production-success;
+                execute-production(recipe-id, qty) => { root.execute-production(recipe-id, qty); }
+                refresh-production => { root.refresh-production(); }
+            }
+            if root.current-view == ActiveView.ChefProduction && root.nav-index == 1: InventoryView {
+                raw-materials: root.inventory-raw-materials;
+                finished-goods: root.inventory-finished-goods;
+                is-loading: root.inventory-loading;
+                error-message: root.inventory-error;
+                refresh => { root.refresh-inventory(); }
+            }
 
             // Representative screens — nav_index-based switching (task 24.5)
             // nav_index 0 → Sales, nav_index 1 → Customers, nav_index 2 → Expenses, nav_index 3 → Payments
-            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 0: RepresentativeSalesView {}
-            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 1: RepresentativeCustomersView {}
-            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 2: RepresentativeExpensesView {}
-            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 3: RepresentativePaymentsView {}
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 0: RepresentativeSalesView {
+                customer-list: root.sales-customer-list;
+                finished-goods-list: root.sales-finished-goods-list;
+                wallet-list: root.sales-wallet-list;
+                sales-history: root.sales-history;
+                is-loading: root.sales-loading;
+                error-message: root.sales-error;
+                success-message: root.sales-success;
+                create-sale(cid, items, amt, wid) => { root.create-sale(cid, items, amt, wid); }
+                refresh-sales => { root.refresh-sales(); }
+            }
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 1: RepresentativeCustomersView {
+                customer-list: root.customers-list;
+                is-loading: root.customers-loading;
+                error-message: root.customers-error;
+                success-message: root.customers-success;
+                search-customers(query) => { root.search-customers(query); }
+                create-customer(name, city, mobile) => { root.create-customer(name, city, mobile); }
+                update-rating(id, rating) => { root.update-customer-rating(id, rating); }
+                refresh-customers => { root.refresh-customers(); }
+            }
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 2: RepresentativeExpensesView {
+                expenses-list: root.expenses-list;
+                expense-wallet-list: root.expense-wallet-list;
+                expense-wallet-names: root.expense-wallet-names;
+                is-loading: root.expenses-loading;
+                error-message: root.expenses-error;
+                success-message: root.expenses-success;
+                record-expense(desc, amt, cat, wid) => { root.record-expense(desc, amt, cat, wid); }
+                refresh-expenses => { root.refresh-expenses(); }
+            }
+            if root.current-view == ActiveView.RepresentativeSales && root.nav-index == 3: RepresentativePaymentsView {
+                debts-list: root.payments-debts-list;
+                payment-wallet-list: root.payment-wallet-list;
+                payment-wallet-names: root.payment-wallet-names;
+                payment-customer-list: root.payment-customer-list;
+                payment-customer-names: root.payment-customer-names;
+                is-loading: root.payments-loading;
+                error-message: root.payments-error;
+                success-message: root.payments-success;
+                record-payment(cid, amt, wid) => { root.record-payment(cid, amt, wid); }
+                refresh-payments => { root.refresh-payments(); }
+            }
         }
     }
 }

@@ -1,29 +1,69 @@
-import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, ListView } from "std-widgets.slint";
 
-// Admin Dashboard — Req 2.6
+// Data struct for a single wallet balance entry
+export struct WalletBalanceItem {
+    name: string,
+    balance: string,
+    wallet-type: string,
+}
+
+// Admin Dashboard — Req 24.3
 // Overview cards: wallet balances, active debts, low-stock alerts
-// Will be wired to SweetLabCore.get_wallets(), get_debt_aging_report(), get_inventory_report()
+// Wired to SweetLabCore.get_wallets(), get_active_debts(), get_inventory_report()
 export component AdminDashboardView inherits Rectangle {
+    // Data properties populated from Rust via AppWindow
+    in property <[WalletBalanceItem]> wallet-balances;
+    in property <int> active-debts-count: 0;
+    in property <int> low-stock-count: 0;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+
+    // Callback to request data refresh from Rust
+    callback refresh();
+
     VerticalLayout {
         padding: 24px;
         spacing: 16px;
 
-        Text {
-            text: "لوحة تحكم المدير";
-            font-size: 24px;
-            font-weight: 700;
+        // Header row with title and refresh button
+        HorizontalLayout {
+            spacing: 12px;
+            Text {
+                text: "لوحة تحكم المدير";
+                font-size: 24px;
+                font-weight: 700;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            Button {
+                text: is-loading ? "⏳ جاري التحديث..." : "🔄 تحديث";
+                enabled: !is-loading;
+                clicked => { root.refresh(); }
+            }
         }
+
         Text {
             text: "مرحباً بك في نظام إدارة مصنع الحلويات";
             font-size: 15px;
             color: #7f8c8d;
         }
 
+        // Error message
+        if error-message != "": Rectangle {
+            background: #e74c3c;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.error-message; color: white; font-size: 13px; }
+            }
+        }
+
         // Overview cards row
         HorizontalLayout {
             spacing: 16px;
 
-            // Wallet balances card — SweetLabCore.get_wallets()
+            // Wallet balances card
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -33,12 +73,30 @@ export component AdminDashboardView inherits Rectangle {
                     padding: 16px;
                     spacing: 6px;
                     Text { text: "💰 أرصدة المحافظ"; font-size: 15px; font-weight: 600; }
-                    Text { text: "— سيتم ربطها بـ SweetLabCore —"; font-size: 12px; color: #95a5a6; }
-                    // TODO: Display wallet balances from SweetLabCore.get_wallets()
+                    if wallet-balances.length == 0 && !is-loading: Text {
+                        text: "لا توجد محافظ";
+                        font-size: 12px;
+                        color: #95a5a6;
+                    }
+                    for item in wallet-balances: HorizontalLayout {
+                        spacing: 8px;
+                        Text {
+                            text: item.name;
+                            font-size: 13px;
+                            color: #2c3e50;
+                            horizontal-stretch: 1;
+                        }
+                        Text {
+                            text: item.balance;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #27ae60;
+                        }
+                    }
                 }
             }
 
-            // Active debts card — SweetLabCore.get_debt_aging_report()
+            // Active debts card
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -48,12 +106,18 @@ export component AdminDashboardView inherits Rectangle {
                     padding: 16px;
                     spacing: 6px;
                     Text { text: "📊 الديون النشطة"; font-size: 15px; font-weight: 600; }
-                    Text { text: "— سيتم ربطها بـ SweetLabCore —"; font-size: 12px; color: #95a5a6; }
-                    // TODO: Display active debt count from SweetLabCore.get_debt_aging_report()
+                    Text {
+                        text: root.active-debts-count == 0 && !root.is-loading
+                            ? "لا توجد ديون نشطة"
+                            : "\{root.active-debts-count} دين نشط";
+                        font-size: 22px;
+                        font-weight: 700;
+                        color: root.active-debts-count > 0 ? #e74c3c : #27ae60;
+                    }
                 }
             }
 
-            // Low-stock alerts card — SweetLabCore.get_inventory_report()
+            // Low-stock alerts card
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -63,8 +127,14 @@ export component AdminDashboardView inherits Rectangle {
                     padding: 16px;
                     spacing: 6px;
                     Text { text: "⚠️ تنبيهات المخزون"; font-size: 15px; font-weight: 600; }
-                    Text { text: "— سيتم ربطها بـ SweetLabCore —"; font-size: 12px; color: #95a5a6; }
-                    // TODO: Display low-stock alerts from SweetLabCore.get_inventory_report()
+                    Text {
+                        text: root.low-stock-count == 0 && !root.is-loading
+                            ? "المخزون جيد"
+                            : "\{root.low-stock-count} صنف منخفض";
+                        font-size: 22px;
+                        font-weight: 700;
+                        color: root.low-stock-count > 0 ? #e67e22 : #27ae60;
+                    }
                 }
             }
         }
@@ -80,7 +150,6 @@ export component AdminDashboardView inherits Rectangle {
                 spacing: 8px;
                 Text { text: "📋 النشاط الأخير"; font-size: 16px; font-weight: 600; }
                 Text { text: "آخر العمليات والأحداث في النظام"; font-size: 13px; color: #7f8c8d; }
-                // TODO: Display recent activity log
             }
         }
     }

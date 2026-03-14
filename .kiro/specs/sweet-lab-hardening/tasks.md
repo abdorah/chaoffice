@@ -327,7 +327,7 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
   - Ensure all tests pass, run `cargo test` for the full core crate, ask the user if questions arise.
 
 - [ ] 12. Desktop UI wiring: Core initialization and login
-  - [-] 12.1 Initialize SweetLabCore in desktop main.rs
+  - [x] 12.1 Initialize SweetLabCore in desktop main.rs
     - Update `desktop/src/main.rs`:
       - Create a Tokio runtime
       - Call `SweetLabCore::new("sweet_lab.db", "Sweet Lab", None)` via `rt.block_on()`
@@ -336,7 +336,7 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
     - Update `desktop/Cargo.toml` to add `tokio` dependency with `rt-multi-thread` feature
     - _Requirements: 24.1_
 
-  - [~] 12.2 Wire login callback to Core_Engine
+  - [x] 12.2 Wire login callback to Core_Engine
     - Replace placeholder username-based routing with actual `core.login()` call
     - Use `slint::spawn_local()` or `rt.block_on()` for async bridging
     - On success: store session token, set current_role and current_view based on session.role
@@ -344,76 +344,76 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
     - Manage login_loading state
     - _Requirements: 24.2_
 
-  - [~] 12.3 Wire logout callback
+  - [x] 12.3 Wire logout callback
     - Call `core.logout(session_token)` on logout
     - Clear session token, reset view to Login
     - _Requirements: 24.2_
 
-- [ ] 13. Desktop UI wiring: Admin screens
-  - [~] 13.1 Wire admin dashboard with live data
+- [x] 13. Desktop UI wiring: Admin screens
+  - [x] 13.1 Wire admin dashboard with live data
     - Update `desktop/ui/admin/dashboard.slint` to expose data properties (wallet_balances, active_debts_count, low_stock_count)
     - In `desktop/src/main.rs`, add callback/refresh logic that calls `core.get_wallets()`, `core.get_active_debts()`, `core.get_inventory_report()` and populates Slint properties
     - _Requirements: 24.3_
 
-  - [~] 13.2 Wire user management screen
+  - [x] 13.2 Wire user management screen
     - Update `desktop/ui/admin/user_management.slint` to expose user list model and create-user callback
     - Wire callbacks to `core.create_user()` and `core.update_user_role()` (passing session_token)
     - Refresh user list after mutations
     - _Requirements: 24.4_
 
-  - [~] 13.3 Wire inventory screen with live data
+  - [x] 13.3 Wire inventory screen with live data
     - Update `desktop/ui/admin/inventory.slint` to expose raw_materials and finished_goods list models
     - Wire refresh callback to `core.get_raw_materials()` and `core.get_finished_goods()`
     - _Requirements: 24.3_
 
-  - [~] 13.4 Wire recipes screen
+  - [x] 13.4 Wire recipes screen
     - Update `desktop/ui/admin/recipes.slint` to expose recipe list model and CRUD callbacks
     - Wire to `core.get_recipes()`, `core.create_recipe()`, `core.delete_recipe()`
     - _Requirements: 24.6_
 
-  - [~] 13.5 Wire wallets screen
+  - [x] 13.5 Wire wallets screen
     - Update `desktop/ui/admin/wallets.slint` to expose wallet list, transaction history, and transfer callback
     - Wire to `core.get_wallets()`, `core.get_transaction_history()`, `core.transfer_funds()`
     - _Requirements: 24.5_
 
-  - [~] 13.6 Wire reports screen
+  - [x] 13.6 Wire reports screen
     - Update `desktop/ui/admin/reports.slint` to expose financial summary, inventory report, and debt aging data
     - Wire to `core.get_financial_summary()`, `core.get_inventory_report()`, `core.get_debt_aging_report()`
     - _Requirements: 24.7_
 
-- [ ] 14. Desktop UI wiring: Chef and Representative screens
-  - [~] 14.1 Wire chef production screen
+- [x] 14. Desktop UI wiring: Chef and Representative screens
+  - [x] 14.1 Wire chef production screen
     - Update `desktop/ui/chef/production.slint` to expose recipe availability model and execute callback
     - Wire to `core.get_recipe_availability()` and `core.execute_production()`
     - _Requirements: 24.8_
 
-  - [~] 14.2 Wire representative sales screen
+  - [x] 14.2 Wire representative sales screen
     - Update `desktop/ui/representative/sales.slint` to expose customer list, finished goods, and create-sale callback
     - Wire to `core.get_customers()`, `core.get_finished_goods()`, `core.create_sale()`
     - _Requirements: 24.9_
 
-  - [~] 14.3 Wire representative customers screen
+  - [x] 14.3 Wire representative customers screen
     - Update `desktop/ui/representative/customers.slint` to expose customer list model, search, and CRUD callbacks
     - Wire to `core.search_customers()`, `core.create_customer()`, `core.update_reliability_rating()`
     - _Requirements: 24.10_
 
-  - [~] 14.4 Wire representative expenses screen
+  - [x] 14.4 Wire representative expenses screen
     - Update `desktop/ui/representative/expenses.slint` to expose expense form and submit callback
     - Wire to `core.record_expense()`
     - _Requirements: 24.11_
 
-  - [~] 14.5 Wire representative payments screen
+  - [x] 14.5 Wire representative payments screen
     - Update `desktop/ui/representative/payments.slint` to expose payment form, customer debt summary, and submit callback
     - Wire to `core.get_active_debts()`, `core.record_debt_payment()`
     - _Requirements: 24.12_
 
-  - [~] 14.6 Implement auto-refresh and loading states across all screens
+  - [x] 14.6 Implement auto-refresh and loading states across all screens
     - After every successful mutation callback, re-fetch and update the affected Slint model properties
     - Set is-loading = true before async calls, false after completion
     - Display error-message on failure
     - _Requirements: 24.13, 24.14_
 
-- [ ] 15. Final checkpoint — Full hardening complete
+- [x] 15. Final checkpoint — Full hardening complete
   - Run `cargo test` for core crate, build desktop binary with `cargo build -p desktop`, verify all screens load with live data, ask the user if questions arise.
 
 ## Notes

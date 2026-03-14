@@ -6146,6 +6146,8 @@ dependencies = [
 name = "sweet-lab-desktop"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "serde_json",
  "slint",
  "slint-build",
  "sweet-lab-core",

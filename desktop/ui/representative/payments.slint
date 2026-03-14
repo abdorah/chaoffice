@@ -1,11 +1,49 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox, ListView } from "std-widgets.slint";
 
-// Representative Customer Payment Screen — Req 9.5, 10.3, 10.4
+// Data model for an active debt record item
+export struct DebtItem {
+    id: string,
+    customer-id: string,
+    customer-name: string,
+    sale-date: string,
+    original-amount: string,
+    remaining-amount: string,
+    overdue-days: int,
+    is-critical: bool,
+}
+
+// Data model for a wallet option in the payment form
+export struct PaymentWalletItem {
+    id: string,
+    name: string,
+    balance: string,
+}
+
+// Data model for a customer option in the payment form
+export struct PaymentCustomerItem {
+    id: string,
+    name: string,
+    total-debt: string,
+    overdue-days: int,
+}
+
+// Representative Customer Payment Screen — Req 24.12
 // Customer picker with debt summary, payment amount, wallet selector, FIFO allocation
-// Will be wired to SweetLabCore.record_debt_payment(), get_active_debts(), get_wallets()
+// Wired to SweetLabCore.record_debt_payment(), get_active_debts(), get_wallets()
 export component RepresentativePaymentsView inherits Rectangle {
-    // TODO: Wire callbacks to SweetLabCore via Rust main.rs
-    // callback record-payment(string /* customer_id */, float /* amount */, string /* wallet_id */);
+    // Data properties (populated from Rust)
+    in property <[DebtItem]> debts-list;
+    in property <[PaymentWalletItem]> payment-wallet-list;
+    in property <[string]> payment-wallet-names;
+    in property <[PaymentCustomerItem]> payment-customer-list;
+    in property <[string]> payment-customer-names;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+    in property <string> success-message: "";
+
+    // Callbacks wired to Rust
+    callback record-payment(string /* customer_id */, string /* amount */, string /* wallet_id */);
+    callback refresh-payments();
 
     VerticalLayout {
         padding: 24px;
@@ -22,6 +60,33 @@ export component RepresentativePaymentsView inherits Rectangle {
             color: #7f8c8d;
         }
 
+        // Status messages
+        if root.error-message != "": Rectangle {
+            background: #fadbd8;
+            border-radius: 4px;
+            min-height: 30px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.error-message; font-size: 13px; color: #c0392b; }
+            }
+        }
+        if root.success-message != "": Rectangle {
+            background: #d5f5e3;
+            border-radius: 4px;
+            min-height: 30px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.success-message; font-size: 13px; color: #27ae60; }
+            }
+        }
+
+        // Loading indicator
+        if root.is-loading: Text {
+            text: "جاري التحميل...";
+            font-size: 14px;
+            color: #3498db;
+        }
+
         HorizontalLayout {
             spacing: 16px;
 
@@ -36,15 +101,15 @@ export component RepresentativePaymentsView inherits Rectangle {
 
                     Text { text: "➕ تسجيل دفعة جديدة"; font-size: 16px; font-weight: 600; }
 
-                    // Customer picker with debt summary — Req 9.5
+                    // Customer picker
                     Text { text: "العميل"; font-size: 13px; }
-                    customer-input := LineEdit {
-                        placeholder-text: "اختر العميل";
-                        // TODO: Replace with customer picker from SweetLabCore.search_customers()
+                    customer-combo := ComboBox {
+                        model: root.payment-customer-names;
+                        current-index: 0;
                     }
 
-                    // Customer debt summary display — Req 9.5
-                    Rectangle {
+                    // Customer debt summary display
+                    if root.payment-customer-list.length > 0 && customer-combo.current-index >= 0 && customer-combo.current-index < root.payment-customer-list.length: Rectangle {
                         background: white;
                         border-radius: 4px;
                         min-height: 70px;
@@ -55,16 +120,21 @@ export component RepresentativePaymentsView inherits Rectangle {
                             HorizontalLayout {
                                 spacing: 4px;
                                 Text { text: "إجمالي الديون:"; font-size: 12px; }
-                                Text { text: "—"; font-size: 12px; color: #e74c3c; }
-                                // TODO: Display customer.total_debt
+                                Text {
+                                    text: root.payment-customer-list[customer-combo.current-index].total-debt;
+                                    font-size: 12px;
+                                    color: #e74c3c;
+                                }
                             }
                             HorizontalLayout {
                                 spacing: 4px;
                                 Text { text: "أيام التأخير:"; font-size: 12px; }
-                                Text { text: "—"; font-size: 12px; color: #e74c3c; }
-                                // TODO: Display customer.overdue_days
+                                Text {
+                                    text: root.payment-customer-list[customer-combo.current-index].overdue-days;
+                                    font-size: 12px;
+                                    color: #e74c3c;
+                                }
                             }
-                            // TODO: Populate from selected customer's debt info
                         }
                     }
 
@@ -77,12 +147,27 @@ export component RepresentativePaymentsView inherits Rectangle {
 
                     // Wallet selector
                     Text { text: "المحفظة"; font-size: 13px; }
-                    wallet-input := LineEdit {
-                        placeholder-text: "اختر المحفظة";
-                        // TODO: Replace with wallet picker from SweetLabCore.get_wallets()
+                    wallet-combo := ComboBox {
+                        model: root.payment-wallet-names;
+                        current-index: 0;
                     }
 
-                    // FIFO allocation note — Req 10.3
+                    // Wallet balance display
+                    if root.payment-wallet-list.length > 0 && wallet-combo.current-index >= 0 && wallet-combo.current-index < root.payment-wallet-list.length: Rectangle {
+                        background: #fef9e7;
+                        border-radius: 4px;
+                        min-height: 30px;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: "رصيد المحفظة: " + root.payment-wallet-list[wallet-combo.current-index].balance;
+                                font-size: 12px;
+                                color: #7d6608;
+                            }
+                        }
+                    }
+
+                    // FIFO allocation note
                     Rectangle {
                         background: #eaf2f8;
                         border-radius: 4px;
@@ -94,27 +179,45 @@ export component RepresentativePaymentsView inherits Rectangle {
                                 font-size: 12px;
                                 color: #2471a3;
                             }
-                            Text {
-                                text: "الديون المسددة بالكامل ستُزال من القائمة النشطة";
-                                font-size: 11px;
-                                color: #5499c7;
-                            }
-                            // Req 10.3: Payment applied oldest first
-                            // Req 10.4: Settled debts removed from active list
                         }
                     }
 
-                    Button {
-                        text: "تسجيل الدفعة";
-                        // TODO: Call SweetLabCore.record_debt_payment(customer_id, amount, wallet_id)
-                        // Req 9.5: Credit wallet + reduce customer debt
-                        // Req 10.3: FIFO allocation to oldest debts
-                        // Req 10.4: Mark fully paid debts as settled
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Button {
+                            text: "تسجيل الدفعة";
+                            enabled: !root.is-loading;
+                            clicked => {
+                                if (root.payment-customer-list.length > 0
+                                    && customer-combo.current-index >= 0
+                                    && customer-combo.current-index < root.payment-customer-list.length
+                                    && root.payment-wallet-list.length > 0
+                                    && wallet-combo.current-index >= 0
+                                    && wallet-combo.current-index < root.payment-wallet-list.length) {
+                                    root.record-payment(
+                                        root.payment-customer-list[customer-combo.current-index].id,
+                                        amount-input.text,
+                                        root.payment-wallet-list[wallet-combo.current-index].id,
+                                    );
+                                }
+                            }
+                        }
+                        Button {
+                            text: "مسح";
+                            clicked => {
+                                amount-input.text = "";
+                            }
+                        }
+                        Button {
+                            text: "🔄 تحديث";
+                            enabled: !root.is-loading;
+                            clicked => { root.refresh-payments(); }
+                        }
                     }
                 }
             }
 
-            // ── Right panel: Active debts for selected customer ──
+            // ── Right panel: Active debts list ──
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -123,55 +226,42 @@ export component RepresentativePaymentsView inherits Rectangle {
                     padding: 16px;
                     spacing: 10px;
 
-                    Text { text: "📊 الديون النشطة للعميل"; font-size: 16px; font-weight: 600; }
+                    Text { text: "📊 الديون النشطة"; font-size: 16px; font-weight: 600; }
 
-                    // Table header — sorted by sale_date ascending (oldest first for FIFO)
+                    // Table header
                     HorizontalLayout {
                         spacing: 8px;
+                        Text { text: "العميل"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
                         Text { text: "تاريخ البيع"; font-size: 13px; font-weight: 600; horizontal-stretch: 2; }
                         Text { text: "المبلغ الأصلي"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
                         Text { text: "المتبقي"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
                         Text { text: "أيام التأخير"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
-                        Text { text: "الحالة"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
                     }
 
                     Rectangle { height: 1px; background: #bdc3c7; }
 
-                    // Placeholder — TODO: populate from SweetLabCore.get_active_debts() filtered by customer
-                    Rectangle {
-                        min-height: 200px;
+                    ListView {
+                        min-height: 300px;
                         vertical-stretch: 1;
-                        VerticalLayout {
-                            padding: 8px;
+                        for debt in root.debts-list: HorizontalLayout {
+                            spacing: 8px;
+                            padding-top: 4px;
+                            padding-bottom: 4px;
+                            Text { text: debt.customer-name; font-size: 13px; horizontal-stretch: 2; overflow: elide; }
+                            Text { text: debt.sale-date; font-size: 13px; horizontal-stretch: 2; color: #7f8c8d; }
+                            Text { text: debt.original-amount; font-size: 13px; horizontal-stretch: 1; }
                             Text {
-                                text: "— اختر عميلاً لعرض ديونه النشطة —";
+                                text: debt.remaining-amount;
                                 font-size: 13px;
-                                color: #95a5a6;
+                                horizontal-stretch: 1;
+                                color: debt.is-critical ? #e74c3c : #2c3e50;
                             }
-                            // TODO: ListView of DebtRecord items for selected customer
-                            // Each row: sale_date | original_amount | remaining_amount | overdue_days | status
-                            // Req 10.3: Sorted by sale_date ASC (oldest first)
-                            // Color-code: red if is_critical (overdue > 30 days)
-                        }
-                    }
-
-                    // Payment history section
-                    Rectangle { height: 1px; background: #bdc3c7; }
-
-                    Text { text: "📜 سجل المدفوعات الأخيرة"; font-size: 14px; font-weight: 600; }
-
-                    Rectangle {
-                        min-height: 100px;
-                        vertical-stretch: 1;
-                        VerticalLayout {
-                            padding: 8px;
                             Text {
-                                text: "— سيتم تحميل سجل المدفوعات من SweetLabCore —";
+                                text: debt.overdue-days;
                                 font-size: 13px;
-                                color: #95a5a6;
+                                horizontal-stretch: 1;
+                                color: debt.is-critical ? #e74c3c : #7f8c8d;
                             }
-                            // TODO: Display recent payment allocations
-                            // Show which debts were allocated and amounts
                         }
                     }
                 }

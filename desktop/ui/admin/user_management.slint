@@ -1,17 +1,47 @@
-import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox, ListView } from "std-widgets.slint";
 
-// User Management — Req 2.2, 2.3
+// Data struct for a user row in the list
+export struct UserItem {
+    id: string,
+    username: string,
+    full-name: string,
+    role: string,
+}
+
+// User Management — Req 24.4
 // List users, create user form, role update
-// Will be wired to SweetLabCore.create_user(), update_user_role()
+// Wired to SweetLabCore.create_user(), update_user_role(), list_users()
 export component UserManagementView inherits Rectangle {
+    // Data properties populated from Rust via AppWindow
+    in property <[UserItem]> user-list;
+    in property <bool> is-loading: false;
+    in property <string> error-message: "";
+    in property <string> success-message: "";
+
+    // Callbacks to Rust
+    callback create-user(string /* username */, string /* password */, string /* full_name */, string /* role */);
+    callback update-role(string /* user_id */, string /* new_role */);
+    callback refresh-users();
+
     VerticalLayout {
         padding: 24px;
         spacing: 16px;
 
-        Text {
-            text: "إدارة المستخدمين";
-            font-size: 24px;
-            font-weight: 700;
+        // Header row with title and refresh button
+        HorizontalLayout {
+            spacing: 12px;
+            Text {
+                text: "إدارة المستخدمين";
+                font-size: 24px;
+                font-weight: 700;
+                vertical-alignment: center;
+                horizontal-stretch: 1;
+            }
+            Button {
+                text: is-loading ? "⏳ جاري التحميل..." : "🔄 تحديث";
+                enabled: !is-loading;
+                clicked => { root.refresh-users(); }
+            }
         }
         Text {
             text: "إنشاء وتعديل حسابات المستخدمين وصلاحياتهم";
@@ -19,10 +49,32 @@ export component UserManagementView inherits Rectangle {
             color: #7f8c8d;
         }
 
+        // Error message
+        if error-message != "": Rectangle {
+            background: #e74c3c;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.error-message; color: white; font-size: 13px; }
+            }
+        }
+
+        // Success message
+        if success-message != "": Rectangle {
+            background: #27ae60;
+            border-radius: 6px;
+            min-height: 36px;
+            VerticalLayout {
+                padding: 8px;
+                Text { text: root.success-message; color: white; font-size: 13px; }
+            }
+        }
+
         HorizontalLayout {
             spacing: 16px;
 
-            // Create user form — SweetLabCore.create_user()
+            // Create user form
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -57,13 +109,25 @@ export component UserManagementView inherits Rectangle {
                     }
 
                     Button {
-                        text: "إنشاء المستخدم";
-                        // TODO: Call SweetLabCore.create_user(username, password, fullname, role)
+                        text: root.is-loading ? "⏳ جاري الإنشاء..." : "إنشاء المستخدم";
+                        enabled: !root.is-loading;
+                        clicked => {
+                            root.create-user(
+                                username-input.text,
+                                password-input.text,
+                                fullname-input.text,
+                                role-combo.current-value,
+                            );
+                            // Clear form fields after submit
+                            username-input.text = "";
+                            password-input.text = "";
+                            fullname-input.text = "";
+                        }
                     }
                 }
             }
 
-            // User list — SweetLabCore list_users (via get from auth)
+            // User list
             Rectangle {
                 background: #ecf0f1;
                 border-radius: 8px;
@@ -80,25 +144,66 @@ export component UserManagementView inherits Rectangle {
                         Text { text: "الاسم"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
                         Text { text: "اسم المستخدم"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
                         Text { text: "الدور"; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
-                        Text { text: "إجراء"; font-size: 13px; font-weight: 600; width: 100px; }
+                        Text { text: "تغيير الدور"; font-size: 13px; font-weight: 600; width: 200px; }
                     }
 
                     Rectangle { height: 1px; background: #bdc3c7; }
 
-                    // Placeholder rows — TODO: populate from SweetLabCore
-                    Rectangle {
+                    if user-list.length == 0 && !is-loading: Text {
+                        text: "لا يوجد مستخدمون";
+                        font-size: 13px;
+                        color: #95a5a6;
+                    }
+
+                    ListView {
                         min-height: 200px;
                         vertical-stretch: 1;
-                        VerticalLayout {
-                            padding: 8px;
-                            Text {
-                                text: "— سيتم تحميل المستخدمين من SweetLabCore —";
-                                font-size: 13px;
-                                color: #95a5a6;
+                        for user[idx] in root.user-list: Rectangle {
+                            height: 44px;
+                            background: Math.mod(idx, 2) == 0 ? #ffffff : #f8f9fa;
+                            border-radius: 4px;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 8px;
+                                spacing: 8px;
+                                Text {
+                                    text: user.full-name;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 1;
+                                }
+                                Text {
+                                    text: user.username;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 1;
+                                }
+                                Text {
+                                    text: user.role;
+                                    font-size: 13px;
+                                    vertical-alignment: center;
+                                    horizontal-stretch: 1;
+                                }
+                                HorizontalLayout {
+                                    width: 200px;
+                                    spacing: 4px;
+                                    Button {
+                                        text: "مدير";
+                                        enabled: user.role != "مدير";
+                                        clicked => { root.update-role(user.id, "مدير"); }
+                                    }
+                                    Button {
+                                        text: "شيف";
+                                        enabled: user.role != "شيف";
+                                        clicked => { root.update-role(user.id, "شيف"); }
+                                    }
+                                    Button {
+                                        text: "مندوب";
+                                        enabled: user.role != "مندوب";
+                                        clicked => { root.update-role(user.id, "مندوب"); }
+                                    }
+                                }
                             }
-                            // TODO: ListView of users with role update buttons
-                            // Each row: full_name | username | role | [update role button]
-                            // SweetLabCore.update_user_role(user_id, new_role)
                         }
                     }
                 }
