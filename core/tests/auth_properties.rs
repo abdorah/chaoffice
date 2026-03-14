@@ -143,8 +143,8 @@ proptest! {
     #[test]
     fn prop3_invalid_credentials_generic_error(
         username in "[a-zA-Z]{3,20}",
-        password in "[a-zA-Z0-9]{4,20}",
-        wrong_password in "[a-zA-Z0-9]{4,20}",
+        password in "[a-zA-Z0-9]{8,20}",
+        wrong_password in "[a-zA-Z0-9]{8,20}",
     ) {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
@@ -214,7 +214,7 @@ proptest! {
     #[test]
     fn prop4_user_creation_missing_fields_rejected(
         valid_username in "[a-zA-Z]{3,15}",
-        valid_password in "[a-zA-Z0-9]{4,15}",
+        valid_password in "[a-zA-Z0-9]{8,15}",
         valid_full_name in "[a-zA-Z ]{3,20}",
         role in generators::arb_user_role(),
     ) {
@@ -275,7 +275,7 @@ proptest! {
     #[test]
     fn prop5_role_update_applies_on_next_login(
         username in "[a-zA-Z]{3,15}",
-        password in "[a-zA-Z0-9]{4,15}",
+        password in "[a-zA-Z0-9]{8,15}",
         initial_role in generators::arb_user_role(),
         new_role in generators::arb_user_role(),
     ) {

@@ -35,7 +35,7 @@ async fn seed_material(pool: &sqlx::SqlitePool, id: &str, name: &str, unit: &str
         .expect("seed material failed");
 }
 
-async fn seed_good(pool: &sqlx::SqlitePool, id: &str, name: &str, qty: f64, price: f64) {
+async fn seed_good(pool: &sqlx::SqlitePool, id: &str, name: &str, qty: f64, price: i64) {
     let now = Utc::now().to_rfc3339();
     fg_queries::insert(pool, id, name, qty, price, &now)
         .await
@@ -75,7 +75,7 @@ async fn raw_material_deduct_exact_then_any_further_deduction_fails() {
 async fn finished_good_deduct_exact_quantity_leaves_zero() {
     let (pool, svc) = setup_fg().await;
     let id = Uuid::new_v4();
-    seed_good(&pool, &id.to_string(), "Sweet Box", 15.0, 25.0).await;
+    seed_good(&pool, &id.to_string(), "Sweet Box", 15.0, 2500).await;
 
     let updated = svc.deduct(id, 15.0).await.unwrap();
     assert_eq!(updated.current_quantity, 0.0, "deducting exact stock should leave 0");
@@ -85,7 +85,7 @@ async fn finished_good_deduct_exact_quantity_leaves_zero() {
 async fn finished_good_deduct_exact_then_any_further_deduction_fails() {
     let (pool, svc) = setup_fg().await;
     let id = Uuid::new_v4();
-    seed_good(&pool, &id.to_string(), "Gift Box", 5.0, 30.0).await;
+    seed_good(&pool, &id.to_string(), "Gift Box", 5.0, 3000).await;
 
     svc.deduct(id, 5.0).await.unwrap();
 
@@ -115,7 +115,7 @@ async fn raw_material_deduct_zero_succeeds_quantity_unchanged() {
 async fn finished_good_deduct_zero_succeeds_quantity_unchanged() {
     let (pool, svc) = setup_fg().await;
     let id = Uuid::new_v4();
-    seed_good(&pool, &id.to_string(), "Chocolate Box", 8.0, 40.0).await;
+    seed_good(&pool, &id.to_string(), "Chocolate Box", 8.0, 4000).await;
 
     let updated = svc.deduct(id, 0.0).await.unwrap();
     assert_eq!(
@@ -156,7 +156,7 @@ async fn deduct_multiple_exact_quantities_leaves_all_zero() {
 
     svc.deduct_multiple(deductions).await.unwrap();
 
-    let materials = svc.get_all().await.unwrap();
+    let materials = svc.get_all(None).await.unwrap();
     for m in &materials {
         assert_eq!(
             m.current_quantity, 0.0,
@@ -182,7 +182,7 @@ async fn deduct_multiple_with_one_insufficient_rolls_back_all() {
     assert!(matches!(err, AppError::InsufficientStock { .. }));
 
     // Both quantities must be unchanged — transaction rolled back
-    let materials = svc.get_all().await.unwrap();
+    let materials = svc.get_all(None).await.unwrap();
     let sugar = materials.iter().find(|m| m.name == "Sugar").unwrap();
     let milk = materials.iter().find(|m| m.name == "Milk").unwrap();
     assert_eq!(sugar.current_quantity, 100.0, "Sugar should be unchanged after rollback");
@@ -203,7 +203,7 @@ async fn deduct_multiple_with_zero_amounts_succeeds() {
 
     svc.deduct_multiple(deductions).await.unwrap();
 
-    let materials = svc.get_all().await.unwrap();
+    let materials = svc.get_all(None).await.unwrap();
     let sugar = materials.iter().find(|m| m.name == "Sugar").unwrap();
     let milk = materials.iter().find(|m| m.name == "Milk").unwrap();
     assert_eq!(sugar.current_quantity, 50.0);
@@ -229,9 +229,9 @@ async fn deduct_multiple_nonexistent_material_rolls_back() {
     deductions.insert(Uuid::new_v4(), 5.0); // doesn't exist
 
     let err = svc.deduct_multiple(deductions).await.unwrap_err();
-    assert!(matches!(err, AppError::Validation { .. }));
+    assert!(matches!(err, AppError::NotFound { .. }));
 
     // Sugar should be unchanged
-    let materials = svc.get_all().await.unwrap();
+    let materials = svc.get_all(None).await.unwrap();
     assert_eq!(materials[0].current_quantity, 100.0);
 }

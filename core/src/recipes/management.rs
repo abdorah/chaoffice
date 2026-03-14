@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
-use crate::models::domain::{Recipe, RecipeIngredient};
+use crate::models::domain::{Pagination, Recipe, RecipeIngredient};
 use crate::persistence::queries::recipes as queries;
 
 /// Service for recipe CRUD and validation (Req 4.1–4.5).
@@ -17,8 +17,9 @@ impl RecipeServiceImpl {
     }
 
     /// Fetch all recipes with their ingredients.
-    pub async fn get_recipes(&self) -> AppResult<Vec<Recipe>> {
-        let rows = queries::list_all(&self.pool).await?;
+    pub async fn get_recipes(&self, pagination: Option<Pagination>) -> AppResult<Vec<Recipe>> {
+        let pg = pagination.unwrap_or_default();
+        let rows = queries::list_all(&self.pool, &pg).await?;
         let mut recipes = Vec::with_capacity(rows.len());
         for row in rows {
             let ingredients = queries::get_ingredients(&self.pool, &row.id).await?;
@@ -26,9 +27,9 @@ impl RecipeServiceImpl {
                 .await?
                 .unwrap_or_default();
             recipes.push(Recipe {
-                id: parse_uuid(&row.id)?,
+                id: crate::utils::parse_uuid("recipe", &row.id)?,
                 name: row.name,
-                finished_good_id: parse_uuid(&row.finished_good_id)?,
+                finished_good_id: crate::utils::parse_uuid("finished_good", &row.finished_good_id)?,
                 finished_good_name,
                 ingredients: ingredients.into_iter().map(ingredient_row_to_domain).collect::<AppResult<Vec<_>>>()?,
             });
@@ -189,13 +190,9 @@ fn validate_ingredient_count(ingredients: &[RecipeIngredient]) -> AppResult<()> 
     Ok(())
 }
 
-fn parse_uuid(s: &str) -> AppResult<Uuid> {
-    Uuid::parse_str(s).map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))
-}
-
 fn ingredient_row_to_domain(row: queries::RecipeIngredientRow) -> AppResult<RecipeIngredient> {
     Ok(RecipeIngredient {
-        raw_material_id: parse_uuid(&row.raw_material_id)?,
+        raw_material_id: crate::utils::parse_uuid("raw_material", &row.raw_material_id)?,
         raw_material_name: row.raw_material_name,
         required_quantity: row.required_quantity,
     })
@@ -223,7 +220,7 @@ mod tests {
 
     async fn seed_finished_good(pool: &SqlitePool, id: &str, name: &str) {
         let now = Utc::now().to_rfc3339();
-        fg_queries::insert(pool, id, name, 0.0, 10.0, &now)
+        fg_queries::insert(pool, id, name, 0.0, 1000, &now)
             .await
             .expect("seed finished good failed");
     }
@@ -274,7 +271,7 @@ mod tests {
     #[tokio::test]
     async fn get_recipes_returns_empty_when_none() {
         let (_pool, svc) = setup().await;
-        let recipes = svc.get_recipes().await.unwrap();
+        let recipes = svc.get_recipes(None).await.unwrap();
         assert!(recipes.is_empty());
     }
 
@@ -289,7 +286,7 @@ mod tests {
         let ingredients = make_ingredients(&[(rm_id, "Sugar", 2.5)]);
         svc.create_recipe("Test Recipe", fg_id, ingredients).await.unwrap();
 
-        let recipes = svc.get_recipes().await.unwrap();
+        let recipes = svc.get_recipes(None).await.unwrap();
         assert_eq!(recipes.len(), 1);
         assert_eq!(recipes[0].name, "Test Recipe");
         assert_eq!(recipes[0].finished_good_name, "Sweet Box");
@@ -510,7 +507,7 @@ mod tests {
 
         svc.delete_recipe(recipe.id).await.unwrap();
 
-        let recipes = svc.get_recipes().await.unwrap();
+        let recipes = svc.get_recipes(None).await.unwrap();
         assert!(recipes.is_empty());
     }
 

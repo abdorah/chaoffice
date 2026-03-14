@@ -1,11 +1,10 @@
-use chrono::{DateTime, Utc};
 use sqlx::SqlitePool;
-use uuid::Uuid;
 
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 use crate::models::domain::{
-    FinishedGood, FinishedGoodReport, InventoryReport, RawMaterial, RawMaterialReport,
+    FinishedGood, FinishedGoodReport, InventoryReport, Pagination, RawMaterial, RawMaterialReport,
 };
+use crate::models::Money;
 use crate::persistence::queries::finished_goods as fg_queries;
 use crate::persistence::queries::raw_materials as rm_queries;
 
@@ -16,17 +15,13 @@ pub async fn get_inventory_report(
     pool: &SqlitePool,
     low_stock_threshold: f64,
 ) -> AppResult<InventoryReport> {
-    let rm_rows = rm_queries::list_all(pool).await?;
+    let rm_rows = rm_queries::list_all(pool, &Pagination::default()).await?;
     let raw_materials: Vec<RawMaterialReport> = rm_rows
         .into_iter()
         .map(|r| -> AppResult<RawMaterialReport> {
-            let last_updated: DateTime<Utc> = r
-                .last_updated
-                .parse()
-                .map_err(|e| AppError::Unknown(format!("Invalid timestamp: {e}")))?;
+            let last_updated = crate::utils::parse_timestamp(&r.last_updated)?;
             let material = RawMaterial {
-                id: Uuid::parse_str(&r.id)
-                    .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?,
+                id: crate::utils::parse_uuid("raw_material", &r.id)?,
                 name: r.name,
                 unit: r.unit,
                 current_quantity: r.current_quantity,
@@ -40,20 +35,16 @@ pub async fn get_inventory_report(
         })
         .collect::<AppResult<Vec<_>>>()?;
 
-    let fg_rows = fg_queries::list_all(pool).await?;
+    let fg_rows = fg_queries::list_all(pool, &Pagination::default()).await?;
     let finished_goods: Vec<FinishedGoodReport> = fg_rows
         .into_iter()
         .map(|r| -> AppResult<FinishedGoodReport> {
-            let last_updated: DateTime<Utc> = r
-                .last_updated
-                .parse()
-                .map_err(|e| AppError::Unknown(format!("Invalid timestamp: {e}")))?;
+            let last_updated = crate::utils::parse_timestamp(&r.last_updated)?;
             let good = FinishedGood {
-                id: Uuid::parse_str(&r.id)
-                    .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?,
+                id: crate::utils::parse_uuid("finished_good", &r.id)?,
                 name: r.name,
                 current_quantity: r.current_quantity,
-                unit_price: r.unit_price,
+                unit_price: Money(r.unit_price),
                 last_updated,
             };
             let is_low_stock = good.current_quantity < low_stock_threshold;
@@ -73,6 +64,8 @@ pub async fn get_inventory_report(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Utc;
+    use uuid::Uuid;
     use crate::persistence::db;
     use crate::persistence::queries::finished_goods as fg_queries;
     use crate::persistence::queries::raw_materials as rm_queries;
@@ -92,7 +85,7 @@ mod tests {
 
         rm_queries::insert(&pool, &rm1.to_string(), "Milk", "L", 5.0, &now).await.unwrap();
         rm_queries::insert(&pool, &rm2.to_string(), "Sugar", "kg", 50.0, &now).await.unwrap();
-        fg_queries::insert(&pool, &fg1.to_string(), "Sweet Box", 3.0, 25.0, &now).await.unwrap();
+        fg_queries::insert(&pool, &fg1.to_string(), "Sweet Box", 3.0, 2500, &now).await.unwrap();
 
         let report = get_inventory_report(&pool, 10.0).await.unwrap();
 

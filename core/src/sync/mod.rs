@@ -14,7 +14,7 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::error::AppResult;
-use crate::models::domain::{ConflictLog, SyncStatus};
+use crate::models::domain::{ConflictLog, Pagination, SyncStatus};
 
 /// Concrete implementation of the SyncManager trait.
 pub struct SyncManagerImpl {
@@ -87,9 +87,14 @@ impl SyncManagerImpl {
         Ok(())
     }
 
-    /// Retrieve the full conflict log for admin review (Req 13.3).
-    pub async fn get_conflict_log(&self) -> AppResult<Vec<ConflictLog>> {
-        conflict::get_all(&self.pool).await
+    /// Retrieve the conflict log with pagination for admin review (Req 23.1).
+    pub async fn get_conflict_log(&self, pagination: &Pagination) -> AppResult<Vec<ConflictLog>> {
+        conflict::get_all(&self.pool, pagination).await
+    }
+
+    /// Delete conflict log entries older than `retention_days` days (Req 23.2).
+    pub async fn cleanup_conflict_log(&self, retention_days: i64) -> AppResult<u64> {
+        conflict::cleanup_older_than(&self.pool, retention_days).await
     }
 }
 
@@ -135,7 +140,7 @@ mod tests {
     #[tokio::test]
     async fn get_conflict_log_empty_initially() {
         let mgr = setup().await;
-        let logs = mgr.get_conflict_log().await.unwrap();
+        let logs = mgr.get_conflict_log(&Pagination::default()).await.unwrap();
         assert!(logs.is_empty());
     }
 

@@ -7,7 +7,7 @@ mod generators;
 use proptest::prelude::*;
 use tokio::runtime::Runtime;
 
-use sweet_lab_core::models::domain::SyncStatus;
+use sweet_lab_core::models::domain::{Pagination, SyncStatus};
 use sweet_lab_core::persistence::db;
 use sweet_lab_core::sync::{conflict, queue};
 
@@ -194,7 +194,7 @@ proptest! {
             prop_assert_eq!(&entry.resolved_with, resolved_with);
 
             // Verify the conflict is persisted and retrievable
-            let logs = conflict::get_all(&pool).await.unwrap();
+            let logs = conflict::get_all(&pool, &Pagination::default()).await.unwrap();
             prop_assert_eq!(logs.len(), 1);
 
             let stored = &logs[0];

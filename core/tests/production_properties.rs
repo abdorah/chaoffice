@@ -48,7 +48,7 @@ async fn seed_raw_material(pool: &sqlx::SqlitePool, id: &str, name: &str, qty: f
 
 async fn seed_finished_good(pool: &sqlx::SqlitePool, id: &str, name: &str, qty: f64) {
     let now = chrono::Utc::now().to_rfc3339();
-    fg_queries::insert(pool, id, name, qty, 10.0, &now)
+    fg_queries::insert(pool, id, name, qty, 1000, &now)
         .await
         .expect("seed finished good failed");
 }
@@ -417,7 +417,7 @@ proptest! {
                 .collect();
             seed_recipe(&pool, &recipe_id.to_string(), "TestRecipe", &fg_id.to_string(), &ing_refs).await;
 
-            let availability = svc.get_recipe_availability().await.unwrap();
+            let availability = svc.get_recipe_availability(None).await.unwrap();
             prop_assert_eq!(availability.len(), 1, "Should have exactly 1 recipe");
 
             let avail = &availability[0];
@@ -460,7 +460,7 @@ proptest! {
                 .collect();
             seed_recipe(&pool, &recipe_id.to_string(), "TestRecipe", &fg_id.to_string(), &ing_refs).await;
 
-            let availability = svc.get_recipe_availability().await.unwrap();
+            let availability = svc.get_recipe_availability(None).await.unwrap();
             prop_assert_eq!(availability.len(), 1);
             prop_assert_eq!(
                 availability[0].max_producible, 0,

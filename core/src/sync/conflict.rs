@@ -9,7 +9,7 @@ use tracing::{info, warn};
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
-use crate::models::domain::ConflictLog;
+use crate::models::domain::{ConflictLog, Pagination};
 
 // ── Row type ───────────────────────────────────────────────────────────────
 
@@ -110,17 +110,34 @@ pub async fn log_conflict(
     })
 }
 
-/// Fetch all conflict log entries ordered by timestamp DESC (Req 13.3).
-pub async fn get_all(pool: &SqlitePool) -> AppResult<Vec<ConflictLog>> {
-    let rows = sqlx::query_as::<_, ConflictLogRow>(
+/// Fetch conflict log entries ordered by timestamp DESC with pagination (Req 23.1).
+pub async fn get_all(pool: &SqlitePool, pagination: &Pagination) -> AppResult<Vec<ConflictLog>> {
+    let sql = format!(
         "SELECT id, entity_type, entity_id, local_version, remote_version, resolved_with, timestamp
          FROM conflict_log
-         ORDER BY timestamp DESC",
-    )
-    .fetch_all(pool)
-    .await?;
+         ORDER BY timestamp DESC
+         LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, ConflictLogRow>(&sql)
+        .fetch_all(pool)
+        .await?;
 
     rows.into_iter().map(row_to_conflict).collect()
+}
+
+/// Delete conflict log entries older than `retention_days` days (Req 23.2).
+pub async fn cleanup_older_than(pool: &SqlitePool, retention_days: i64) -> AppResult<u64> {
+    let result = sqlx::query(
+        "DELETE FROM conflict_log WHERE timestamp < datetime('now', '-' || ? || ' days')",
+    )
+    .bind(retention_days)
+    .execute(pool)
+    .await?;
+
+    let deleted = result.rows_affected();
+    info!(deleted = deleted, retention_days = retention_days, "Conflict log cleanup complete");
+    Ok(deleted)
 }
 
 
@@ -205,7 +222,7 @@ mod tests {
             .await
             .unwrap();
 
-        let logs = get_all(&pool).await.unwrap();
+        let logs = get_all(&pool, &Pagination::default()).await.unwrap();
         assert_eq!(logs.len(), 2);
         // Most recent first
         assert_eq!(logs[0].entity_type, "second");
@@ -215,7 +232,87 @@ mod tests {
     #[tokio::test]
     async fn get_all_empty_when_no_conflicts() {
         let pool = setup().await;
-        let logs = get_all(&pool).await.unwrap();
+        let logs = get_all(&pool, &Pagination::default()).await.unwrap();
         assert!(logs.is_empty());
+    }
+
+    #[tokio::test]
+    async fn get_all_respects_pagination_limit() {
+        let pool = setup().await;
+
+        for i in 0..5 {
+            log_conflict(&pool, &format!("type_{i}"), Uuid::new_v4(), "a", "b", "LOCAL")
+                .await
+                .unwrap();
+        }
+
+        let page = Pagination { limit: 2, offset: 0 };
+        let logs = get_all(&pool, &page).await.unwrap();
+        assert_eq!(logs.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn get_all_respects_pagination_offset() {
+        let pool = setup().await;
+
+        for i in 0..5 {
+            log_conflict(&pool, &format!("type_{i}"), Uuid::new_v4(), "a", "b", "LOCAL")
+                .await
+                .unwrap();
+        }
+
+        let page = Pagination { limit: 100, offset: 3 };
+        let logs = get_all(&pool, &page).await.unwrap();
+        assert_eq!(logs.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn cleanup_older_than_deletes_old_entries() {
+        let pool = setup().await;
+
+        // Insert an entry with a timestamp 40 days ago
+        let id = Uuid::new_v4();
+        let old_ts = (Utc::now() - chrono::Duration::days(40)).to_rfc3339();
+        sqlx::query(
+            "INSERT INTO conflict_log (id, entity_type, entity_id, local_version, remote_version, resolved_with, timestamp)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(id.to_string())
+        .bind("old_type")
+        .bind(Uuid::new_v4().to_string())
+        .bind("a")
+        .bind("b")
+        .bind("LOCAL")
+        .bind(&old_ts)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Insert a recent entry
+        log_conflict(&pool, "recent", Uuid::new_v4(), "a", "b", "LOCAL")
+            .await
+            .unwrap();
+
+        let deleted = cleanup_older_than(&pool, 30).await.unwrap();
+        assert_eq!(deleted, 1);
+
+        let remaining = get_all(&pool, &Pagination::default()).await.unwrap();
+        assert_eq!(remaining.len(), 1);
+        assert_eq!(remaining[0].entity_type, "recent");
+    }
+
+    #[tokio::test]
+    async fn cleanup_older_than_keeps_recent_entries() {
+        let pool = setup().await;
+
+        log_conflict(&pool, "recent", Uuid::new_v4(), "a", "b", "LOCAL")
+            .await
+            .unwrap();
+
+        let deleted = cleanup_older_than(&pool, 30).await.unwrap();
+        assert_eq!(deleted, 0);
+
+        let remaining = get_all(&pool, &Pagination::default()).await.unwrap();
+        assert_eq!(remaining.len(), 1);
     }
 }

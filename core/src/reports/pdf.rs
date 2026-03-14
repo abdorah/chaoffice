@@ -5,19 +5,26 @@ use genpdf::{Document, Element, SimplePageDecorator};
 use crate::error::{AppError, AppResult};
 use crate::models::domain::Invoice;
 
-/// Default font directory — can be overridden by placing Liberation fonts here.
-const DEFAULT_FONT_DIR: &str = "./fonts";
+/// Default font family name for PDF generation.
 const DEFAULT_FONT_FAMILY: &str = "LiberationSans";
 
-/// Render an Invoice to PDF bytes (Req 12.4).
+/// Render an Invoice to PDF bytes (Req 12.4, 22.1, 22.2).
 ///
-/// Uses genpdf with LiberationSans fonts from `./fonts/`. If fonts are not
-/// available, returns an error with a descriptive message.
-pub fn export_to_pdf(invoice: &Invoice) -> AppResult<Vec<u8>> {
+/// Uses genpdf with LiberationSans fonts from the given `font_dir`.
+/// Returns `AppError::Validation` if the font directory does not exist.
+pub fn export_to_pdf(invoice: &Invoice, font_dir: &str) -> AppResult<Vec<u8>> {
+    // Req 22.2: Return a descriptive error instead of panicking if font dir is missing
+    if !std::path::Path::new(font_dir).is_dir() {
+        return Err(AppError::Validation {
+            field: "font_dir".to_string(),
+            message: format!("Font directory not found: {font_dir}"),
+        });
+    }
+
     let font_family =
-        genpdf::fonts::from_files(DEFAULT_FONT_DIR, DEFAULT_FONT_FAMILY, None).map_err(|e| {
+        genpdf::fonts::from_files(font_dir, DEFAULT_FONT_FAMILY, None).map_err(|e| {
             AppError::Unknown(format!(
-                "Failed to load fonts from '{DEFAULT_FONT_DIR}/{DEFAULT_FONT_FAMILY}': {e}. \
+                "Failed to load fonts from '{font_dir}/{DEFAULT_FONT_FAMILY}': {e}. \
                  Place LiberationSans-Regular.ttf, LiberationSans-Bold.ttf, \
                  LiberationSans-Italic.ttf, and LiberationSans-BoldItalic.ttf in the fonts/ directory."
             ))
@@ -64,13 +71,13 @@ pub fn export_to_pdf(invoice: &Invoice) -> AppResult<Vec<u8>> {
 
     // Data rows
     for (i, item) in invoice.line_items.iter().enumerate() {
-        let subtotal = item.quantity as f64 * item.unit_price;
+        let subtotal = item.unit_price * item.quantity as i64;
         let mut row = table.row();
         row.push_element(Paragraph::new(format!("{}", i + 1)));
         row.push_element(Paragraph::new(&item.finished_good_name));
         row.push_element(Paragraph::new(format!("{}", item.quantity)));
-        row.push_element(Paragraph::new(format!("{:.2}", item.unit_price)));
-        row.push_element(Paragraph::new(format!("{:.2}", subtotal)));
+        row.push_element(Paragraph::new(item.unit_price.to_display()));
+        row.push_element(Paragraph::new(subtotal.to_display()));
         row.push().map_err(|e| AppError::Unknown(format!("PDF table error: {e}")))?;
     }
 
@@ -78,10 +85,10 @@ pub fn export_to_pdf(invoice: &Invoice) -> AppResult<Vec<u8>> {
     doc.push(Paragraph::new(" "));
 
     // ── Totals ─────────────────────────────────────────────────────
-    doc.push(Paragraph::new(format!("Total: {:.2}", invoice.total_amount)).styled(bold));
-    doc.push(Paragraph::new(format!("Amount Paid: {:.2}", invoice.amount_paid)));
+    doc.push(Paragraph::new(format!("Total: {}", invoice.total_amount.to_display())).styled(bold));
+    doc.push(Paragraph::new(format!("Amount Paid: {}", invoice.amount_paid.to_display())));
     doc.push(
-        Paragraph::new(format!("Remaining Balance: {:.2}", invoice.remaining_balance))
+        Paragraph::new(format!("Remaining Balance: {}", invoice.remaining_balance.to_display()))
             .styled(bold),
     );
 
@@ -93,10 +100,12 @@ pub fn export_to_pdf(invoice: &Invoice) -> AppResult<Vec<u8>> {
     Ok(buf)
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::models::domain::SaleLineItem;
+    use crate::models::Money;
     use uuid::Uuid;
 
     fn sample_invoice() -> Invoice {
@@ -110,35 +119,52 @@ mod tests {
                     finished_good_id: Uuid::new_v4(),
                     finished_good_name: "Sweet Box".to_string(),
                     quantity: 3,
-                    unit_price: 25.0,
+                    unit_price: Money::from_f64(25.0),
                 },
                 SaleLineItem {
                     finished_good_id: Uuid::new_v4(),
                     finished_good_name: "Chocolate Bar".to_string(),
                     quantity: 5,
-                    unit_price: 10.0,
+                    unit_price: Money::from_f64(10.0),
                 },
             ],
-            total_amount: 125.0,
-            amount_paid: 100.0,
-            remaining_balance: 25.0,
+            total_amount: Money::from_f64(125.0),
+            amount_paid: Money::from_f64(100.0),
+            remaining_balance: Money::from_f64(25.0),
             date: "2025-01-15".to_string(),
             invoice_number: "INV-abcd1234".to_string(),
         }
     }
 
     #[test]
-    fn export_to_pdf_returns_error_without_fonts() {
-        // Without font files in ./fonts/, this should return a descriptive error
+    fn export_to_pdf_returns_validation_error_for_missing_font_dir() {
         let invoice = sample_invoice();
-        let result = export_to_pdf(&invoice);
-        // In CI/test environments without fonts, we expect an error
-        // If fonts are present, we expect non-empty bytes
+        let result = export_to_pdf(&invoice, "./nonexistent_fonts_dir");
+        match result {
+            Err(AppError::Validation { field, message }) => {
+                assert_eq!(field, "font_dir");
+                assert!(
+                    message.contains("Font directory not found"),
+                    "Error should mention font directory: {message}"
+                );
+            }
+            other => panic!("Expected Validation error, got: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn export_to_pdf_with_default_font_dir() {
+        // With the default font dir, this may succeed or fail depending on environment
+        let invoice = sample_invoice();
+        let result = export_to_pdf(&invoice, "./fonts");
         match result {
             Ok(bytes) => assert!(!bytes.is_empty(), "PDF bytes should not be empty"),
             Err(e) => {
                 let msg = format!("{e}");
-                assert!(msg.contains("font"), "Error should mention fonts: {msg}");
+                assert!(
+                    msg.contains("font") || msg.contains("Font"),
+                    "Error should mention fonts: {msg}"
+                );
             }
         }
     }

@@ -199,7 +199,7 @@ proptest! {
                 .expect("Customer creation failed");
 
             // Search by full name
-            let results = svc.search_customers(&name).await.expect("Search failed");
+            let results = svc.search_customers(&name, None).await.expect("Search failed");
             prop_assert!(
                 results.iter().any(|c| c.id == customer.id),
                 "Customer should appear in search results for name '{}', got {} results",
@@ -225,7 +225,7 @@ proptest! {
                 .expect("Customer creation failed");
 
             // Search by full city
-            let results = svc.search_customers(&city).await.expect("Search failed");
+            let results = svc.search_customers(&city, None).await.expect("Search failed");
             prop_assert!(
                 results.iter().any(|c| c.id == customer.id),
                 "Customer should appear in search results for city '{}', got {} results",
@@ -251,7 +251,7 @@ proptest! {
                 .expect("Customer creation failed");
 
             // Search by full mobile
-            let results = svc.search_customers(&mobile).await.expect("Search failed");
+            let results = svc.search_customers(&mobile, None).await.expect("Search failed");
             prop_assert!(
                 results.iter().any(|c| c.id == customer.id),
                 "Customer should appear in search results for mobile '{}', got {} results",

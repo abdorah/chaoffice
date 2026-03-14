@@ -32,7 +32,7 @@ async fn seed_raw_material(pool: &sqlx::SqlitePool, id: &str, name: &str) {
 
 async fn seed_finished_good(pool: &sqlx::SqlitePool, id: &str, name: &str) {
     let now = chrono::Utc::now().to_rfc3339();
-    fg_queries::insert(pool, id, name, 0.0, 10.0, &now)
+    fg_queries::insert(pool, id, name, 0.0, 1000, &now)
         .await
         .expect("seed finished good failed");
 }
@@ -339,7 +339,7 @@ proptest! {
             prop_assert!(result.is_ok(), "Deletion should succeed with no production logs, got: {:?}", result.unwrap_err());
 
             // Verify recipe is gone
-            let recipes = svc.get_recipes().await.unwrap();
+            let recipes = svc.get_recipes(None).await.unwrap();
             prop_assert!(
                 recipes.iter().all(|r| r.id != recipe.id),
                 "Deleted recipe should not appear in list"

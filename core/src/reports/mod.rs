@@ -13,11 +13,15 @@ use crate::models::domain::{FinancialSummary, InventoryReport, Invoice};
 /// Concrete implementation of the ReportService.
 pub struct ReportServiceImpl {
     pool: SqlitePool,
+    font_dir: String,
 }
 
 impl ReportServiceImpl {
-    pub fn new(pool: SqlitePool) -> Self {
-        Self { pool }
+    pub fn new(pool: SqlitePool, font_dir: Option<String>) -> Self {
+        Self {
+            pool,
+            font_dir: font_dir.unwrap_or_else(|| "./fonts".to_string()),
+        }
     }
 
     /// Aggregate sales revenue, expenses, net profit, and wallet balances for a date range (Req 12.1).
@@ -38,13 +42,13 @@ impl ReportServiceImpl {
     }
 
     /// Build an Invoice from a sale record (Req 12.3).
-    pub async fn generate_invoice(&self, sale_id: Uuid) -> AppResult<Invoice> {
-        financial::generate_invoice(&self.pool, sale_id).await
+    pub async fn generate_invoice(&self, sale_id: Uuid, business_name: &str) -> AppResult<Invoice> {
+        financial::generate_invoice(&self.pool, sale_id, business_name).await
     }
 
-    /// Render an Invoice to PDF bytes using genpdf (Req 12.4).
+    /// Render an Invoice to PDF bytes using genpdf (Req 12.4, 22.1, 22.2).
     pub async fn export_to_pdf(&self, invoice: &Invoice) -> AppResult<Vec<u8>> {
-        pdf::export_to_pdf(invoice)
+        pdf::export_to_pdf(invoice, &self.font_dir)
     }
 
     /// Render an Invoice to Excel bytes using rust_xlsxwriter (Req 12.4).

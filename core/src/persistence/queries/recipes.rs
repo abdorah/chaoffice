@@ -1,6 +1,7 @@
 use sqlx::{Executor, SqlitePool};
 
 use crate::error::{AppError, AppResult};
+use crate::models::domain::Pagination;
 
 /// Row type for the `recipes` table.
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -23,12 +24,14 @@ pub struct RecipeIngredientRow {
 }
 
 /// Fetch all recipes.
-pub async fn list_all(pool: &SqlitePool) -> AppResult<Vec<RecipeRow>> {
-    let rows = sqlx::query_as::<_, RecipeRow>(
-        "SELECT id, name, finished_good_id, sync_status, updated_at FROM recipes ORDER BY name ASC",
-    )
-    .fetch_all(pool)
-    .await?;
+pub async fn list_all(pool: &SqlitePool, pagination: &Pagination) -> AppResult<Vec<RecipeRow>> {
+    let sql = format!(
+        "SELECT id, name, finished_good_id, sync_status, updated_at FROM recipes ORDER BY name ASC LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, RecipeRow>(&sql)
+        .fetch_all(pool)
+        .await?;
     Ok(rows)
 }
 

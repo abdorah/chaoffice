@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::fmt;
 use uuid::Uuid;
 
+use super::Money;
+
 // ── Enums ──────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -79,6 +81,26 @@ pub struct AppUser {
     pub password_hash: String,
 }
 
+/// User data safe for API responses — no password_hash.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SafeUser {
+    pub id: Uuid,
+    pub username: String,
+    pub full_name: String,
+    pub role: UserRole,
+}
+
+impl From<AppUser> for SafeUser {
+    fn from(u: AppUser) -> Self {
+        SafeUser {
+            id: u.id,
+            username: u.username,
+            full_name: u.full_name,
+            role: u.role,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Session {
     pub session_id: Uuid,
@@ -112,7 +134,7 @@ pub struct FinishedGood {
     pub id: Uuid,
     pub name: String,
     pub current_quantity: f64,
-    pub unit_price: f64,
+    pub unit_price: Money,
     pub last_updated: DateTime<Utc>,
 }
 
@@ -163,7 +185,7 @@ pub struct Customer {
     pub city: String,
     pub mobile: String,
     pub reliability_rating: i32,
-    pub total_debt: f64,
+    pub total_debt: Money,
     pub overdue_days: i32,
 }
 
@@ -174,7 +196,7 @@ pub struct SaleLineItem {
     pub finished_good_id: Uuid,
     pub finished_good_name: String,
     pub quantity: i32,
-    pub unit_price: f64,
+    pub unit_price: Money,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,8 +205,8 @@ pub struct Sale {
     pub customer_id: Uuid,
     pub customer_name: String,
     pub line_items: Vec<SaleLineItem>,
-    pub total_amount: f64,
-    pub amount_paid: f64,
+    pub total_amount: Money,
+    pub amount_paid: Money,
     pub payment_wallet_id: Uuid,
     pub timestamp: DateTime<Utc>,
 }
@@ -196,7 +218,7 @@ pub struct Receipt {
     pub customer_city: String,
     pub customer_mobile: String,
     pub business_name: String,
-    pub remaining_balance: f64,
+    pub remaining_balance: Money,
     pub formatted_date: String,
 }
 
@@ -207,14 +229,14 @@ pub struct Wallet {
     pub id: Uuid,
     pub name: String,
     pub wallet_type: WalletType,
-    pub current_balance: f64,
+    pub current_balance: Money,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalletTransaction {
     pub id: Uuid,
     pub wallet_id: Uuid,
-    pub amount: f64,
+    pub amount: Money,
     pub description: String,
     pub related_entity_id: Option<Uuid>,
     pub timestamp: DateTime<Utc>,
@@ -225,7 +247,7 @@ pub struct FundTransfer {
     pub id: Uuid,
     pub source_wallet_id: Uuid,
     pub destination_wallet_id: Uuid,
-    pub amount: f64,
+    pub amount: Money,
     pub timestamp: DateTime<Utc>,
 }
 
@@ -237,8 +259,8 @@ pub struct DebtRecord {
     pub customer_id: Uuid,
     pub customer_name: String,
     pub sale_id: Uuid,
-    pub original_amount: f64,
-    pub remaining_amount: f64,
+    pub original_amount: Money,
+    pub remaining_amount: Money,
     pub sale_date: DateTime<Utc>,
     pub overdue_days: i32,
     pub is_critical: bool,
@@ -249,16 +271,18 @@ pub struct DebtRecord {
 pub struct DebtPayment {
     pub id: Uuid,
     pub customer_id: Uuid,
-    pub amount: f64,
+    pub amount: Money,
+    pub unallocated: Money,
     pub wallet_id: Uuid,
     pub allocations: Vec<DebtAllocation>,
     pub timestamp: DateTime<Utc>,
 }
 
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DebtAllocation {
     pub debt_record_id: Uuid,
-    pub amount_applied: f64,
+    pub amount_applied: Money,
 }
 
 // ── Expenses ───────────────────────────────────────────────────────────────
@@ -267,7 +291,7 @@ pub struct DebtAllocation {
 pub struct Expense {
     pub id: Uuid,
     pub description: String,
-    pub amount: f64,
+    pub amount: Money,
     pub category: ExpenseCategory,
     pub wallet_id: Uuid,
     pub wallet_name: String,
@@ -279,9 +303,9 @@ pub struct Expense {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FinancialSummary {
-    pub total_revenue: f64,
-    pub total_expenses: f64,
-    pub net_profit: f64,
+    pub total_revenue: Money,
+    pub total_expenses: Money,
+    pub net_profit: Money,
     pub wallet_balances: Vec<Wallet>,
     pub start_date: DateTime<Utc>,
     pub end_date: DateTime<Utc>,
@@ -312,11 +336,25 @@ pub struct Invoice {
     pub customer_city: String,
     pub customer_mobile: String,
     pub line_items: Vec<SaleLineItem>,
-    pub total_amount: f64,
-    pub amount_paid: f64,
-    pub remaining_balance: f64,
+    pub total_amount: Money,
+    pub amount_paid: Money,
+    pub remaining_balance: Money,
     pub date: String,
     pub invoice_number: String,
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone)]
+pub struct Pagination {
+    pub limit: i64,
+    pub offset: i64,
+}
+
+impl Default for Pagination {
+    fn default() -> Self {
+        Pagination { limit: 100, offset: 0 }
+    }
 }
 
 // ── Sync ───────────────────────────────────────────────────────────────────
@@ -330,6 +368,13 @@ pub struct SyncQueueItem {
     pub payload: String,
     pub created_at: DateTime<Utc>,
     pub status: SyncStatus,
+}
+
+/// Wrapper for HashMap<ExpenseCategory, Vec<Expense>> for UniFFI compatibility.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExpenseCategoryGroup {
+    pub category: ExpenseCategory,
+    pub expenses: Vec<Expense>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

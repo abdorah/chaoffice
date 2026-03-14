@@ -1,69 +1,38 @@
-use chrono::{DateTime, Utc};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::error::{AppError, AppResult};
-use crate::models::domain::{Receipt, Sale, SaleLineItem};
-use crate::persistence::queries::sales as sale_queries;
+use crate::error::AppResult;
+use crate::models::domain::{Receipt, Sale};
+use crate::models::Money;
+use crate::sales::helpers::fetch_sale_with_details;
 
 /// Generate a receipt for a given sale (Req 8.5).
 ///
 /// Fetches the sale with line items and customer details, then assembles
 /// a Receipt with all required fields: customer name, itemized list, total,
 /// amount paid, remaining balance, and date.
-pub async fn generate_receipt(pool: &SqlitePool, sale_id: Uuid) -> AppResult<Receipt> {
-    let sale_row = sale_queries::get_sale_with_customer(pool, &sale_id.to_string())
-        .await?
-        .ok_or_else(|| AppError::Validation {
-            field: "sale_id".to_string(),
-            message: format!("Sale {sale_id} not found"),
-        })?;
-
-    let line_item_rows = sale_queries::get_line_items(pool, &sale_id.to_string()).await?;
-    let line_items: Vec<SaleLineItem> = line_item_rows
-        .into_iter()
-        .map(|li| -> AppResult<SaleLineItem> {
-            Ok(SaleLineItem {
-                finished_good_id: Uuid::parse_str(&li.finished_good_id)
-                    .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?,
-                finished_good_name: li.finished_good_name,
-                quantity: li.quantity,
-                unit_price: li.unit_price,
-            })
-        })
-        .collect::<AppResult<Vec<_>>>()?;
-
-    let customer = sale_queries::get_customer_detail(pool, &sale_row.customer_id)
-        .await?
-        .ok_or_else(|| AppError::Unknown("Customer not found for sale".to_string()))?;
-
-    let timestamp: DateTime<Utc> = sale_row
-        .timestamp
-        .parse()
-        .map_err(|e| AppError::Unknown(format!("Invalid timestamp: {e}")))?;
+pub async fn generate_receipt(pool: &SqlitePool, sale_id: Uuid, business_name: &str) -> AppResult<Receipt> {
+    let data = fetch_sale_with_details(pool, sale_id).await?;
 
     let sale = Sale {
-        id: Uuid::parse_str(&sale_row.id)
-            .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?,
-        customer_id: Uuid::parse_str(&sale_row.customer_id)
-            .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?,
-        customer_name: sale_row.customer_name,
-        line_items,
-        total_amount: sale_row.total_amount,
-        amount_paid: sale_row.amount_paid,
-        payment_wallet_id: Uuid::parse_str(&sale_row.payment_wallet_id)
-            .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?,
-        timestamp,
+        id: crate::utils::parse_uuid("sale", &data.sale_row.id)?,
+        customer_id: crate::utils::parse_uuid("customer", &data.sale_row.customer_id)?,
+        customer_name: data.sale_row.customer_name,
+        line_items: data.line_items,
+        total_amount: Money(data.sale_row.total_amount),
+        amount_paid: Money(data.sale_row.amount_paid),
+        payment_wallet_id: crate::utils::parse_uuid("wallet", &data.sale_row.payment_wallet_id)?,
+        timestamp: data.timestamp,
     };
 
     let remaining_balance = sale.total_amount - sale.amount_paid;
-    let formatted_date = timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
+    let formatted_date = data.timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
 
     Ok(Receipt {
-        customer_name: customer.name,
-        customer_city: customer.city,
-        customer_mobile: customer.mobile,
-        business_name: "Sweet Lab".to_string(),
+        customer_name: data.customer.name,
+        customer_city: data.customer.city,
+        customer_mobile: data.customer.mobile,
+        business_name: business_name.to_string(),
         remaining_balance,
         formatted_date,
         sale,
@@ -74,6 +43,11 @@ pub async fn generate_receipt(pool: &SqlitePool, sale_id: Uuid) -> AppResult<Rec
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Utc;
+    use uuid::Uuid;
+    use crate::error::AppError;
+    use crate::models::domain::SaleLineItem;
+    use crate::models::Money;
     use crate::persistence::db;
     use crate::persistence::queries::customers as customer_queries;
     use crate::persistence::queries::finished_goods as fg_queries;
@@ -95,10 +69,10 @@ mod tests {
         customer_queries::insert(pool, &cust_id.to_string(), "Khaled", "Aleppo", "+963922222222", &now)
             .await
             .unwrap();
-        wallet_queries::insert_wallet(pool, &wallet_id.to_string(), "Cash", "Cash", 1000.0, &now)
+        wallet_queries::insert_wallet(pool, &wallet_id.to_string(), "Cash", "Cash", 100000, &now)
             .await
             .unwrap();
-        fg_queries::insert(pool, &fg_id.to_string(), "Sweet Box", 50.0, 20.0, &now)
+        fg_queries::insert(pool, &fg_id.to_string(), "Sweet Box", 50.0, 2000, &now)
             .await
             .unwrap();
 
@@ -114,13 +88,13 @@ mod tests {
             finished_good_id: fg_id,
             finished_good_name: "Sweet Box".into(),
             quantity: 3,
-            unit_price: 20.0,
+            unit_price: Money::from_f64(20.0),
         }];
 
         // total = 60, paid = 40 → remaining = 20
-        let sale = svc.create_sale(cust_id, items, 40.0, wallet_id).await.unwrap();
+        let sale = svc.create_sale(cust_id, items, Money::from_f64(40.0), wallet_id).await.unwrap();
 
-        let receipt = generate_receipt(&pool, sale.id).await.unwrap();
+        let receipt = generate_receipt(&pool, sale.id, "Sweet Lab").await.unwrap();
 
         // Customer details (Req 8.5)
         assert_eq!(receipt.customer_name, "Khaled");
@@ -134,12 +108,12 @@ mod tests {
         assert_eq!(receipt.sale.line_items.len(), 1);
         assert_eq!(receipt.sale.line_items[0].finished_good_name, "Sweet Box");
         assert_eq!(receipt.sale.line_items[0].quantity, 3);
-        assert_eq!(receipt.sale.line_items[0].unit_price, 20.0);
+        assert_eq!(receipt.sale.line_items[0].unit_price, Money::from_f64(20.0));
 
         // Totals
-        assert_eq!(receipt.sale.total_amount, 60.0);
-        assert_eq!(receipt.sale.amount_paid, 40.0);
-        assert_eq!(receipt.remaining_balance, 20.0);
+        assert_eq!(receipt.sale.total_amount, Money::from_f64(60.0));
+        assert_eq!(receipt.sale.amount_paid, Money::from_f64(40.0));
+        assert_eq!(receipt.remaining_balance, Money::from_f64(20.0));
 
         // Date is formatted
         assert!(!receipt.formatted_date.is_empty());
@@ -148,7 +122,7 @@ mod tests {
     #[tokio::test]
     async fn receipt_for_nonexistent_sale_fails() {
         let (pool, _svc) = setup().await;
-        let err = generate_receipt(&pool, Uuid::new_v4()).await.unwrap_err();
+        let err = generate_receipt(&pool, Uuid::new_v4(), "Sweet Lab").await.unwrap_err();
         assert!(matches!(err, AppError::Validation { .. }));
     }
 
@@ -161,12 +135,12 @@ mod tests {
             finished_good_id: fg_id,
             finished_good_name: "Sweet Box".into(),
             quantity: 2,
-            unit_price: 20.0,
+            unit_price: Money::from_f64(20.0),
         }];
 
-        let sale = svc.create_sale(cust_id, items, 40.0, wallet_id).await.unwrap();
-        let receipt = generate_receipt(&pool, sale.id).await.unwrap();
+        let sale = svc.create_sale(cust_id, items, Money::from_f64(40.0), wallet_id).await.unwrap();
+        let receipt = generate_receipt(&pool, sale.id, "Sweet Lab").await.unwrap();
 
-        assert_eq!(receipt.remaining_balance, 0.0);
+        assert_eq!(receipt.remaining_balance, Money::ZERO);
     }
 }

@@ -1,9 +1,11 @@
 pub mod customers;
+pub mod debt_payments;
 pub mod debts;
 pub mod expenses;
 pub mod finished_goods;
 pub mod raw_materials;
 pub mod recipes;
 pub mod sales;
+pub mod sessions;
 pub mod users;
 pub mod wallets;

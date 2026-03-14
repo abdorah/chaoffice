@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use sweet_lab_core::debt::tracker::DebtServiceImpl;
 use sweet_lab_core::models::domain::SaleLineItem;
+use sweet_lab_core::models::Money;
 use sweet_lab_core::persistence::db;
 use sweet_lab_core::persistence::queries::customers as customer_queries;
 use sweet_lab_core::persistence::queries::finished_goods as fg_queries;
@@ -53,7 +54,7 @@ async fn seed_production_fixture(pool: &SqlitePool) -> ProductionFixture {
     rm_queries::insert(pool, &rm_sugar_id.to_string(), "Sugar", "kg", 50.0, &now).await.unwrap();
 
     // Finished good
-    fg_queries::insert(pool, &fg_id.to_string(), "Sweet Box", 0.0, 25.0, &now).await.unwrap();
+    fg_queries::insert(pool, &fg_id.to_string(), "Sweet Box", 0.0, 2500, &now).await.unwrap();
 
     // Recipe: 1 Sweet Box = 2L milk + 0.5kg sugar
     recipe_queries::insert_recipe(pool, &recipe_id.to_string(), "Sweet Box Recipe", &fg_id.to_string(), &now).await.unwrap();
@@ -77,9 +78,9 @@ async fn seed_sale_fixture(pool: &SqlitePool, fg_qty: f64) -> SaleFixture {
 
     customer_queries::insert(pool, &customer_id.to_string(), "Khaled", "Aleppo", "+963922222222", &now)
         .await.unwrap();
-    wallet_queries::insert_wallet(pool, &wallet_id.to_string(), "Cash Box", "Cash", 1000.0, &now)
+    wallet_queries::insert_wallet(pool, &wallet_id.to_string(), "Cash Box", "Cash", 100000, &now)
         .await.unwrap();
-    fg_queries::insert(pool, &fg_id.to_string(), "Chocolate Bar", fg_qty, 10.0, &now)
+    fg_queries::insert(pool, &fg_id.to_string(), "Chocolate Bar", fg_qty, 1000, &now)
         .await.unwrap();
 
     SaleFixture { customer_id, wallet_id, fg_id }
@@ -160,7 +161,7 @@ async fn production_flow_multiple_runs_accumulate_correctly() {
     assert_eq!(fg.current_quantity, 8.0);
 
     // Production history has 2 entries
-    let history = production_svc.get_production_history().await.unwrap();
+    let history = production_svc.get_production_history(None).await.unwrap();
     assert_eq!(history.len(), 2);
 }
 
@@ -179,17 +180,17 @@ async fn sale_flow_full_payment_credits_wallet_deducts_inventory_no_debt() {
         finished_good_id: f.fg_id,
         finished_good_name: "Chocolate Bar".into(),
         quantity: 5,
-        unit_price: 10.0,
+        unit_price: Money::from_f64(10.0),
     }];
 
     // Full payment: total = 50, paid = 50
-    let sale = sales_svc.create_sale(f.customer_id, items, 50.0, f.wallet_id).await.unwrap();
-    assert_eq!(sale.total_amount, 50.0);
-    assert_eq!(sale.amount_paid, 50.0);
+    let sale = sales_svc.create_sale(f.customer_id, items, Money::from_f64(50.0), f.wallet_id).await.unwrap();
+    assert_eq!(sale.total_amount, Money::from_f64(50.0));
+    assert_eq!(sale.amount_paid, Money::from_f64(50.0));
 
-    // Wallet: 1000 + 50 = 1050
+    // Wallet: 1000 + 50 = 1050 (check via raw query — WalletRow uses f64)
     let wallet = wallet_queries::get_by_id(&pool, &f.wallet_id.to_string()).await.unwrap().unwrap();
-    assert_eq!(wallet.current_balance, 1050.0);
+    assert_eq!(wallet.current_balance, 105000);
 
     // Inventory: 50 - 5 = 45
     let fg = fg_queries::get_by_id(&pool, &f.fg_id.to_string()).await.unwrap().unwrap();
@@ -212,27 +213,27 @@ async fn sale_flow_partial_payment_creates_debt_for_remainder() {
         finished_good_id: f.fg_id,
         finished_good_name: "Chocolate Bar".into(),
         quantity: 8,
-        unit_price: 10.0,
+        unit_price: Money::from_f64(10.0),
     }];
 
     // Partial payment: total = 80, paid = 30 → debt = 50
-    let sale = sales_svc.create_sale(f.customer_id, items, 30.0, f.wallet_id).await.unwrap();
-    assert_eq!(sale.total_amount, 80.0);
-    assert_eq!(sale.amount_paid, 30.0);
+    let sale = sales_svc.create_sale(f.customer_id, items, Money::from_f64(30.0), f.wallet_id).await.unwrap();
+    assert_eq!(sale.total_amount, Money::from_f64(80.0));
+    assert_eq!(sale.amount_paid, Money::from_f64(30.0));
 
     // Wallet: 1000 + 30 = 1030
     let wallet = wallet_queries::get_by_id(&pool, &f.wallet_id.to_string()).await.unwrap().unwrap();
-    assert_eq!(wallet.current_balance, 1030.0);
+    assert_eq!(wallet.current_balance, 103000);
 
     // Inventory: 50 - 8 = 42
     let fg = fg_queries::get_by_id(&pool, &f.fg_id.to_string()).await.unwrap().unwrap();
     assert_eq!(fg.current_quantity, 42.0);
 
-    // Debt record for 50
-    let debt: (f64,) = sqlx::query_as("SELECT remaining_amount FROM debt_records WHERE sale_id = ?")
+    // Debt record for 50 (remaining_amount is INTEGER cents)
+    let debt: (i64,) = sqlx::query_as("SELECT remaining_amount FROM debt_records WHERE sale_id = ?")
         .bind(sale.id.to_string())
         .fetch_one(&pool).await.unwrap();
-    assert_eq!(debt.0, 50.0);
+    assert_eq!(debt.0, 5000);
 }
 
 #[tokio::test]
@@ -245,26 +246,26 @@ async fn sale_flow_zero_payment_creates_full_debt() {
         finished_good_id: f.fg_id,
         finished_good_name: "Chocolate Bar".into(),
         quantity: 3,
-        unit_price: 10.0,
+        unit_price: Money::from_f64(10.0),
     }];
 
     // No payment: total = 30, paid = 0 → debt = 30
-    let sale = sales_svc.create_sale(f.customer_id, items, 0.0, f.wallet_id).await.unwrap();
-    assert_eq!(sale.total_amount, 30.0);
+    let sale = sales_svc.create_sale(f.customer_id, items, Money::ZERO, f.wallet_id).await.unwrap();
+    assert_eq!(sale.total_amount, Money::from_f64(30.0));
 
     // Wallet unchanged
     let wallet = wallet_queries::get_by_id(&pool, &f.wallet_id.to_string()).await.unwrap().unwrap();
-    assert_eq!(wallet.current_balance, 1000.0);
+    assert_eq!(wallet.current_balance, 100000);
 
     // Inventory: 50 - 3 = 47
     let fg = fg_queries::get_by_id(&pool, &f.fg_id.to_string()).await.unwrap().unwrap();
     assert_eq!(fg.current_quantity, 47.0);
 
-    // Full debt
-    let debt: (f64,) = sqlx::query_as("SELECT remaining_amount FROM debt_records WHERE sale_id = ?")
+    // Full debt (remaining_amount is INTEGER cents)
+    let debt: (i64,) = sqlx::query_as("SELECT remaining_amount FROM debt_records WHERE sale_id = ?")
         .bind(sale.id.to_string())
         .fetch_one(&pool).await.unwrap();
-    assert_eq!(debt.0, 30.0);
+    assert_eq!(debt.0, 3000);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -281,9 +282,9 @@ async fn seed_debts_for_fifo(pool: &SqlitePool) -> (Uuid, Uuid, Uuid) {
 
     customer_queries::insert(pool, &customer_id.to_string(), "Sara", "Homs", "+963933333333", &now)
         .await.unwrap();
-    wallet_queries::insert_wallet(pool, &wallet_id.to_string(), "Rep Wallet", "Representative", 500.0, &now)
+    wallet_queries::insert_wallet(pool, &wallet_id.to_string(), "Rep Wallet", "Representative", 50000, &now)
         .await.unwrap();
-    fg_queries::insert(pool, &fg_id.to_string(), "Gift Box", 200.0, 20.0, &now)
+    fg_queries::insert(pool, &fg_id.to_string(), "Gift Box", 200.0, 2000, &now)
         .await.unwrap();
 
     let sales_svc = SalesServiceImpl::new(pool.clone());
@@ -293,27 +294,27 @@ async fn seed_debts_for_fifo(pool: &SqlitePool) -> (Uuid, Uuid, Uuid) {
         finished_good_id: fg_id,
         finished_good_name: "Gift Box".into(),
         quantity: 3,
-        unit_price: 20.0,
+        unit_price: Money::from_f64(20.0),
     }];
-    sales_svc.create_sale(customer_id, items1, 0.0, wallet_id).await.unwrap();
+    sales_svc.create_sale(customer_id, items1, Money::ZERO, wallet_id).await.unwrap();
 
     // Sale 2: total 40, paid 0 → debt 40
     let items2 = vec![SaleLineItem {
         finished_good_id: fg_id,
         finished_good_name: "Gift Box".into(),
         quantity: 2,
-        unit_price: 20.0,
+        unit_price: Money::from_f64(20.0),
     }];
-    sales_svc.create_sale(customer_id, items2, 0.0, wallet_id).await.unwrap();
+    sales_svc.create_sale(customer_id, items2, Money::ZERO, wallet_id).await.unwrap();
 
     // Sale 3: total 100, paid 0 → debt 100
     let items3 = vec![SaleLineItem {
         finished_good_id: fg_id,
         finished_good_name: "Gift Box".into(),
         quantity: 5,
-        unit_price: 20.0,
+        unit_price: Money::from_f64(20.0),
     }];
-    sales_svc.create_sale(customer_id, items3, 0.0, wallet_id).await.unwrap();
+    sales_svc.create_sale(customer_id, items3, Money::ZERO, wallet_id).await.unwrap();
 
     (customer_id, wallet_id, fg_id)
 }
@@ -325,26 +326,26 @@ async fn payment_flow_fifo_pays_oldest_debt_first() {
     let debt_svc = DebtServiceImpl::new(pool.clone());
 
     // Total debts: 60 + 40 + 100 = 200
-    let active_before = debt_svc.get_active_debts().await.unwrap();
+    let active_before = debt_svc.get_active_debts(None).await.unwrap();
     assert_eq!(active_before.len(), 3);
 
     // Pay 70: should fully settle debt1 (60) and partially pay debt2 (10 of 40)
-    let payment = debt_svc.record_payment(customer_id, 70.0, wallet_id).await.unwrap();
-    assert_eq!(payment.amount, 70.0);
+    let payment = debt_svc.record_payment(customer_id, Money::from_f64(70.0), wallet_id).await.unwrap();
+    assert_eq!(payment.amount, Money::from_f64(70.0));
     assert_eq!(payment.allocations.len(), 2);
 
     // First allocation: 60 applied to oldest debt
-    assert_eq!(payment.allocations[0].amount_applied, 60.0);
+    assert_eq!(payment.allocations[0].amount_applied, Money::from_f64(60.0));
     // Second allocation: 10 applied to next debt
-    assert_eq!(payment.allocations[1].amount_applied, 10.0);
+    assert_eq!(payment.allocations[1].amount_applied, Money::from_f64(10.0));
 
     // Active debts: debt1 settled, debt2 remaining 30, debt3 remaining 100
-    let active_after = debt_svc.get_active_debts().await.unwrap();
+    let active_after = debt_svc.get_active_debts(None).await.unwrap();
     assert_eq!(active_after.len(), 2);
 
     // Remaining amounts (sorted by sale_date ASC = oldest first)
-    let remaining: Vec<f64> = active_after.iter().map(|d| d.remaining_amount).collect();
-    assert_eq!(remaining, vec![30.0, 100.0]);
+    let remaining: Vec<Money> = active_after.iter().map(|d| d.remaining_amount).collect();
+    assert_eq!(remaining, vec![Money::from_f64(30.0), Money::from_f64(100.0)]);
 }
 
 #[tokio::test]
@@ -354,14 +355,14 @@ async fn payment_flow_fully_settles_all_debts() {
     let debt_svc = DebtServiceImpl::new(pool.clone());
 
     // Pay exactly 200 to settle all debts
-    let payment = debt_svc.record_payment(customer_id, 200.0, wallet_id).await.unwrap();
+    let payment = debt_svc.record_payment(customer_id, Money::from_f64(200.0), wallet_id).await.unwrap();
     assert_eq!(payment.allocations.len(), 3);
-    assert_eq!(payment.allocations[0].amount_applied, 60.0);
-    assert_eq!(payment.allocations[1].amount_applied, 40.0);
-    assert_eq!(payment.allocations[2].amount_applied, 100.0);
+    assert_eq!(payment.allocations[0].amount_applied, Money::from_f64(60.0));
+    assert_eq!(payment.allocations[1].amount_applied, Money::from_f64(40.0));
+    assert_eq!(payment.allocations[2].amount_applied, Money::from_f64(100.0));
 
     // No active debts remain
-    let active = debt_svc.get_active_debts().await.unwrap();
+    let active = debt_svc.get_active_debts(None).await.unwrap();
     assert!(active.is_empty());
 }
 
@@ -372,15 +373,15 @@ async fn payment_flow_overpayment_only_allocates_owed_amount() {
     let debt_svc = DebtServiceImpl::new(pool.clone());
 
     // Pay 500 but only 200 is owed
-    let payment = debt_svc.record_payment(customer_id, 500.0, wallet_id).await.unwrap();
+    let payment = debt_svc.record_payment(customer_id, Money::from_f64(500.0), wallet_id).await.unwrap();
 
     // All debts settled
-    let active = debt_svc.get_active_debts().await.unwrap();
+    let active = debt_svc.get_active_debts(None).await.unwrap();
     assert!(active.is_empty());
 
     // Total allocated = 200 (not 500)
-    let total_allocated: f64 = payment.allocations.iter().map(|a| a.amount_applied).sum();
-    assert_eq!(total_allocated, 200.0);
+    let total_allocated: Money = payment.allocations.iter().map(|a| a.amount_applied).sum();
+    assert_eq!(total_allocated, Money::from_f64(200.0));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -405,10 +406,10 @@ async fn full_pipeline_production_then_sale_then_payment() {
         .await.unwrap();
     customer_queries::insert(&pool, &customer_id.to_string(), "Omar", "Latakia", "+963944444444", &now)
         .await.unwrap();
-    wallet_queries::insert_wallet(&pool, &wallet_id.to_string(), "Bank Account", "Bank", 0.0, &now)
+    wallet_queries::insert_wallet(&pool, &wallet_id.to_string(), "Bank Account", "Bank", 0, &now)
         .await.unwrap();
     rm_queries::insert(&pool, &rm_cream_id.to_string(), "Cream", "kg", 20.0, &now).await.unwrap();
-    fg_queries::insert(&pool, &fg_id.to_string(), "Cream Cake", 0.0, 50.0, &now).await.unwrap();
+    fg_queries::insert(&pool, &fg_id.to_string(), "Cream Cake", 0.0, 5000, &now).await.unwrap();
 
     // Recipe: 1 Cream Cake = 2kg cream
     recipe_queries::insert_recipe(&pool, &recipe_id.to_string(), "Cream Cake Recipe", &fg_id.to_string(), &now)
@@ -433,33 +434,33 @@ async fn full_pipeline_production_then_sale_then_payment() {
         finished_good_id: fg_id,
         finished_good_name: "Cream Cake".into(),
         quantity: 3,
-        unit_price: 50.0,
+        unit_price: Money::from_f64(50.0),
     }];
     // total = 150, paid = 100 → debt = 50
-    let sale = sales_svc.create_sale(customer_id, items, 100.0, wallet_id).await.unwrap();
-    assert_eq!(sale.total_amount, 150.0);
+    let sale = sales_svc.create_sale(customer_id, items, Money::from_f64(100.0), wallet_id).await.unwrap();
+    assert_eq!(sale.total_amount, Money::from_f64(150.0));
 
     // Cream Cake: 5 - 3 = 2
     let fg = fg_queries::get_by_id(&pool, &fg_id.to_string()).await.unwrap().unwrap();
     assert_eq!(fg.current_quantity, 2.0);
 
-    // Wallet: 0 + 100 = 100
+    // Wallet: 0 + 100 = 10000 cents ($100)
     let wallet = wallet_queries::get_by_id(&pool, &wallet_id.to_string()).await.unwrap().unwrap();
-    assert_eq!(wallet.current_balance, 100.0);
+    assert_eq!(wallet.current_balance, 10000);
 
-    // Debt: 50
-    let debt: (f64,) = sqlx::query_as("SELECT remaining_amount FROM debt_records WHERE sale_id = ?")
+    // Debt: 5000 cents ($50)
+    let debt: (i64,) = sqlx::query_as("SELECT remaining_amount FROM debt_records WHERE sale_id = ?")
         .bind(sale.id.to_string())
         .fetch_one(&pool).await.unwrap();
-    assert_eq!(debt.0, 50.0);
+    assert_eq!(debt.0, 5000);
 
     // ── Step 3: Payment settles debt ───────────────────────────────────
     let debt_svc = DebtServiceImpl::new(pool.clone());
-    let payment = debt_svc.record_payment(customer_id, 50.0, wallet_id).await.unwrap();
+    let payment = debt_svc.record_payment(customer_id, Money::from_f64(50.0), wallet_id).await.unwrap();
     assert_eq!(payment.allocations.len(), 1);
-    assert_eq!(payment.allocations[0].amount_applied, 50.0);
+    assert_eq!(payment.allocations[0].amount_applied, Money::from_f64(50.0));
 
     // No active debts
-    let active = debt_svc.get_active_debts().await.unwrap();
+    let active = debt_svc.get_active_debts(None).await.unwrap();
     assert!(active.is_empty());
 }

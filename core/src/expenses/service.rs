@@ -5,8 +5,10 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
-use crate::models::domain::{Expense, ExpenseCategory};
+use crate::models::domain::{Expense, ExpenseCategory, Pagination};
+use crate::models::Money;
 use crate::persistence::queries::expenses as expense_queries;
+use crate::persistence::queries::users as user_queries;
 use crate::persistence::queries::wallets as wallet_queries;
 
 /// Service for recording and querying expenses.
@@ -24,7 +26,7 @@ impl ExpenseServiceImpl {
     pub async fn record_expense(
         &self,
         description: &str,
-        amount: f64,
+        amount: Money,
         category: ExpenseCategory,
         wallet_id: Uuid,
         recorded_by: Uuid,
@@ -38,10 +40,19 @@ impl ExpenseServiceImpl {
         }
 
         // Validate amount
-        if amount <= 0.0 {
+        if amount.0 <= 0 {
             return Err(AppError::Validation {
                 field: "amount".to_string(),
                 message: "Amount must be positive".to_string(),
+            });
+        }
+
+        // Validate recorded_by user exists (Req 15.1, 15.2)
+        let user = user_queries::get_user_by_id(&self.pool, &recorded_by.to_string()).await?;
+        if user.is_none() {
+            return Err(AppError::NotFound {
+                entity_type: "user".to_string(),
+                entity_id: recorded_by.to_string(),
             });
         }
 
@@ -60,30 +71,38 @@ impl ExpenseServiceImpl {
                 message: format!("Wallet {wallet_id} not found"),
             })?;
 
-        if wallet.current_balance < amount {
+        let wallet_balance = Money(wallet.current_balance);
+        if wallet_balance < amount {
             return Err(AppError::InsufficientFunds {
                 wallet_name: wallet.name.clone(),
-                available: wallet.current_balance,
+                available: wallet_balance,
                 requested: amount,
             });
         }
 
-        // Debit wallet (Req 11.2)
-        let new_balance = wallet.current_balance - amount;
-        wallet_queries::update_balance_in_tx(
+        // Debit wallet atomically with balance check (Req 11.2, 7.3)
+        let rows_affected = wallet_queries::atomic_debit_in_tx(
             &mut *tx,
             &wallet_id.to_string(),
-            new_balance,
+            amount.0,
             &now_str,
         )
         .await?;
+
+        if rows_affected == 0 {
+            return Err(AppError::InsufficientFunds {
+                wallet_name: wallet.name.clone(),
+                available: wallet_balance,
+                requested: amount,
+            });
+        }
 
         // Log wallet transaction
         wallet_queries::insert_transaction_in_tx(
             &mut *tx,
             &Uuid::new_v4().to_string(),
             &wallet_id.to_string(),
-            -amount,
+            -amount.0,
             &format!("Expense: {description}"),
             Some(&expense_id.to_string()),
             &now_str,
@@ -96,7 +115,7 @@ impl ExpenseServiceImpl {
             &mut *tx,
             &expense_id.to_string(),
             description,
-            amount,
+            amount.0,
             category_str,
             &wallet_id.to_string(),
             &recorded_by.to_string(),
@@ -124,11 +143,14 @@ impl ExpenseServiceImpl {
         &self,
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
+        pagination: Option<Pagination>,
     ) -> AppResult<Vec<Expense>> {
+        let pg = pagination.unwrap_or_default();
         let rows = expense_queries::get_by_date_range(
             &self.pool,
             &start_date.to_rfc3339(),
             &end_date.to_rfc3339(),
+            &pg,
         )
         .await?;
 
@@ -140,11 +162,14 @@ impl ExpenseServiceImpl {
         &self,
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
+        pagination: Option<Pagination>,
     ) -> AppResult<HashMap<ExpenseCategory, Vec<Expense>>> {
+        let pg = pagination.unwrap_or_default();
         let rows = expense_queries::get_by_date_range_with_category(
             &self.pool,
             &start_date.to_rfc3339(),
             &end_date.to_rfc3339(),
+            &pg,
         )
         .await?;
 
@@ -177,21 +202,15 @@ fn parse_category(s: &str) -> AppResult<ExpenseCategory> {
 
 /// Convert a persistence row to an Expense domain model.
 fn row_to_expense(row: expense_queries::ExpenseWithWalletRow) -> AppResult<Expense> {
-    let id = Uuid::parse_str(&row.id)
-        .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?;
-    let wallet_id = Uuid::parse_str(&row.wallet_id)
-        .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?;
-    let recorded_by = Uuid::parse_str(&row.recorded_by)
-        .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?;
-    let timestamp: DateTime<Utc> = row
-        .timestamp
-        .parse()
-        .map_err(|e| AppError::Unknown(format!("Invalid timestamp: {e}")))?;
+    let id = crate::utils::parse_uuid("expense", &row.id)?;
+    let wallet_id = crate::utils::parse_uuid("wallet", &row.wallet_id)?;
+    let recorded_by = crate::utils::parse_uuid("user", &row.recorded_by)?;
+    let timestamp = crate::utils::parse_timestamp(&row.timestamp)?;
 
     Ok(Expense {
         id,
         description: row.description,
-        amount: row.amount,
+        amount: Money(row.amount),
         category: parse_category(&row.category)?,
         wallet_id,
         wallet_name: row.wallet_name,
@@ -204,6 +223,7 @@ fn row_to_expense(row: expense_queries::ExpenseWithWalletRow) -> AppResult<Expen
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::Money;
     use crate::persistence::db;
     use crate::persistence::queries::wallets as wallet_queries;
     use chrono::Duration;
@@ -214,7 +234,7 @@ mod tests {
         (pool, svc)
     }
 
-    async fn seed_wallet(pool: &SqlitePool, id: &str, name: &str, balance: f64) {
+    async fn seed_wallet(pool: &SqlitePool, id: &str, name: &str, balance: i64) {
         let now = Utc::now().to_rfc3339();
         wallet_queries::insert_wallet(pool, id, name, "Cash", balance, &now)
             .await
@@ -242,16 +262,16 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 500.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 50000).await;
         seed_user(&pool, &user_id.to_string()).await;
 
         let expense = svc
-            .record_expense("Office supplies", 100.0, ExpenseCategory::OperatingCost, wallet_id, user_id)
+            .record_expense("Office supplies", Money::from_f64(100.0), ExpenseCategory::OperatingCost, wallet_id, user_id)
             .await
             .unwrap();
 
         assert_eq!(expense.description, "Office supplies");
-        assert_eq!(expense.amount, 100.0);
+        assert_eq!(expense.amount, Money::from_f64(100.0));
         assert_eq!(expense.category, ExpenseCategory::OperatingCost);
         assert_eq!(expense.wallet_id, wallet_id);
         assert_eq!(expense.wallet_name, "Cash Box");
@@ -263,16 +283,16 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 500.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 50000).await;
         seed_user(&pool, &user_id.to_string()).await;
 
-        svc.record_expense("Milk purchase", 150.0, ExpenseCategory::Purchase, wallet_id, user_id)
+        svc.record_expense("Milk purchase", Money::from_f64(150.0), ExpenseCategory::Purchase, wallet_id, user_id)
             .await
             .unwrap();
 
-        // Wallet should be 500 - 150 = 350
+        // Wallet should be 50000 - 15000 = 35000 cents ($500 - $150 = $350)
         let wallet = wallet_queries::get_by_id(&pool, &wallet_id.to_string()).await.unwrap().unwrap();
-        assert_eq!(wallet.current_balance, 350.0);
+        assert_eq!(wallet.current_balance, 35000);
     }
 
     #[tokio::test]
@@ -280,16 +300,16 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 500.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 50000).await;
         seed_user(&pool, &user_id.to_string()).await;
 
-        svc.record_expense("Sugar", 50.0, ExpenseCategory::Purchase, wallet_id, user_id)
+        svc.record_expense("Sugar", Money::from_f64(50.0), ExpenseCategory::Purchase, wallet_id, user_id)
             .await
             .unwrap();
 
-        let txns = wallet_queries::get_transactions(&pool, &wallet_id.to_string()).await.unwrap();
+        let txns = wallet_queries::get_transactions(&pool, &wallet_id.to_string(), &Pagination::default()).await.unwrap();
         assert_eq!(txns.len(), 1);
-        assert_eq!(txns[0].amount, -50.0);
+        assert_eq!(txns[0].amount, -5000);
         assert!(txns[0].description.contains("Expense"));
     }
 
@@ -300,26 +320,26 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 30.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 3000).await;
         seed_user(&pool, &user_id.to_string()).await;
 
         let err = svc
-            .record_expense("Expensive item", 100.0, ExpenseCategory::Purchase, wallet_id, user_id)
+            .record_expense("Expensive item", Money::from_f64(100.0), ExpenseCategory::Purchase, wallet_id, user_id)
             .await
             .unwrap_err();
 
         match err {
             AppError::InsufficientFunds { wallet_name, available, requested } => {
                 assert_eq!(wallet_name, "Cash Box");
-                assert_eq!(available, 30.0);
-                assert_eq!(requested, 100.0);
+                assert_eq!(available, Money::from_f64(30.0));
+                assert_eq!(requested, Money::from_f64(100.0));
             }
             other => panic!("Expected InsufficientFunds, got: {other:?}"),
         }
 
         // Wallet unchanged
         let wallet = wallet_queries::get_by_id(&pool, &wallet_id.to_string()).await.unwrap().unwrap();
-        assert_eq!(wallet.current_balance, 30.0);
+        assert_eq!(wallet.current_balance, 3000);
     }
 
     // ── record_expense: validation ─────────────────────────────────────
@@ -328,7 +348,7 @@ mod tests {
     async fn record_expense_empty_description_rejected() {
         let (_pool, svc) = setup().await;
         let err = svc
-            .record_expense("", 50.0, ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
+            .record_expense("", Money::from_f64(50.0), ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
             .await
             .unwrap_err();
         assert!(matches!(err, AppError::Validation { field, .. } if field == "description"));
@@ -338,7 +358,7 @@ mod tests {
     async fn record_expense_whitespace_description_rejected() {
         let (_pool, svc) = setup().await;
         let err = svc
-            .record_expense("   ", 50.0, ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
+            .record_expense("   ", Money::from_f64(50.0), ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
             .await
             .unwrap_err();
         assert!(matches!(err, AppError::Validation { field, .. } if field == "description"));
@@ -348,7 +368,7 @@ mod tests {
     async fn record_expense_zero_amount_rejected() {
         let (_pool, svc) = setup().await;
         let err = svc
-            .record_expense("Test", 0.0, ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
+            .record_expense("Test", Money::ZERO, ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
             .await
             .unwrap_err();
         assert!(matches!(err, AppError::Validation { field, .. } if field == "amount"));
@@ -358,7 +378,7 @@ mod tests {
     async fn record_expense_negative_amount_rejected() {
         let (_pool, svc) = setup().await;
         let err = svc
-            .record_expense("Test", -10.0, ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
+            .record_expense("Test", Money(-1000), ExpenseCategory::Purchase, Uuid::new_v4(), Uuid::new_v4())
             .await
             .unwrap_err();
         assert!(matches!(err, AppError::Validation { field, .. } if field == "amount"));
@@ -371,7 +391,7 @@ mod tests {
         seed_user(&pool, &user_id.to_string()).await;
 
         let err = svc
-            .record_expense("Test", 50.0, ExpenseCategory::Purchase, Uuid::new_v4(), user_id)
+            .record_expense("Test", Money::from_f64(50.0), ExpenseCategory::Purchase, Uuid::new_v4(), user_id)
             .await
             .unwrap_err();
         assert!(matches!(err, AppError::Validation { .. }));
@@ -384,18 +404,18 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 5000.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 500000).await;
         seed_user(&pool, &user_id.to_string()).await;
 
         // Record 3 expenses
-        svc.record_expense("Expense 1", 10.0, ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
-        svc.record_expense("Expense 2", 20.0, ExpenseCategory::OperatingCost, wallet_id, user_id).await.unwrap();
-        svc.record_expense("Expense 3", 30.0, ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
+        svc.record_expense("Expense 1", Money::from_f64(10.0), ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
+        svc.record_expense("Expense 2", Money::from_f64(20.0), ExpenseCategory::OperatingCost, wallet_id, user_id).await.unwrap();
+        svc.record_expense("Expense 3", Money::from_f64(30.0), ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
 
         // Query with a wide range that includes all
         let start = Utc::now() - Duration::hours(1);
         let end = Utc::now() + Duration::hours(1);
-        let expenses = svc.get_expenses(start, end).await.unwrap();
+        let expenses = svc.get_expenses(start, end, None).await.unwrap();
         assert_eq!(expenses.len(), 3);
     }
 
@@ -404,15 +424,15 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 5000.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 500000).await;
         seed_user(&pool, &user_id.to_string()).await;
 
-        svc.record_expense("Expense 1", 10.0, ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
+        svc.record_expense("Expense 1", Money::from_f64(10.0), ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
 
         // Query a range in the past
         let start = Utc::now() - Duration::days(10);
         let end = Utc::now() - Duration::days(5);
-        let expenses = svc.get_expenses(start, end).await.unwrap();
+        let expenses = svc.get_expenses(start, end, None).await.unwrap();
         assert!(expenses.is_empty());
     }
 
@@ -423,16 +443,16 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 5000.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 500000).await;
         seed_user(&pool, &user_id.to_string()).await;
 
-        svc.record_expense("Milk", 100.0, ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
-        svc.record_expense("Sugar", 50.0, ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
-        svc.record_expense("Electricity", 200.0, ExpenseCategory::OperatingCost, wallet_id, user_id).await.unwrap();
+        svc.record_expense("Milk", Money::from_f64(100.0), ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
+        svc.record_expense("Sugar", Money::from_f64(50.0), ExpenseCategory::Purchase, wallet_id, user_id).await.unwrap();
+        svc.record_expense("Electricity", Money::from_f64(200.0), ExpenseCategory::OperatingCost, wallet_id, user_id).await.unwrap();
 
         let start = Utc::now() - Duration::hours(1);
         let end = Utc::now() + Duration::hours(1);
-        let grouped = svc.get_expenses_by_category(start, end).await.unwrap();
+        let grouped = svc.get_expenses_by_category(start, end, None).await.unwrap();
 
         assert_eq!(grouped.len(), 2);
         assert_eq!(grouped[&ExpenseCategory::Purchase].len(), 2);
@@ -445,7 +465,7 @@ mod tests {
         let (_pool, svc) = setup().await;
         let start = Utc::now() - Duration::hours(1);
         let end = Utc::now() + Duration::hours(1);
-        let grouped = svc.get_expenses_by_category(start, end).await.unwrap();
+        let grouped = svc.get_expenses_by_category(start, end, None).await.unwrap();
         assert!(grouped.is_empty());
     }
 
@@ -456,14 +476,29 @@ mod tests {
         let (pool, svc) = setup().await;
         let wallet_id = Uuid::new_v4();
         let user_id = Uuid::new_v4();
-        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 75.0).await;
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 7500).await;
         seed_user(&pool, &user_id.to_string()).await;
 
-        svc.record_expense("Full spend", 75.0, ExpenseCategory::OperatingCost, wallet_id, user_id)
+        svc.record_expense("Full spend", Money::from_f64(75.0), ExpenseCategory::OperatingCost, wallet_id, user_id)
             .await
             .unwrap();
 
         let wallet = wallet_queries::get_by_id(&pool, &wallet_id.to_string()).await.unwrap().unwrap();
-        assert_eq!(wallet.current_balance, 0.0);
+        assert_eq!(wallet.current_balance, 0);
     }
+
+    #[tokio::test]
+    async fn record_expense_nonexistent_user_rejected() {
+        let (pool, svc) = setup().await;
+        let wallet_id = Uuid::new_v4();
+        seed_wallet(&pool, &wallet_id.to_string(), "Cash Box", 500000).await;
+
+        let fake_user_id = Uuid::new_v4();
+        let err = svc
+            .record_expense("Test", Money::from_f64(50.0), ExpenseCategory::Purchase, wallet_id, fake_user_id)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::NotFound { ref entity_type, .. } if entity_type == "user"));
+    }
+
 }

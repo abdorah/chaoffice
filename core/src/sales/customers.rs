@@ -3,7 +3,8 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
-use crate::models::domain::Customer;
+use crate::models::domain::{Customer, Pagination};
+use crate::models::Money;
 use crate::persistence::queries::customers as queries;
 
 /// Service for managing customer profiles.
@@ -18,8 +19,9 @@ impl CustomerService {
 
     /// Fetch all customers. total_debt and overdue_days default to 0
     /// (will be computed from debt records later).
-    pub async fn get_customers(&self) -> AppResult<Vec<Customer>> {
-        let rows = queries::list_all(&self.pool).await?;
+    pub async fn get_customers(&self, pagination: Option<Pagination>) -> AppResult<Vec<Customer>> {
+        let pg = pagination.unwrap_or_default();
+        let rows = queries::list_all(&self.pool, &pg).await?;
         rows.into_iter().map(row_to_domain).collect()
     }
 
@@ -51,7 +53,7 @@ impl CustomerService {
             city: city.to_string(),
             mobile: mobile.to_string(),
             reliability_rating: 0,
-            total_debt: 0.0,
+            total_debt: Money::ZERO,
             overdue_days: 0,
         })
     }
@@ -85,8 +87,9 @@ impl CustomerService {
     }
 
     /// Search customers by name, city, or mobile (Req 7.4).
-    pub async fn search_customers(&self, query: &str) -> AppResult<Vec<Customer>> {
-        let rows = queries::search(&self.pool, query).await?;
+    pub async fn search_customers(&self, query: &str, pagination: Option<Pagination>) -> AppResult<Vec<Customer>> {
+        let pg = pagination.unwrap_or_default();
+        let rows = queries::search(&self.pool, query, &pg).await?;
         rows.into_iter().map(row_to_domain).collect()
     }
 }
@@ -103,8 +106,7 @@ fn is_unique_violation(err: &sqlx::Error) -> bool {
 
 /// Convert a persistence row to a domain model.
 fn row_to_domain(row: queries::CustomerRow) -> AppResult<Customer> {
-    let id = Uuid::parse_str(&row.id)
-        .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?;
+    let id = crate::utils::parse_uuid("customer", &row.id)?;
 
     Ok(Customer {
         id,
@@ -112,8 +114,8 @@ fn row_to_domain(row: queries::CustomerRow) -> AppResult<Customer> {
         city: row.city,
         mobile: row.mobile,
         reliability_rating: row.reliability_rating,
-        total_debt: 0.0,
-        overdue_days: 0,
+        total_debt: Money(row.total_debt),
+        overdue_days: row.overdue_days,
     })
 }
 
@@ -140,7 +142,7 @@ mod tests {
         assert_eq!(customer.city, "Damascus");
         assert_eq!(customer.mobile, "+963911111111");
         assert_eq!(customer.reliability_rating, 0);
-        assert_eq!(customer.total_debt, 0.0);
+        assert_eq!(customer.total_debt, Money::ZERO);
         assert_eq!(customer.overdue_days, 0);
     }
 
@@ -179,7 +181,7 @@ mod tests {
                 .unwrap();
         }
 
-        let customers = svc.get_customers().await.unwrap();
+        let customers = svc.get_customers(None).await.unwrap();
         assert_eq!(customers[0].reliability_rating, 5);
     }
 
@@ -223,7 +225,7 @@ mod tests {
             .await
             .unwrap();
 
-        let results = svc.search_customers("Ahmad").await.unwrap();
+        let results = svc.search_customers("Ahmad", None).await.unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].name, "Ahmad Hassan");
     }
@@ -238,7 +240,7 @@ mod tests {
             .await
             .unwrap();
 
-        let results = svc.search_customers("Aleppo").await.unwrap();
+        let results = svc.search_customers("Aleppo", None).await.unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].name, "Khaled");
     }
@@ -253,7 +255,7 @@ mod tests {
             .await
             .unwrap();
 
-        let results = svc.search_customers("9222").await.unwrap();
+        let results = svc.search_customers("9222", None).await.unwrap();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].name, "Khaled");
     }
@@ -265,7 +267,7 @@ mod tests {
             .await
             .unwrap();
 
-        let results = svc.search_customers("nonexistent").await.unwrap();
+        let results = svc.search_customers("nonexistent", None).await.unwrap();
         assert!(results.is_empty());
     }
 
@@ -279,7 +281,7 @@ mod tests {
             .await
             .unwrap();
 
-        let customers = svc.get_customers().await.unwrap();
+        let customers = svc.get_customers(None).await.unwrap();
         assert_eq!(customers.len(), 2);
     }
 }

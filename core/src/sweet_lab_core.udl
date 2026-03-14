@@ -1,2 +1,460 @@
-namespace sweet_lab_core {
+namespace sweet_lab_core {};
+
+// ── Custom Type Mappings ───────────────────────────────────────────────────
+// Uuid and DateTime<Utc> are represented as strings over the FFI boundary.
+// Money is a newtype around i64 (integer cents).
+
+[Custom]
+typedef string Uuid;
+
+[Custom]
+typedef string DateTime;
+
+[Custom]
+typedef i64 Money;
+
+// ── Error ──────────────────────────────────────────────────────────────────
+
+[Error]
+enum AppError {
+    "Authentication",
+    "Authorization",
+    "NotFound",
+    "InsufficientStock",
+    "InsufficientFunds",
+    "Validation",
+    "Duplicate",
+    "DeletionBlocked",
+    "SyncConflict",
+    "Network",
+    "Database",
+    "Serialization",
+    "Unknown",
+};
+
+// ── Enums ──────────────────────────────────────────────────────────────────
+
+enum UserRole {
+    "Admin",
+    "Chef",
+    "Representative",
+};
+
+enum WalletType {
+    "Bank",
+    "Cash",
+    "Representative",
+};
+
+enum ExpenseCategory {
+    "Purchase",
+    "OperatingCost",
+};
+
+enum SyncStatus {
+    "Synced",
+    "Pending",
+    "Conflict",
+};
+
+// ── Value Types (dictionaries) ─────────────────────────────────────────────
+
+dictionary Pagination {
+    i64 limit;
+    i64 offset;
+};
+
+dictionary SafeUser {
+    Uuid id;
+    string username;
+    string full_name;
+    UserRole role;
+};
+
+dictionary Session {
+    Uuid session_id;
+    Uuid user_id;
+    UserRole role;
+    DateTime created_at;
+    DateTime last_activity;
+    DateTime expires_at;
+};
+
+dictionary RawMaterial {
+    Uuid id;
+    string name;
+    string unit;
+    double current_quantity;
+    DateTime last_updated;
+};
+
+dictionary FinishedGood {
+    Uuid id;
+    string name;
+    double current_quantity;
+    Money unit_price;
+    DateTime last_updated;
+};
+
+dictionary RecipeIngredient {
+    Uuid raw_material_id;
+    string raw_material_name;
+    double required_quantity;
+};
+
+dictionary Recipe {
+    Uuid id;
+    string name;
+    Uuid finished_good_id;
+    string finished_good_name;
+    sequence<RecipeIngredient> ingredients;
+};
+
+dictionary RecipeAvailability {
+    Recipe recipe;
+    i32 max_producible;
+    sequence<string> insufficient_materials;
+};
+
+dictionary ProductionLog {
+    Uuid id;
+    Uuid recipe_id;
+    string recipe_name;
+    Uuid chef_id;
+    string chef_name;
+    i32 production_quantity;
+    record<Uuid, double> materials_consumed;
+    Uuid finished_good_id;
+    DateTime timestamp;
+};
+
+dictionary Customer {
+    Uuid id;
+    string name;
+    string city;
+    string mobile;
+    i32 reliability_rating;
+    Money total_debt;
+    i32 overdue_days;
+};
+
+dictionary SaleLineItem {
+    Uuid finished_good_id;
+    string finished_good_name;
+    i32 quantity;
+    Money unit_price;
+};
+
+dictionary Sale {
+    Uuid id;
+    Uuid customer_id;
+    string customer_name;
+    sequence<SaleLineItem> line_items;
+    Money total_amount;
+    Money amount_paid;
+    Uuid payment_wallet_id;
+    DateTime timestamp;
+};
+
+dictionary Receipt {
+    Sale sale;
+    string customer_name;
+    string customer_city;
+    string customer_mobile;
+    string business_name;
+    Money remaining_balance;
+    string formatted_date;
+};
+
+dictionary Wallet {
+    Uuid id;
+    string name;
+    WalletType wallet_type;
+    Money current_balance;
+};
+
+dictionary WalletTransaction {
+    Uuid id;
+    Uuid wallet_id;
+    Money amount;
+    string description;
+    Uuid? related_entity_id;
+    DateTime timestamp;
+};
+
+dictionary FundTransfer {
+    Uuid id;
+    Uuid source_wallet_id;
+    Uuid destination_wallet_id;
+    Money amount;
+    DateTime timestamp;
+};
+
+dictionary DebtRecord {
+    Uuid id;
+    Uuid customer_id;
+    string customer_name;
+    Uuid sale_id;
+    Money original_amount;
+    Money remaining_amount;
+    DateTime sale_date;
+    i32 overdue_days;
+    boolean is_critical;
+    boolean is_settled;
+};
+
+dictionary DebtPayment {
+    Uuid id;
+    Uuid customer_id;
+    Money amount;
+    Money unallocated;
+    Uuid wallet_id;
+    sequence<DebtAllocation> allocations;
+    DateTime timestamp;
+};
+
+dictionary DebtAllocation {
+    Uuid debt_record_id;
+    Money amount_applied;
+};
+
+dictionary Expense {
+    Uuid id;
+    string description;
+    Money amount;
+    ExpenseCategory category;
+    Uuid wallet_id;
+    string wallet_name;
+    Uuid recorded_by;
+    DateTime timestamp;
+};
+
+dictionary FinancialSummary {
+    Money total_revenue;
+    Money total_expenses;
+    Money net_profit;
+    sequence<Wallet> wallet_balances;
+    DateTime start_date;
+    DateTime end_date;
+};
+
+dictionary InventoryReport {
+    sequence<RawMaterialReport> raw_materials;
+    sequence<FinishedGoodReport> finished_goods;
+};
+
+dictionary RawMaterialReport {
+    RawMaterial material;
+    boolean is_low_stock;
+};
+
+dictionary FinishedGoodReport {
+    FinishedGood good;
+    boolean is_low_stock;
+};
+
+dictionary Invoice {
+    string business_name;
+    string customer_name;
+    string customer_city;
+    string customer_mobile;
+    sequence<SaleLineItem> line_items;
+    Money total_amount;
+    Money amount_paid;
+    Money remaining_balance;
+    string date;
+    string invoice_number;
+};
+
+dictionary ExpenseCategoryGroup {
+    ExpenseCategory category;
+    sequence<Expense> expenses;
+};
+
+dictionary SyncQueueItem {
+    Uuid id;
+    string entity_type;
+    Uuid entity_id;
+    string operation;
+    string payload;
+    DateTime created_at;
+    SyncStatus status;
+};
+
+dictionary ConflictLog {
+    Uuid id;
+    string entity_type;
+    Uuid entity_id;
+    string local_version;
+    string remote_version;
+    string resolved_with;
+    DateTime timestamp;
+};
+
+// ── Main Interface ─────────────────────────────────────────────────────────
+
+interface SweetLabCore {
+
+    // ── Constructor ────────────────────────────────────────────────────
+    [Async, Throws=AppError, Name=new]
+    constructor(string db_path, string business_name, string? sync_base_url, string? font_dir);
+
+    // ── Auth ───────────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    Session login(string username, string password);
+
+    [Async, Throws=AppError]
+    void logout(Uuid session_id);
+
+    [Async, Throws=AppError]
+    SafeUser create_user(Uuid session_token, string username, string password, string full_name, UserRole role);
+
+    [Async, Throws=AppError]
+    void update_user_role(Uuid session_token, Uuid user_id, UserRole new_role);
+
+    [Async, Throws=AppError]
+    boolean check_permission(UserRole role, string resource, string action);
+
+    // ── Inventory — Raw Materials ──────────────────────────────────────
+    [Async, Throws=AppError]
+    sequence<RawMaterial> get_raw_materials(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    RawMaterial add_raw_material_purchase(Uuid session_token, Uuid material_id, double quantity);
+
+    [Async, Throws=AppError]
+    void deduct_raw_materials(Uuid session_token, record<Uuid, double> deductions);
+
+    // ── Inventory — Finished Goods ─────────────────────────────────────
+    [Async, Throws=AppError]
+    sequence<FinishedGood> get_finished_goods(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    FinishedGood add_finished_goods(Uuid session_token, Uuid good_id, double quantity);
+
+    [Async, Throws=AppError]
+    FinishedGood deduct_finished_goods(Uuid session_token, Uuid good_id, double quantity);
+
+    // ── Recipes ────────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    sequence<Recipe> get_recipes(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    Recipe create_recipe(Uuid session_token, string name, Uuid finished_good_id, sequence<RecipeIngredient> ingredients);
+
+    [Async, Throws=AppError]
+    Recipe update_recipe(Uuid session_token, Recipe recipe);
+
+    [Async, Throws=AppError]
+    void delete_recipe(Uuid session_token, Uuid recipe_id);
+
+    [Async, Throws=AppError]
+    void validate_ingredients(sequence<RecipeIngredient> ingredients);
+
+    // ── Production ─────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    ProductionLog execute_production(Uuid session_token, Uuid recipe_id, i32 quantity, Uuid chef_id);
+
+    [Async, Throws=AppError]
+    sequence<RecipeAvailability> get_recipe_availability(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    sequence<ProductionLog> get_production_history(Uuid session_token, Pagination? pagination);
+
+    // ── Customers ──────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    sequence<Customer> get_customers(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    Customer create_customer(Uuid session_token, string name, string city, string mobile);
+
+    [Async, Throws=AppError]
+    void update_reliability_rating(Uuid session_token, Uuid customer_id, i32 rating);
+
+    [Async, Throws=AppError]
+    sequence<Customer> search_customers(Uuid session_token, string query, Pagination? pagination);
+
+    // ── Sales ──────────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    Sale create_sale(Uuid session_token, Uuid customer_id, sequence<SaleLineItem> line_items, Money amount_paid, Uuid wallet_id);
+
+    [Async, Throws=AppError]
+    sequence<Sale> get_sales_history(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    Receipt generate_receipt(Uuid session_token, Uuid sale_id);
+
+    // ── Wallets ────────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    sequence<Wallet> get_wallets(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    sequence<WalletTransaction> get_transaction_history(Uuid session_token, Uuid wallet_id, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    FundTransfer transfer_funds(Uuid session_token, Uuid source_id, Uuid destination_id, Money amount);
+
+    [Async, Throws=AppError]
+    void credit_wallet(Uuid session_token, Uuid wallet_id, Money amount, string description, Uuid? related_entity_id);
+
+    [Async, Throws=AppError]
+    void debit_wallet(Uuid session_token, Uuid wallet_id, Money amount, string description, Uuid? related_entity_id);
+
+    // ── Debt ───────────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    sequence<DebtRecord> get_active_debts(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    sequence<DebtRecord> get_debt_aging_report(Uuid session_token, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    DebtPayment record_debt_payment(Uuid session_token, Uuid customer_id, Money amount, Uuid wallet_id);
+
+    [Async, Throws=AppError]
+    DebtRecord create_debt_record(Uuid session_token, Uuid customer_id, Uuid sale_id, Money amount);
+
+    // ── Expenses ───────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    Expense record_expense(Uuid session_token, string description, Money amount, ExpenseCategory category, Uuid wallet_id, Uuid recorded_by);
+
+    [Async, Throws=AppError]
+    sequence<Expense> get_expenses(Uuid session_token, DateTime start_date, DateTime end_date, Pagination? pagination);
+
+    [Async, Throws=AppError]
+    sequence<ExpenseCategoryGroup> get_expenses_by_category(Uuid session_token, DateTime start_date, DateTime end_date, Pagination? pagination);
+
+    // ── Reports ────────────────────────────────────────────────────────
+    [Async, Throws=AppError]
+    FinancialSummary get_financial_summary(Uuid session_token, DateTime start_date, DateTime end_date);
+
+    [Async, Throws=AppError]
+    InventoryReport get_inventory_report(Uuid session_token, double low_stock_threshold);
+
+    [Async, Throws=AppError]
+    Invoice generate_invoice(Uuid session_token, Uuid sale_id);
+
+    [Async, Throws=AppError]
+    sequence<u8> export_to_pdf(Invoice invoice);
+
+    [Async, Throws=AppError]
+    sequence<u8> export_to_excel(Invoice invoice);
+
+    // ── Sync ───────────────────────────────────────────────────────────
+    [Async]
+    boolean is_online();
+
+    [Async]
+    SyncStatus get_sync_status();
+
+    [Async, Throws=AppError]
+    void sync_all();
+
+    [Async, Throws=AppError]
+    void queue_modification(string entity_type, Uuid entity_id, string operation, string payload);
+
+    [Async, Throws=AppError]
+    sequence<ConflictLog> get_conflict_log(Pagination? pagination);
+
+    [Async, Throws=AppError]
+    u64 cleanup_conflict_log(i64 retention_days);
 };

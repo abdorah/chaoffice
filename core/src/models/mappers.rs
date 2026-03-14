@@ -10,6 +10,7 @@ use uuid::Uuid;
 use crate::error::{AppError, AppResult};
 use crate::models::domain;
 use crate::models::generated::models as proto;
+use crate::models::Money;
 
 // ── Timestamp helpers ──────────────────────────────────────────────────────
 
@@ -131,7 +132,6 @@ impl From<&domain::AppUser> for proto::AppUser {
             username: u.username.clone(),
             full_name: u.full_name.clone(),
             role: proto::UserRole::from(&u.role) as i32,
-            password_hash: u.password_hash.clone(),
         }
     }
 }
@@ -154,7 +154,7 @@ impl From<&domain::FinishedGood> for proto::FinishedGood {
             id: g.id.to_string(),
             name: g.name.clone(),
             current_quantity: g.current_quantity,
-            unit_price: g.unit_price,
+            unit_price: g.unit_price.to_f64(),
             last_updated: Some(datetime_to_timestamp(&g.last_updated)),
         }
     }
@@ -210,7 +210,7 @@ impl From<&domain::Customer> for proto::Customer {
             city: c.city.clone(),
             mobile: c.mobile.clone(),
             reliability_rating: c.reliability_rating,
-            total_debt: c.total_debt,
+            total_debt: c.total_debt.to_f64(),
             overdue_days: c.overdue_days,
         }
     }
@@ -222,7 +222,7 @@ impl From<&domain::SaleLineItem> for proto::SaleLineItem {
             finished_good_id: li.finished_good_id.to_string(),
             finished_good_name: li.finished_good_name.clone(),
             quantity: li.quantity,
-            unit_price: li.unit_price,
+            unit_price: li.unit_price.to_f64(),
         }
     }
 }
@@ -234,8 +234,8 @@ impl From<&domain::Sale> for proto::Sale {
             customer_id: s.customer_id.to_string(),
             customer_name: s.customer_name.clone(),
             line_items: s.line_items.iter().map(proto::SaleLineItem::from).collect(),
-            total_amount: s.total_amount,
-            amount_paid: s.amount_paid,
+            total_amount: s.total_amount.to_f64(),
+            amount_paid: s.amount_paid.to_f64(),
             payment_wallet_id: s.payment_wallet_id.to_string(),
             timestamp: Some(datetime_to_timestamp(&s.timestamp)),
         }
@@ -248,7 +248,7 @@ impl From<&domain::Wallet> for proto::Wallet {
             id: w.id.to_string(),
             name: w.name.clone(),
             wallet_type: proto::WalletType::from(&w.wallet_type) as i32,
-            current_balance: w.current_balance,
+            current_balance: w.current_balance.to_f64(),
         }
     }
 }
@@ -258,7 +258,7 @@ impl From<&domain::WalletTransaction> for proto::WalletTransaction {
         proto::WalletTransaction {
             id: t.id.to_string(),
             wallet_id: t.wallet_id.to_string(),
-            amount: t.amount,
+            amount: t.amount.to_f64(),
             description: t.description.clone(),
             related_entity_id: t.related_entity_id.map(|id| id.to_string()).unwrap_or_default(),
             timestamp: Some(datetime_to_timestamp(&t.timestamp)),
@@ -273,8 +273,8 @@ impl From<&domain::DebtRecord> for proto::DebtRecord {
             customer_id: d.customer_id.to_string(),
             customer_name: d.customer_name.clone(),
             sale_id: d.sale_id.to_string(),
-            original_amount: d.original_amount,
-            remaining_amount: d.remaining_amount,
+            original_amount: d.original_amount.to_f64(),
+            remaining_amount: d.remaining_amount.to_f64(),
             sale_date: Some(datetime_to_timestamp(&d.sale_date)),
             overdue_days: d.overdue_days,
             is_critical: d.is_critical,
@@ -288,7 +288,7 @@ impl From<&domain::Expense> for proto::Expense {
         proto::Expense {
             id: e.id.to_string(),
             description: e.description.clone(),
-            amount: e.amount,
+            amount: e.amount.to_f64(),
             category: proto::ExpenseCategory::from(&e.category) as i32,
             wallet_id: e.wallet_id.to_string(),
             wallet_name: e.wallet_name.clone(),
@@ -336,7 +336,7 @@ impl TryFrom<&proto::AppUser> for domain::AppUser {
             username: u.username.clone(),
             full_name: u.full_name.clone(),
             role: proto_user_role_to_domain(u.role)?,
-            password_hash: u.password_hash.clone(),
+            password_hash: String::new(),
         })
     }
 }
@@ -361,7 +361,7 @@ impl TryFrom<&proto::FinishedGood> for domain::FinishedGood {
             id: parse_uuid(&g.id)?,
             name: g.name.clone(),
             current_quantity: g.current_quantity,
-            unit_price: g.unit_price,
+            unit_price: Money::from_f64(g.unit_price),
             last_updated: timestamp_to_datetime(g.last_updated),
         })
     }
@@ -426,7 +426,7 @@ impl TryFrom<&proto::Customer> for domain::Customer {
             city: c.city.clone(),
             mobile: c.mobile.clone(),
             reliability_rating: c.reliability_rating,
-            total_debt: c.total_debt,
+            total_debt: Money::from_f64(c.total_debt),
             overdue_days: c.overdue_days,
         })
     }
@@ -439,7 +439,7 @@ impl TryFrom<&proto::SaleLineItem> for domain::SaleLineItem {
             finished_good_id: parse_uuid(&li.finished_good_id)?,
             finished_good_name: li.finished_good_name.clone(),
             quantity: li.quantity,
-            unit_price: li.unit_price,
+            unit_price: Money::from_f64(li.unit_price),
         })
     }
 }
@@ -457,8 +457,8 @@ impl TryFrom<&proto::Sale> for domain::Sale {
             customer_id: parse_uuid(&s.customer_id)?,
             customer_name: s.customer_name.clone(),
             line_items: line_items?,
-            total_amount: s.total_amount,
-            amount_paid: s.amount_paid,
+            total_amount: Money::from_f64(s.total_amount),
+            amount_paid: Money::from_f64(s.amount_paid),
             payment_wallet_id: parse_uuid(&s.payment_wallet_id)?,
             timestamp: timestamp_to_datetime(s.timestamp),
         })
@@ -472,7 +472,7 @@ impl TryFrom<&proto::Wallet> for domain::Wallet {
             id: parse_uuid(&w.id)?,
             name: w.name.clone(),
             wallet_type: proto_wallet_type_to_domain(w.wallet_type)?,
-            current_balance: w.current_balance,
+            current_balance: Money::from_f64(w.current_balance),
         })
     }
 }
@@ -488,7 +488,7 @@ impl TryFrom<&proto::WalletTransaction> for domain::WalletTransaction {
         Ok(domain::WalletTransaction {
             id: parse_uuid(&t.id)?,
             wallet_id: parse_uuid(&t.wallet_id)?,
-            amount: t.amount,
+            amount: Money::from_f64(t.amount),
             description: t.description.clone(),
             related_entity_id,
             timestamp: timestamp_to_datetime(t.timestamp),
@@ -504,8 +504,8 @@ impl TryFrom<&proto::DebtRecord> for domain::DebtRecord {
             customer_id: parse_uuid(&d.customer_id)?,
             customer_name: d.customer_name.clone(),
             sale_id: parse_uuid(&d.sale_id)?,
-            original_amount: d.original_amount,
-            remaining_amount: d.remaining_amount,
+            original_amount: Money::from_f64(d.original_amount),
+            remaining_amount: Money::from_f64(d.remaining_amount),
             sale_date: timestamp_to_datetime(d.sale_date),
             overdue_days: d.overdue_days,
             is_critical: d.is_critical,
@@ -520,7 +520,7 @@ impl TryFrom<&proto::Expense> for domain::Expense {
         Ok(domain::Expense {
             id: parse_uuid(&e.id)?,
             description: e.description.clone(),
-            amount: e.amount,
+            amount: Money::from_f64(e.amount),
             category: proto_expense_category_to_domain(e.category)?,
             wallet_id: parse_uuid(&e.wallet_id)?,
             wallet_name: e.wallet_name.clone(),
@@ -595,9 +595,31 @@ pub fn validate_non_negative(field_name: &str, value: f64) -> AppResult<()> {
     Ok(())
 }
 
+/// Validates that a Money value is non-negative.
+pub fn validate_money_non_negative(field_name: &str, value: Money) -> AppResult<()> {
+    if value.0 < 0 {
+        return Err(AppError::Serialization(format!(
+            "Field '{}' must be non-negative, got {}",
+            field_name, value
+        )));
+    }
+    Ok(())
+}
+
 /// Validates that a numeric value is positive (> 0).
 pub fn validate_positive(field_name: &str, value: f64) -> AppResult<()> {
     if value <= 0.0 {
+        return Err(AppError::Serialization(format!(
+            "Field '{}' must be positive, got {}",
+            field_name, value
+        )));
+    }
+    Ok(())
+}
+
+/// Validates that a Money value is positive (> 0).
+pub fn validate_money_positive(field_name: &str, value: Money) -> AppResult<()> {
+    if value.0 <= 0 {
         return Err(AppError::Serialization(format!(
             "Field '{}' must be positive, got {}",
             field_name, value
@@ -629,7 +651,7 @@ pub fn validate_raw_material(m: &domain::RawMaterial) -> AppResult<()> {
 pub fn validate_finished_good(g: &domain::FinishedGood) -> AppResult<()> {
     validate_non_empty("name", &g.name)?;
     validate_non_negative("current_quantity", g.current_quantity)?;
-    validate_non_negative("unit_price", g.unit_price)?;
+    validate_money_non_negative("unit_price", g.unit_price)?;
     Ok(())
 }
 
@@ -639,7 +661,7 @@ pub fn validate_customer(c: &domain::Customer) -> AppResult<()> {
     validate_non_empty("city", &c.city)?;
     validate_non_empty("mobile", &c.mobile)?;
     validate_range("reliability_rating", c.reliability_rating, 0, 5)?;
-    validate_non_negative("total_debt", c.total_debt)?;
+    validate_money_non_negative("total_debt", c.total_debt)?;
     Ok(())
 }
 
@@ -654,21 +676,21 @@ pub fn validate_app_user(u: &domain::AppUser) -> AppResult<()> {
 /// Validates a deserialized `Expense` has valid field values.
 pub fn validate_expense(e: &domain::Expense) -> AppResult<()> {
     validate_non_empty("description", &e.description)?;
-    validate_positive("amount", e.amount)?;
+    validate_money_positive("amount", e.amount)?;
     Ok(())
 }
 
 /// Validates a deserialized `DebtRecord` has valid field values.
 pub fn validate_debt_record(d: &domain::DebtRecord) -> AppResult<()> {
-    validate_positive("original_amount", d.original_amount)?;
-    validate_non_negative("remaining_amount", d.remaining_amount)?;
+    validate_money_positive("original_amount", d.original_amount)?;
+    validate_money_non_negative("remaining_amount", d.remaining_amount)?;
     Ok(())
 }
 
 /// Validates a deserialized `Sale` has valid field values.
 pub fn validate_sale(s: &domain::Sale) -> AppResult<()> {
-    validate_non_negative("total_amount", s.total_amount)?;
-    validate_non_negative("amount_paid", s.amount_paid)?;
+    validate_money_non_negative("total_amount", s.total_amount)?;
+    validate_money_non_negative("amount_paid", s.amount_paid)?;
     if s.line_items.is_empty() {
         return Err(AppError::Serialization(
             "Sale must have at least one line item".to_string(),
@@ -676,7 +698,7 @@ pub fn validate_sale(s: &domain::Sale) -> AppResult<()> {
     }
     for li in &s.line_items {
         validate_non_empty("finished_good_name", &li.finished_good_name)?;
-        validate_non_negative("unit_price", li.unit_price)?;
+        validate_money_non_negative("unit_price", li.unit_price)?;
         if li.quantity <= 0 {
             return Err(AppError::Serialization(
                 "SaleLineItem quantity must be positive".to_string(),
@@ -741,7 +763,6 @@ mod tests {
             username: "test".to_string(),
             full_name: "Test".to_string(),
             role: proto::UserRole::Admin as i32,
-            password_hash: "hash".to_string(),
         };
         let result = domain::AppUser::try_from(&proto_user);
         assert!(result.is_err());

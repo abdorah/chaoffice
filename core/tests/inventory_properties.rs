@@ -106,20 +106,20 @@ proptest! {
             match err.unwrap_err() {
                 AppError::InsufficientStock { material_name, available, requested } => {
                     prop_assert_eq!(material_name, "TestMaterial");
-                    prop_assert!(
-                        (available - current_qty).abs() < 1e-9,
-                        "Available should be {}, got {}", current_qty, available
+                    prop_assert_eq!(
+                        available, current_qty as i64,
+                        "Available should be {}, got {}", current_qty as i64, available
                     );
-                    prop_assert!(
-                        (requested - deduction).abs() < 1e-9,
-                        "Requested should be {}, got {}", deduction, requested
+                    prop_assert_eq!(
+                        requested, deduction as i64,
+                        "Requested should be {}, got {}", deduction as i64, requested
                     );
                 }
                 other => prop_assert!(false, "Expected InsufficientStock, got: {:?}", other),
             }
 
             // Verify quantity unchanged
-            let materials = svc.get_all().await.unwrap();
+            let materials = svc.get_all(None).await.unwrap();
             prop_assert_eq!(materials.len(), 1);
             prop_assert!(
                 (materials[0].current_quantity - current_qty).abs() < 1e-9,
@@ -157,7 +157,7 @@ proptest! {
             let (pool, svc) = setup_finished_good_svc().await;
             let id = Uuid::new_v4();
             let now = chrono::Utc::now().to_rfc3339();
-            fg_queries::insert(&pool, &id.to_string(), "TestGood", current_qty, 10.0, &now)
+            fg_queries::insert(&pool, &id.to_string(), "TestGood", current_qty, 1000, &now)
                 .await
                 .expect("seed failed");
 
@@ -167,20 +167,20 @@ proptest! {
             match err.unwrap_err() {
                 AppError::InsufficientStock { material_name, available, requested } => {
                     prop_assert_eq!(material_name, "TestGood");
-                    prop_assert!(
-                        (available - current_qty).abs() < 1e-9,
-                        "Available should be {}, got {}", current_qty, available
+                    prop_assert_eq!(
+                        available, current_qty as i64,
+                        "Available should be {}, got {}", current_qty as i64, available
                     );
-                    prop_assert!(
-                        (requested - deduction).abs() < 1e-9,
-                        "Requested should be {}, got {}", deduction, requested
+                    prop_assert_eq!(
+                        requested, deduction as i64,
+                        "Requested should be {}, got {}", deduction as i64, requested
                     );
                 }
                 other => prop_assert!(false, "Expected InsufficientStock, got: {:?}", other),
             }
 
             // Verify quantity unchanged
-            let goods = svc.get_all().await.unwrap();
+            let goods = svc.get_all(None).await.unwrap();
             prop_assert_eq!(goods.len(), 1);
             prop_assert!(
                 (goods[0].current_quantity - current_qty).abs() < 1e-9,

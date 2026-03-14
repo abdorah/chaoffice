@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
-use crate::models::domain::RawMaterial;
+use crate::models::domain::{Pagination, RawMaterial};
 use crate::persistence::queries::raw_materials as queries;
 
 /// Service for managing raw material inventory.
@@ -19,8 +19,9 @@ impl RawMaterialService {
     }
 
     /// Fetch all raw materials.
-    pub async fn get_all(&self) -> AppResult<Vec<RawMaterial>> {
-        let rows = queries::list_all(&self.pool).await?;
+    pub async fn get_all(&self, pagination: Option<Pagination>) -> AppResult<Vec<RawMaterial>> {
+        let pg = pagination.unwrap_or_default();
+        let rows = queries::list_all(&self.pool, &pg).await?;
         rows.into_iter().map(row_to_domain).collect()
     }
 
@@ -67,16 +68,16 @@ impl RawMaterialService {
             .bind(&id_str)
             .fetch_optional(&mut *tx)
             .await?
-            .ok_or_else(|| AppError::Validation {
-                field: "material_id".to_string(),
-                message: format!("Raw material {material_id} not found"),
+            .ok_or_else(|| AppError::NotFound {
+                entity_type: "raw_material".to_string(),
+                entity_id: material_id.to_string(),
             })?;
 
             if row.current_quantity < *amount {
                 return Err(AppError::InsufficientStock {
                     material_name: row.name,
-                    available: row.current_quantity,
-                    requested: *amount,
+                    available: row.current_quantity as i64,
+                    requested: *amount as i64,
                 });
             }
         }
@@ -102,12 +103,8 @@ impl RawMaterialService {
 
 /// Convert a persistence row to a domain model.
 fn row_to_domain(row: queries::RawMaterialRow) -> AppResult<RawMaterial> {
-    let id = Uuid::parse_str(&row.id)
-        .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?;
-    let last_updated: DateTime<Utc> = row
-        .last_updated
-        .parse()
-        .map_err(|e| AppError::Unknown(format!("Invalid timestamp: {e}")))?;
+    let id = crate::utils::parse_uuid("raw_material", &row.id)?;
+    let last_updated = crate::utils::parse_timestamp(&row.last_updated)?;
 
     Ok(RawMaterial {
         id,
@@ -140,7 +137,7 @@ mod tests {
     #[tokio::test]
     async fn get_all_returns_empty_when_no_materials() {
         let (_pool, svc) = setup().await;
-        let materials = svc.get_all().await.unwrap();
+        let materials = svc.get_all(None).await.unwrap();
         assert!(materials.is_empty());
     }
 
@@ -150,7 +147,7 @@ mod tests {
         let id = Uuid::new_v4().to_string();
         seed_material(&pool, &id, "Sugar", "kg", 100.0).await;
 
-        let materials = svc.get_all().await.unwrap();
+        let materials = svc.get_all(None).await.unwrap();
         assert_eq!(materials.len(), 1);
         assert_eq!(materials[0].name, "Sugar");
         assert_eq!(materials[0].current_quantity, 100.0);
@@ -208,8 +205,8 @@ mod tests {
                 requested,
             } => {
                 assert_eq!(material_name, "Butter");
-                assert_eq!(available, 2.0);
-                assert_eq!(requested, 5.0);
+                assert_eq!(available, 2);
+                assert_eq!(requested, 5);
             }
             other => panic!("Expected InsufficientStock, got: {other:?}"),
         }
@@ -219,7 +216,7 @@ mod tests {
     async fn deduct_nonexistent_material_fails() {
         let (_pool, svc) = setup().await;
         let err = svc.deduct(Uuid::new_v4(), 1.0).await.unwrap_err();
-        assert!(matches!(err, AppError::Validation { .. }));
+        assert!(matches!(err, AppError::NotFound { .. }));
     }
 
     #[tokio::test]
@@ -236,7 +233,7 @@ mod tests {
 
         svc.deduct_multiple(deductions).await.unwrap();
 
-        let materials = svc.get_all().await.unwrap();
+        let materials = svc.get_all(None).await.unwrap();
         let sugar = materials.iter().find(|m| m.name == "Sugar").unwrap();
         let milk = materials.iter().find(|m| m.name == "Milk").unwrap();
         assert_eq!(sugar.current_quantity, 70.0);
@@ -259,7 +256,7 @@ mod tests {
         assert!(matches!(err, AppError::InsufficientStock { .. }));
 
         // Both quantities should be unchanged (transaction rolled back)
-        let materials = svc.get_all().await.unwrap();
+        let materials = svc.get_all(None).await.unwrap();
         let sugar = materials.iter().find(|m| m.name == "Sugar").unwrap();
         let milk = materials.iter().find(|m| m.name == "Milk").unwrap();
         assert_eq!(sugar.current_quantity, 100.0);
@@ -277,10 +274,10 @@ mod tests {
         deductions.insert(Uuid::new_v4(), 5.0); // doesn't exist
 
         let err = svc.deduct_multiple(deductions).await.unwrap_err();
-        assert!(matches!(err, AppError::Validation { .. }));
+        assert!(matches!(err, AppError::NotFound { .. }));
 
         // Sugar should be unchanged
-        let materials = svc.get_all().await.unwrap();
+        let materials = svc.get_all(None).await.unwrap();
         assert_eq!(materials[0].current_quantity, 100.0);
     }
 }

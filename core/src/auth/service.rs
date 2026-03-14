@@ -1,22 +1,19 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
 use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 use argon2::Argon2;
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use sqlx::SqlitePool;
-use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::auth::rbac::PermissionTable;
 use crate::error::{AppError, AppResult};
 use crate::models::domain::{AppUser, Session, UserRole};
+use crate::persistence::queries::sessions as session_queries;
+use crate::persistence::queries::users as user_queries;
 
 /// Concrete implementation of the AuthService.
 pub struct AuthServiceImpl {
     pool: SqlitePool,
     permissions: PermissionTable,
-    sessions: Arc<Mutex<HashMap<Uuid, Session>>>,
 }
 
 impl AuthServiceImpl {
@@ -24,7 +21,6 @@ impl AuthServiceImpl {
         Self {
             pool,
             permissions: PermissionTable::new(),
-            sessions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -37,15 +33,10 @@ impl AuthServiceImpl {
             message: "Invalid credentials".to_string(),
         };
 
-        // Look up user by username
-        let row = sqlx::query_as::<_, UserRow>(
-            "SELECT id, username, full_name, role, password_hash FROM users WHERE username = ?",
-        )
-        .bind(username)
-        .fetch_optional(&self.pool)
-        .await?;
-
-        let user_row = row.ok_or_else(invalid)?;
+        // Look up user by username (Req 12.3: use shared query layer)
+        let user_row = user_queries::get_user_by_username(&self.pool, username)
+            .await?
+            .ok_or_else(invalid)?;
 
         // Verify password with argon2
         let parsed_hash =
@@ -59,7 +50,7 @@ impl AuthServiceImpl {
         })?;
 
         let user_id =
-            Uuid::parse_str(&user_row.id).map_err(|e| AppError::Unknown(e.to_string()))?;
+            crate::utils::parse_uuid("user", &user_row.id)?;
 
         let now = Utc::now();
         let session = Session {
@@ -71,18 +62,64 @@ impl AuthServiceImpl {
             expires_at: now + Duration::hours(24),
         };
 
-        self.sessions
-            .lock()
-            .await
-            .insert(session.session_id, session.clone());
+        // Persist session to SQLite (Req 10.1)
+        session_queries::insert_session(
+            &self.pool,
+            &session.session_id.to_string(),
+            &session.user_id.to_string(),
+            &session.role.to_string(),
+            &session.created_at.to_rfc3339(),
+            &session.last_activity.to_rfc3339(),
+            &session.expires_at.to_rfc3339(),
+        )
+        .await?;
 
         Ok(session)
     }
 
     /// Remove a session (logout).
     pub async fn logout(&self, session_id: Uuid) -> AppResult<()> {
-        self.sessions.lock().await.remove(&session_id);
-        Ok(())
+        session_queries::delete_session(&self.pool, &session_id.to_string()).await
+    }
+
+    /// Retrieve a session by token. Returns None if not found.
+    pub async fn get_session(&self, session_id: Uuid) -> AppResult<Option<Session>> {
+        let row = session_queries::get_session(&self.pool, &session_id.to_string()).await?;
+        match row {
+            Some(r) => Ok(Some(self.row_to_session(&r)?)),
+            None => Ok(None),
+        }
+    }
+
+    /// Update the last_activity timestamp for a session (Req 10.2).
+    pub async fn touch_session(&self, session_id: Uuid, now: DateTime<Utc>) -> AppResult<()> {
+        session_queries::update_last_activity(
+            &self.pool,
+            &session_id.to_string(),
+            &now.to_rfc3339(),
+        )
+        .await
+    }
+
+    /// Convert a SessionRow into a domain Session.
+    fn row_to_session(&self, row: &session_queries::SessionRow) -> AppResult<Session> {
+        let session_id = crate::utils::parse_uuid("session", &row.id)?;
+        let user_id = crate::utils::parse_uuid("user", &row.user_id)?;
+        let role = UserRole::from_str_value(&row.role).ok_or_else(|| {
+            AppError::Unknown(format!("Invalid role in session: {}", row.role))
+        })?;
+        let created_at = crate::utils::parse_timestamp(&row.created_at)?;
+        let last_activity = crate::utils::parse_timestamp(&row.last_activity)?;
+        let expires_at = crate::utils::parse_timestamp(&row.expires_at)?;
+
+        Ok(Session {
+            session_id,
+            user_id,
+            role,
+            created_at,
+            last_activity,
+            expires_at,
+        })
     }
 
     /// Create a new user with field validation and argon2 password hashing.
@@ -98,6 +135,14 @@ impl AuthServiceImpl {
         validate_field("password", password)?;
         validate_field("full_name", full_name)?;
 
+        // Validate password strength (Req 11.1, 11.2)
+        if password.len() < 8 {
+            return Err(AppError::Validation {
+                field: "password".to_string(),
+                message: "Password must be at least 8 characters".to_string(),
+            });
+        }
+
         // Hash password with argon2
         let salt = SaltString::generate(&mut rand_core::OsRng);
         let password_hash = Argon2::default()
@@ -106,34 +151,19 @@ impl AuthServiceImpl {
             .to_string();
 
         let id = Uuid::new_v4();
-        let now = Utc::now().to_rfc3339();
         let role_str = role.to_string();
         let id_str = id.to_string();
 
-        sqlx::query(
-            "INSERT INTO users (id, username, full_name, role, password_hash, sync_status, updated_at, created_at)
-             VALUES (?, ?, ?, ?, ?, 'Synced', ?, ?)",
+        // Use shared query layer for user insertion (Req 12.3)
+        user_queries::insert_user(
+            &self.pool,
+            &id_str,
+            username,
+            full_name,
+            &role_str,
+            &password_hash,
         )
-        .bind(&id_str)
-        .bind(username)
-        .bind(full_name)
-        .bind(&role_str)
-        .bind(&password_hash)
-        .bind(&now)
-        .bind(&now)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| {
-            if let sqlx::Error::Database(ref db_err) = e {
-                if db_err.message().contains("UNIQUE") {
-                    return AppError::Duplicate {
-                        field: "username".to_string(),
-                        value: username.to_string(),
-                    };
-                }
-            }
-            AppError::Database(e)
-        })?;
+        .await?;
 
         Ok(AppUser {
             id,
@@ -148,18 +178,11 @@ impl AuthServiceImpl {
     /// Per Req 2.3, the new permissions apply on the user's next login.
     pub async fn update_user_role(&self, user_id: Uuid, new_role: UserRole) -> AppResult<()> {
         let role_str = new_role.to_string();
-        let now = Utc::now().to_rfc3339();
 
-        let result = sqlx::query(
-            "UPDATE users SET role = ?, updated_at = ? WHERE id = ?",
-        )
-        .bind(&role_str)
-        .bind(&now)
-        .bind(user_id.to_string())
-        .execute(&self.pool)
-        .await?;
+        // Use shared query layer for role update (Req 12.3)
+        let updated = user_queries::update_role(&self.pool, &user_id.to_string(), &role_str).await?;
 
-        if result.rows_affected() == 0 {
+        if !updated {
             return Err(AppError::Validation {
                 field: "user_id".to_string(),
                 message: format!("User {user_id} not found"),
@@ -191,16 +214,6 @@ fn validate_field(field: &str, value: &str) -> AppResult<()> {
     Ok(())
 }
 
-/// SQLx row type for reading users from the database.
-#[derive(sqlx::FromRow)]
-#[allow(dead_code)]
-struct UserRow {
-    id: String,
-    username: String,
-    full_name: String,
-    role: String,
-    password_hash: String,
-}
 
 #[cfg(test)]
 mod tests {
@@ -235,11 +248,11 @@ mod tests {
     #[tokio::test]
     async fn login_wrong_password_returns_generic_error() {
         let svc = setup().await;
-        svc.create_user("bob", "correct", "Bob", UserRole::Chef)
+        svc.create_user("bob", "correct1", "Bob", UserRole::Chef)
             .await
             .unwrap();
 
-        let err = svc.login("bob", "wrong").await.unwrap_err();
+        let err = svc.login("bob", "wrongpwd1").await.unwrap_err();
         match &err {
             AppError::Authentication { message } => {
                 assert_eq!(message, "Invalid credentials");
@@ -290,12 +303,12 @@ mod tests {
     #[tokio::test]
     async fn create_user_rejects_duplicate_username() {
         let svc = setup().await;
-        svc.create_user("dup", "pass", "First", UserRole::Admin)
+        svc.create_user("dup", "password1", "First", UserRole::Admin)
             .await
             .unwrap();
 
         let err = svc
-            .create_user("dup", "pass2", "Second", UserRole::Chef)
+            .create_user("dup", "password2", "Second", UserRole::Chef)
             .await
             .unwrap_err();
         assert!(matches!(err, AppError::Duplicate { field, .. } if field == "username"));
@@ -305,7 +318,7 @@ mod tests {
     async fn update_user_role_succeeds() {
         let svc = setup().await;
         let user = svc
-            .create_user("carol", "pass", "Carol", UserRole::Chef)
+            .create_user("carol", "password1", "Carol", UserRole::Chef)
             .await
             .unwrap();
 
@@ -315,7 +328,7 @@ mod tests {
 
         // Verify: login should still work, and the new role is reflected
         // (Req 2.3: role update applies on next login)
-        let session = svc.login("carol", "pass").await.unwrap();
+        let session = svc.login("carol", "password1").await.unwrap();
         assert_eq!(session.role, UserRole::Admin);
     }
 
@@ -350,20 +363,20 @@ mod tests {
     #[tokio::test]
     async fn logout_removes_session() {
         let svc = setup().await;
-        svc.create_user("dave", "pass", "Dave", UserRole::Admin)
+        svc.create_user("dave", "password1", "Dave", UserRole::Admin)
             .await
             .unwrap();
 
-        let session = svc.login("dave", "pass").await.unwrap();
+        let session = svc.login("dave", "password1").await.unwrap();
         let sid = session.session_id;
 
-        // Session exists
-        assert!(svc.sessions.lock().await.contains_key(&sid));
+        // Session exists in DB
+        assert!(svc.get_session(sid).await.unwrap().is_some());
 
         svc.logout(sid).await.unwrap();
 
-        // Session removed
-        assert!(!svc.sessions.lock().await.contains_key(&sid));
+        // Session removed from DB
+        assert!(svc.get_session(sid).await.unwrap().is_none());
     }
 
     #[tokio::test]

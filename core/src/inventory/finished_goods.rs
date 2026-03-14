@@ -1,9 +1,10 @@
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::error::{AppError, AppResult};
-use crate::models::domain::FinishedGood;
+use crate::error::AppResult;
+use crate::models::domain::{FinishedGood, Pagination};
+use crate::models::Money;
 use crate::persistence::queries::finished_goods as queries;
 
 /// Service for managing finished goods inventory.
@@ -17,8 +18,9 @@ impl FinishedGoodService {
     }
 
     /// Fetch all finished goods.
-    pub async fn get_all(&self) -> AppResult<Vec<FinishedGood>> {
-        let rows = queries::list_all(&self.pool).await?;
+    pub async fn get_all(&self, pagination: Option<Pagination>) -> AppResult<Vec<FinishedGood>> {
+        let pg = pagination.unwrap_or_default();
+        let rows = queries::list_all(&self.pool, &pg).await?;
         rows.into_iter().map(row_to_domain).collect()
     }
 
@@ -47,18 +49,14 @@ impl FinishedGoodService {
 
 /// Convert a persistence row to a domain model.
 fn row_to_domain(row: queries::FinishedGoodRow) -> AppResult<FinishedGood> {
-    let id = Uuid::parse_str(&row.id)
-        .map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))?;
-    let last_updated: DateTime<Utc> = row
-        .last_updated
-        .parse()
-        .map_err(|e| AppError::Unknown(format!("Invalid timestamp: {e}")))?;
+    let id = crate::utils::parse_uuid("finished_good", &row.id)?;
+    let last_updated = crate::utils::parse_timestamp(&row.last_updated)?;
 
     Ok(FinishedGood {
         id,
         name: row.name,
         current_quantity: row.current_quantity,
-        unit_price: row.unit_price,
+        unit_price: Money(row.unit_price),
         last_updated,
     })
 }
@@ -66,6 +64,7 @@ fn row_to_domain(row: queries::FinishedGoodRow) -> AppResult<FinishedGood> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::AppError;
     use crate::persistence::db;
     use crate::persistence::queries::finished_goods as queries;
 
@@ -75,7 +74,7 @@ mod tests {
         (pool, svc)
     }
 
-    async fn seed_good(pool: &SqlitePool, id: &str, name: &str, qty: f64, price: f64) {
+    async fn seed_good(pool: &SqlitePool, id: &str, name: &str, qty: f64, price: i64) {
         let now = Utc::now().to_rfc3339();
         queries::insert(pool, id, name, qty, price, &now)
             .await
@@ -85,7 +84,7 @@ mod tests {
     #[tokio::test]
     async fn get_all_returns_empty_when_no_goods() {
         let (_pool, svc) = setup().await;
-        let goods = svc.get_all().await.unwrap();
+        let goods = svc.get_all(None).await.unwrap();
         assert!(goods.is_empty());
     }
 
@@ -93,20 +92,20 @@ mod tests {
     async fn get_all_returns_seeded_goods() {
         let (pool, svc) = setup().await;
         let id = Uuid::new_v4().to_string();
-        seed_good(&pool, &id, "Sweet Box", 20.0, 15.50).await;
+        seed_good(&pool, &id, "Sweet Box", 20.0, 1550).await;
 
-        let goods = svc.get_all().await.unwrap();
+        let goods = svc.get_all(None).await.unwrap();
         assert_eq!(goods.len(), 1);
         assert_eq!(goods[0].name, "Sweet Box");
         assert_eq!(goods[0].current_quantity, 20.0);
-        assert_eq!(goods[0].unit_price, 15.50);
+        assert_eq!(goods[0].unit_price, Money::from_f64(15.50));
     }
 
     #[tokio::test]
     async fn add_increases_quantity() {
         let (pool, svc) = setup().await;
         let id = Uuid::new_v4();
-        seed_good(&pool, &id.to_string(), "Sweet Box", 10.0, 15.0).await;
+        seed_good(&pool, &id.to_string(), "Sweet Box", 10.0, 1500).await;
 
         let updated = svc.add(id, 5.0).await.unwrap();
         assert_eq!(updated.current_quantity, 15.0);
@@ -124,7 +123,7 @@ mod tests {
     async fn deduct_succeeds_when_stock_sufficient() {
         let (pool, svc) = setup().await;
         let id = Uuid::new_v4();
-        seed_good(&pool, &id.to_string(), "Chocolate Box", 30.0, 20.0).await;
+        seed_good(&pool, &id.to_string(), "Chocolate Box", 30.0, 2000).await;
 
         let updated = svc.deduct(id, 10.0).await.unwrap();
         assert_eq!(updated.current_quantity, 20.0);
@@ -134,7 +133,7 @@ mod tests {
     async fn deduct_exact_quantity_succeeds() {
         let (pool, svc) = setup().await;
         let id = Uuid::new_v4();
-        seed_good(&pool, &id.to_string(), "Gift Box", 5.0, 25.0).await;
+        seed_good(&pool, &id.to_string(), "Gift Box", 5.0, 2500).await;
 
         let updated = svc.deduct(id, 5.0).await.unwrap();
         assert_eq!(updated.current_quantity, 0.0);
@@ -144,7 +143,7 @@ mod tests {
     async fn deduct_insufficient_stock_returns_error() {
         let (pool, svc) = setup().await;
         let id = Uuid::new_v4();
-        seed_good(&pool, &id.to_string(), "Premium Box", 3.0, 50.0).await;
+        seed_good(&pool, &id.to_string(), "Premium Box", 3.0, 5000).await;
 
         let err = svc.deduct(id, 10.0).await.unwrap_err();
         match err {
@@ -154,8 +153,8 @@ mod tests {
                 requested,
             } => {
                 assert_eq!(material_name, "Premium Box");
-                assert_eq!(available, 3.0);
-                assert_eq!(requested, 10.0);
+                assert_eq!(available, 3);
+                assert_eq!(requested, 10);
             }
             other => panic!("Expected InsufficientStock, got: {other:?}"),
         }
@@ -165,6 +164,6 @@ mod tests {
     async fn deduct_nonexistent_good_fails() {
         let (_pool, svc) = setup().await;
         let err = svc.deduct(Uuid::new_v4(), 1.0).await.unwrap_err();
-        assert!(matches!(err, AppError::Validation { .. }));
+        assert!(matches!(err, AppError::NotFound { .. }));
     }
 }

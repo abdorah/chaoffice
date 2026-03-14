@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
-use crate::models::domain::{ProductionLog, Recipe, RecipeAvailability, RecipeIngredient};
+use crate::models::domain::{Pagination, ProductionLog, Recipe, RecipeAvailability, RecipeIngredient};
 use crate::persistence::queries::raw_materials as rm_queries;
 use crate::persistence::queries::recipes as recipe_queries;
 
@@ -118,7 +118,7 @@ impl ProductionServiceImpl {
             .execute(&mut *tx)
             .await?;
 
-            let rm_uuid = parse_uuid(rm_id)?;
+            let rm_uuid = crate::utils::parse_uuid("raw_material", rm_id)?;
             materials_consumed.insert(rm_uuid, *required);
         }
 
@@ -170,7 +170,7 @@ impl ProductionServiceImpl {
             chef_name: chef_row.full_name,
             production_quantity: quantity,
             materials_consumed,
-            finished_good_id: parse_uuid(fg_id)?,
+            finished_good_id: crate::utils::parse_uuid("finished_good", fg_id)?,
             timestamp: now,
         })
     }
@@ -178,8 +178,9 @@ impl ProductionServiceImpl {
     /// Compute recipe availability: max_producible per recipe (Req 5.5).
     ///
     /// max_producible = min(floor(stock / required)) across all ingredients.
-    pub async fn get_recipe_availability(&self) -> AppResult<Vec<RecipeAvailability>> {
-        let recipe_rows = recipe_queries::list_all(&self.pool).await?;
+    pub async fn get_recipe_availability(&self, pagination: Option<Pagination>) -> AppResult<Vec<RecipeAvailability>> {
+        let pg = pagination.unwrap_or_default();
+        let recipe_rows = recipe_queries::list_all(&self.pool, &pg).await?;
         let mut result = Vec::with_capacity(recipe_rows.len());
 
         for row in recipe_rows {
@@ -197,7 +198,7 @@ impl ProductionServiceImpl {
                     Some(rm) => {
                         let producible = (rm.current_quantity / ing.required_quantity).floor() as i32;
                         max_producible = max_producible.min(producible);
-                        if rm.current_quantity == 0.0 {
+                        if rm.current_quantity < ing.required_quantity {
                             insufficient_materials.push(ing.raw_material_name.clone());
                         }
                     }
@@ -216,7 +217,7 @@ impl ProductionServiceImpl {
             let domain_ingredients: Vec<RecipeIngredient> = ingredients
                 .into_iter()
                 .map(|ing| Ok(RecipeIngredient {
-                    raw_material_id: parse_uuid(&ing.raw_material_id)?,
+                    raw_material_id: crate::utils::parse_uuid("raw_material", &ing.raw_material_id)?,
                     raw_material_name: ing.raw_material_name,
                     required_quantity: ing.required_quantity,
                 }))
@@ -224,9 +225,9 @@ impl ProductionServiceImpl {
 
             result.push(RecipeAvailability {
                 recipe: Recipe {
-                    id: parse_uuid(&row.id)?,
+                    id: crate::utils::parse_uuid("recipe", &row.id)?,
                     name: row.name,
-                    finished_good_id: parse_uuid(&row.finished_good_id)?,
+                    finished_good_id: crate::utils::parse_uuid("finished_good", &row.finished_good_id)?,
                     finished_good_name: fg_name,
                     ingredients: domain_ingredients,
                 },
@@ -239,17 +240,21 @@ impl ProductionServiceImpl {
     }
 
     /// Fetch production history with recipe and chef names (Req 5.4).
-    pub async fn get_production_history(&self) -> AppResult<Vec<ProductionLog>> {
-        let rows = sqlx::query_as::<_, ProductionLogRow>(
+    pub async fn get_production_history(&self, pagination: Option<Pagination>) -> AppResult<Vec<ProductionLog>> {
+        let pg = pagination.unwrap_or_default();
+        let sql = format!(
             "SELECT pl.id, pl.recipe_id, r.name AS recipe_name, pl.chef_id, u.full_name AS chef_name,
                     pl.production_quantity, pl.materials_consumed_json, pl.finished_good_id, pl.timestamp
              FROM production_logs pl
              JOIN recipes r ON r.id = pl.recipe_id
              JOIN users u ON u.id = pl.chef_id
-             ORDER BY pl.timestamp DESC",
-        )
-        .fetch_all(&self.pool)
-        .await?;
+             ORDER BY pl.timestamp DESC
+             LIMIT {} OFFSET {}",
+            pg.limit, pg.offset
+        );
+        let rows = sqlx::query_as::<_, ProductionLogRow>(&sql)
+            .fetch_all(&self.pool)
+            .await?;
 
         rows.into_iter().map(log_row_to_domain).collect()
     }
@@ -274,26 +279,19 @@ fn log_row_to_domain(row: ProductionLogRow) -> AppResult<ProductionLog> {
         serde_json::from_str(&row.materials_consumed_json)
             .map_err(|e| AppError::Serialization(e.to_string()))?;
 
-    let timestamp: DateTime<Utc> = row
-        .timestamp
-        .parse()
-        .map_err(|e| AppError::Unknown(format!("Invalid timestamp: {e}")))?;
+    let timestamp = crate::utils::parse_timestamp(&row.timestamp)?;
 
     Ok(ProductionLog {
-        id: parse_uuid(&row.id)?,
-        recipe_id: parse_uuid(&row.recipe_id)?,
+        id: crate::utils::parse_uuid("production_log", &row.id)?,
+        recipe_id: crate::utils::parse_uuid("recipe", &row.recipe_id)?,
         recipe_name: row.recipe_name,
-        chef_id: parse_uuid(&row.chef_id)?,
+        chef_id: crate::utils::parse_uuid("user", &row.chef_id)?,
         chef_name: row.chef_name,
         production_quantity: row.production_quantity,
         materials_consumed,
-        finished_good_id: parse_uuid(&row.finished_good_id)?,
+        finished_good_id: crate::utils::parse_uuid("finished_good", &row.finished_good_id)?,
         timestamp,
     })
-}
-
-fn parse_uuid(s: &str) -> AppResult<Uuid> {
-    Uuid::parse_str(s).map_err(|e| AppError::Unknown(format!("Invalid UUID: {e}")))
 }
 
 
@@ -335,7 +333,7 @@ mod tests {
 
     async fn seed_finished_good(pool: &SqlitePool, id: &str, name: &str, qty: f64) {
         let now = Utc::now().to_rfc3339();
-        fg_queries::insert(pool, id, name, qty, 10.0, &now)
+        fg_queries::insert(pool, id, name, qty, 1000, &now)
             .await
             .expect("seed finished good failed");
     }
@@ -557,7 +555,7 @@ mod tests {
         .await;
 
         // Sugar: floor(10/2) = 5, Milk: floor(7/3) = 2 → min = 2
-        let avail = svc.get_recipe_availability().await.unwrap();
+        let avail = svc.get_recipe_availability(None).await.unwrap();
         assert_eq!(avail.len(), 1);
         assert_eq!(avail[0].max_producible, 2);
         assert!(avail[0].insufficient_materials.is_empty());
@@ -583,15 +581,43 @@ mod tests {
         )
         .await;
 
-        let avail = svc.get_recipe_availability().await.unwrap();
+        let avail = svc.get_recipe_availability(None).await.unwrap();
         assert_eq!(avail[0].max_producible, 0);
         assert_eq!(avail[0].insufficient_materials, vec!["Milk"]);
     }
 
     #[tokio::test]
+    async fn get_recipe_availability_lists_insufficient_partial_stock() {
+        let (pool, svc) = setup().await;
+        let fg_id = Uuid::new_v4();
+        let rm1 = Uuid::new_v4();
+        let rm2 = Uuid::new_v4();
+        let recipe_id = Uuid::new_v4();
+
+        seed_finished_good(&pool, &fg_id.to_string(), "Box", 0.0).await;
+        // Sugar needs 5.0 per batch but only 3.0 available → insufficient
+        seed_raw_material(&pool, &rm1.to_string(), "Sugar", 3.0).await;
+        // Milk needs 2.0 per batch and has 10.0 → sufficient
+        seed_raw_material(&pool, &rm2.to_string(), "Milk", 10.0).await;
+        seed_recipe(
+            &pool,
+            &recipe_id.to_string(),
+            "Recipe",
+            &fg_id.to_string(),
+            &[(&rm1.to_string(), 5.0), (&rm2.to_string(), 2.0)],
+        )
+        .await;
+
+        let avail = svc.get_recipe_availability(None).await.unwrap();
+        assert_eq!(avail[0].max_producible, 0);
+        // Sugar has 3.0 but needs 5.0 → flagged as insufficient
+        assert_eq!(avail[0].insufficient_materials, vec!["Sugar"]);
+    }
+
+    #[tokio::test]
     async fn get_recipe_availability_empty_when_no_recipes() {
         let (_pool, svc) = setup().await;
-        let avail = svc.get_recipe_availability().await.unwrap();
+        let avail = svc.get_recipe_availability(None).await.unwrap();
         assert!(avail.is_empty());
     }
 
@@ -620,7 +646,7 @@ mod tests {
         svc.execute_production(recipe_id, 2, chef_id).await.unwrap();
         svc.execute_production(recipe_id, 3, chef_id).await.unwrap();
 
-        let history = svc.get_production_history().await.unwrap();
+        let history = svc.get_production_history(None).await.unwrap();
         assert_eq!(history.len(), 2);
         // Most recent first
         assert_eq!(history[0].production_quantity, 3);
@@ -631,7 +657,7 @@ mod tests {
     #[tokio::test]
     async fn get_production_history_empty_when_no_logs() {
         let (_pool, svc) = setup().await;
-        let history = svc.get_production_history().await.unwrap();
+        let history = svc.get_production_history(None).await.unwrap();
         assert!(history.is_empty());
     }
 

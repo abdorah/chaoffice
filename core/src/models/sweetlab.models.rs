@@ -9,8 +9,6 @@ pub struct AppUser {
     pub full_name: ::prost::alloc::string::String,
     #[prost(enumeration = "UserRole", tag = "4")]
     pub role: i32,
-    #[prost(string, tag = "5")]
-    pub password_hash: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RawMaterial {

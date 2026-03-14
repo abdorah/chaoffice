@@ -1,13 +1,14 @@
 use sqlx::{Executor, SqlitePool};
 
 use crate::error::AppResult;
+use crate::models::domain::Pagination;
 
 /// Row type matching the `expenses` table schema.
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct ExpenseRow {
     pub id: String,
     pub description: String,
-    pub amount: f64,
+    pub amount: i64,
     pub category: String,
     pub wallet_id: String,
     pub recorded_by: String,
@@ -21,7 +22,7 @@ pub struct ExpenseRow {
 pub struct ExpenseWithWalletRow {
     pub id: String,
     pub description: String,
-    pub amount: f64,
+    pub amount: i64,
     pub category: String,
     pub wallet_id: String,
     pub wallet_name: String,
@@ -34,7 +35,7 @@ pub async fn insert_expense_in_tx<'e, E>(
     executor: E,
     id: &str,
     description: &str,
-    amount: f64,
+    amount: i64,
     category: &str,
     wallet_id: &str,
     recorded_by: &str,
@@ -67,18 +68,22 @@ pub async fn get_by_date_range(
     pool: &SqlitePool,
     start_date: &str,
     end_date: &str,
+    pagination: &Pagination,
 ) -> AppResult<Vec<ExpenseWithWalletRow>> {
-    let rows = sqlx::query_as::<_, ExpenseWithWalletRow>(
+    let sql = format!(
         "SELECT e.id, e.description, e.amount, e.category, e.wallet_id, w.name AS wallet_name, e.recorded_by, e.timestamp
          FROM expenses e
          JOIN wallets w ON e.wallet_id = w.id
          WHERE e.timestamp >= ? AND e.timestamp <= ?
-         ORDER BY e.timestamp DESC",
-    )
-    .bind(start_date)
-    .bind(end_date)
-    .fetch_all(pool)
-    .await?;
+         ORDER BY e.timestamp DESC
+         LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, ExpenseWithWalletRow>(&sql)
+        .bind(start_date)
+        .bind(end_date)
+        .fetch_all(pool)
+        .await?;
 
     Ok(rows)
 }
@@ -89,18 +94,22 @@ pub async fn get_by_date_range_with_category(
     pool: &SqlitePool,
     start_date: &str,
     end_date: &str,
+    pagination: &Pagination,
 ) -> AppResult<Vec<ExpenseWithWalletRow>> {
-    let rows = sqlx::query_as::<_, ExpenseWithWalletRow>(
+    let sql = format!(
         "SELECT e.id, e.description, e.amount, e.category, e.wallet_id, w.name AS wallet_name, e.recorded_by, e.timestamp
          FROM expenses e
          JOIN wallets w ON e.wallet_id = w.id
          WHERE e.timestamp >= ? AND e.timestamp <= ?
-         ORDER BY e.category ASC, e.timestamp DESC",
-    )
-    .bind(start_date)
-    .bind(end_date)
-    .fetch_all(pool)
-    .await?;
+         ORDER BY e.category ASC, e.timestamp DESC
+         LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, ExpenseWithWalletRow>(&sql)
+        .bind(start_date)
+        .bind(end_date)
+        .fetch_all(pool)
+        .await?;
 
     Ok(rows)
 }

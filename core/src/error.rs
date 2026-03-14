@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::models::Money;
+
 #[derive(Error, Debug)]
 pub enum AppError {
     #[error("Authentication failed: {message}")]
@@ -11,18 +13,24 @@ pub enum AppError {
         resource: String,
     },
 
+    #[error("Not found: {entity_type} with id {entity_id}")]
+    NotFound {
+        entity_type: String,
+        entity_id: String,
+    },
+
     #[error("Insufficient stock: {material_name} has {available}, requested {requested}")]
     InsufficientStock {
         material_name: String,
-        available: f64,
-        requested: f64,
+        available: i64,
+        requested: i64,
     },
 
     #[error("Insufficient funds: {wallet_name} has {available}, requested {requested}")]
     InsufficientFunds {
         wallet_name: String,
-        available: f64,
-        requested: f64,
+        available: Money,
+        requested: Money,
     },
 
     #[error("Validation error: {field} — {message}")]

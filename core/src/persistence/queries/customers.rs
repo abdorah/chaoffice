@@ -1,8 +1,9 @@
 use sqlx::SqlitePool;
 
 use crate::error::AppResult;
+use crate::models::domain::Pagination;
 
-/// Row type matching the `customers` table schema.
+/// Row type matching the `customers` table schema with computed debt fields.
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct CustomerRow {
     pub id: String,
@@ -12,23 +13,41 @@ pub struct CustomerRow {
     pub reliability_rating: i32,
     pub sync_status: String,
     pub updated_at: String,
+    pub total_debt: i64,
+    pub overdue_days: i32,
 }
 
-/// Fetch all customers.
-pub async fn list_all(pool: &SqlitePool) -> AppResult<Vec<CustomerRow>> {
-    let rows = sqlx::query_as::<_, CustomerRow>(
-        "SELECT id, name, city, mobile, reliability_rating, sync_status, updated_at FROM customers ORDER BY name ASC",
-    )
-    .fetch_all(pool)
-    .await?;
+
+/// Fetch all customers with computed debt summaries.
+pub async fn list_all(pool: &SqlitePool, pagination: &Pagination) -> AppResult<Vec<CustomerRow>> {
+    let sql = format!(
+        "SELECT c.id, c.name, c.city, c.mobile, c.reliability_rating, c.sync_status, c.updated_at,
+                COALESCE(SUM(d.remaining_amount), 0) AS total_debt,
+                COALESCE(MAX(CAST((julianday('now') - julianday(d.sale_date)) AS INTEGER)), 0) AS overdue_days
+         FROM customers c
+         LEFT JOIN debt_records d ON d.customer_id = c.id AND d.is_settled = 0
+         GROUP BY c.id
+         ORDER BY c.name ASC
+         LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, CustomerRow>(&sql)
+        .fetch_all(pool)
+        .await?;
 
     Ok(rows)
 }
 
-/// Fetch a single customer by id. Returns `None` if not found.
+/// Fetch a single customer by id with computed debt summary. Returns `None` if not found.
 pub async fn get_by_id(pool: &SqlitePool, id: &str) -> AppResult<Option<CustomerRow>> {
     let row = sqlx::query_as::<_, CustomerRow>(
-        "SELECT id, name, city, mobile, reliability_rating, sync_status, updated_at FROM customers WHERE id = ?",
+        "SELECT c.id, c.name, c.city, c.mobile, c.reliability_rating, c.sync_status, c.updated_at,
+                COALESCE(SUM(d.remaining_amount), 0) AS total_debt,
+                COALESCE(MAX(CAST((julianday('now') - julianday(d.sale_date)) AS INTEGER)), 0) AS overdue_days
+         FROM customers c
+         LEFT JOIN debt_records d ON d.customer_id = c.id AND d.is_settled = 0
+         WHERE c.id = ?
+         GROUP BY c.id",
     )
     .bind(id)
     .fetch_optional(pool)
@@ -80,20 +99,27 @@ pub async fn update_rating(
     Ok(result.rows_affected())
 }
 
-/// Search customers by name, city, or mobile using SQL LIKE.
-pub async fn search(pool: &SqlitePool, query: &str) -> AppResult<Vec<CustomerRow>> {
+/// Search customers by name, city, or mobile using SQL LIKE with computed debt summaries.
+pub async fn search(pool: &SqlitePool, query: &str, pagination: &Pagination) -> AppResult<Vec<CustomerRow>> {
     let pattern = format!("%{query}%");
-    let rows = sqlx::query_as::<_, CustomerRow>(
-        "SELECT id, name, city, mobile, reliability_rating, sync_status, updated_at
-         FROM customers
-         WHERE name LIKE ? OR city LIKE ? OR mobile LIKE ?
-         ORDER BY name ASC",
-    )
-    .bind(&pattern)
-    .bind(&pattern)
-    .bind(&pattern)
-    .fetch_all(pool)
-    .await?;
+    let sql = format!(
+        "SELECT c.id, c.name, c.city, c.mobile, c.reliability_rating, c.sync_status, c.updated_at,
+                COALESCE(SUM(d.remaining_amount), 0) AS total_debt,
+                COALESCE(MAX(CAST((julianday('now') - julianday(d.sale_date)) AS INTEGER)), 0) AS overdue_days
+         FROM customers c
+         LEFT JOIN debt_records d ON d.customer_id = c.id AND d.is_settled = 0
+         WHERE c.name LIKE ? OR c.city LIKE ? OR c.mobile LIKE ?
+         GROUP BY c.id
+         ORDER BY c.name ASC
+         LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, CustomerRow>(&sql)
+        .bind(&pattern)
+        .bind(&pattern)
+        .bind(&pattern)
+        .fetch_all(pool)
+        .await?;
 
     Ok(rows)
 }

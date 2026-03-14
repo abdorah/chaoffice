@@ -1,6 +1,7 @@
 use sqlx::SqlitePool;
 
 use crate::error::{AppError, AppResult};
+use crate::models::domain::Pagination;
 
 /// Row type matching the `raw_materials` table schema.
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -15,12 +16,14 @@ pub struct RawMaterialRow {
 }
 
 /// Fetch all raw materials.
-pub async fn list_all(pool: &SqlitePool) -> AppResult<Vec<RawMaterialRow>> {
-    let rows = sqlx::query_as::<_, RawMaterialRow>(
-        "SELECT id, name, unit, current_quantity, last_updated, sync_status, updated_at FROM raw_materials ORDER BY name ASC",
-    )
-    .fetch_all(pool)
-    .await?;
+pub async fn list_all(pool: &SqlitePool, pagination: &Pagination) -> AppResult<Vec<RawMaterialRow>> {
+    let sql = format!(
+        "SELECT id, name, unit, current_quantity, last_updated, sync_status, updated_at FROM raw_materials ORDER BY name ASC LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, RawMaterialRow>(&sql)
+        .fetch_all(pool)
+        .await?;
 
     Ok(rows)
 }
@@ -68,43 +71,50 @@ pub async fn add_quantity(
         .ok_or_else(|| AppError::Unknown("Material disappeared after update".to_string()))
 }
 
-/// Deduct `amount` from a raw material's quantity.
+/// Deduct `amount` from a raw material's quantity atomically.
 ///
-/// Returns `InsufficientStock` if the current quantity is less than `amount`.
+/// Uses a single UPDATE with a WHERE clause that checks `current_quantity >= amount`
+/// to prevent race conditions (Req 4.1). If rows_affected == 0, distinguishes
+/// NotFound vs InsufficientStock (Req 4.2).
 pub async fn deduct_quantity(
     pool: &SqlitePool,
     id: &str,
     amount: f64,
     now: &str,
 ) -> AppResult<RawMaterialRow> {
-    // Fetch current state to check stock and get the name for error messages
-    let row = get_by_id(pool, id).await?.ok_or_else(|| AppError::Validation {
-        field: "material_id".to_string(),
-        message: format!("Raw material {id} not found"),
-    })?;
-
-    if row.current_quantity < amount {
-        return Err(AppError::InsufficientStock {
-            material_name: row.name,
-            available: row.current_quantity,
-            requested: amount,
-        });
-    }
-
-    sqlx::query(
-        "UPDATE raw_materials SET current_quantity = current_quantity - ?, last_updated = ?, updated_at = ? WHERE id = ?",
+    // Atomic check-and-deduct in a single statement (Req 4.1)
+    let result = sqlx::query(
+        "UPDATE raw_materials SET current_quantity = current_quantity - ?, last_updated = ?, updated_at = ? WHERE id = ? AND current_quantity >= ?",
     )
     .bind(amount)
     .bind(now)
     .bind(now)
     .bind(id)
+    .bind(amount)
     .execute(pool)
     .await?;
+
+    if result.rows_affected() == 0 {
+        // Distinguish NotFound vs InsufficientStock (Req 4.2)
+        let row = get_by_id(pool, id).await?;
+        return match row {
+            None => Err(AppError::NotFound {
+                entity_type: "raw_material".to_string(),
+                entity_id: id.to_string(),
+            }),
+            Some(existing) => Err(AppError::InsufficientStock {
+                material_name: existing.name,
+                available: existing.current_quantity as i64,
+                requested: amount as i64,
+            }),
+        };
+    }
 
     get_by_id(pool, id)
         .await?
         .ok_or_else(|| AppError::Unknown("Material disappeared after update".to_string()))
 }
+
 
 /// Insert a new raw material (used primarily in tests).
 pub async fn insert(

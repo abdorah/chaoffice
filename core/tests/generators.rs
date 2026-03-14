@@ -6,6 +6,7 @@ use proptest::prelude::*;
 use uuid::Uuid;
 
 use sweet_lab_core::models::domain::*;
+use sweet_lab_core::models::Money;
 
 // ── Helper strategies ──────────────────────────────────────────────────────
 
@@ -34,6 +35,11 @@ pub fn arb_name() -> impl Strategy<Value = String> {
 /// to avoid floating-point serialization edge cases.
 pub fn arb_positive_f64() -> impl Strategy<Value = f64> {
     (0u64..10_000_000u64).prop_map(|v| (v as f64) / 100.0)
+}
+
+/// Generate a non-negative Money value (0 to 100_000.00).
+pub fn arb_money() -> impl Strategy<Value = Money> {
+    (0i64..10_000_000i64).prop_map(Money)
 }
 
 /// Generate a phone-like string.
@@ -105,7 +111,7 @@ pub fn arb_raw_material() -> impl Strategy<Value = RawMaterial> {
 }
 
 pub fn arb_finished_good() -> impl Strategy<Value = FinishedGood> {
-    (arb_uuid(), arb_name(), arb_positive_f64(), arb_positive_f64(), arb_datetime())
+    (arb_uuid(), arb_name(), arb_positive_f64(), arb_money(), arb_datetime())
         .prop_map(|(id, name, current_quantity, unit_price, last_updated)| FinishedGood {
             id,
             name,
@@ -178,7 +184,7 @@ pub fn arb_customer() -> impl Strategy<Value = Customer> {
         arb_name(),
         arb_mobile(),
         0..=5i32,
-        arb_positive_f64(),
+        arb_money(),
         0..365i32,
     )
         .prop_map(|(id, name, city, mobile, reliability_rating, total_debt, overdue_days)| {
@@ -195,7 +201,7 @@ pub fn arb_customer() -> impl Strategy<Value = Customer> {
 }
 
 pub fn arb_sale_line_item() -> impl Strategy<Value = SaleLineItem> {
-    (arb_uuid(), arb_name(), 1..100i32, arb_positive_f64())
+    (arb_uuid(), arb_name(), 1..100i32, arb_money())
         .prop_map(|(finished_good_id, finished_good_name, quantity, unit_price)| SaleLineItem {
             finished_good_id,
             finished_good_name,
@@ -210,8 +216,8 @@ pub fn arb_sale() -> impl Strategy<Value = Sale> {
         arb_uuid(),
         arb_name(),
         prop::collection::vec(arb_sale_line_item(), 1..=5),
-        arb_positive_f64(),
-        arb_positive_f64(),
+        arb_money(),
+        arb_money(),
         arb_uuid(),
         arb_datetime(),
     )
@@ -238,7 +244,7 @@ pub fn arb_receipt() -> impl Strategy<Value = Receipt> {
         arb_name(),
         arb_mobile(),
         arb_name(),
-        arb_positive_f64(),
+        arb_money(),
         arb_name(),
     )
         .prop_map(
@@ -257,7 +263,7 @@ pub fn arb_receipt() -> impl Strategy<Value = Receipt> {
 }
 
 pub fn arb_wallet() -> impl Strategy<Value = Wallet> {
-    (arb_uuid(), arb_name(), arb_wallet_type(), arb_positive_f64())
+    (arb_uuid(), arb_name(), arb_wallet_type(), arb_money())
         .prop_map(|(id, name, wallet_type, current_balance)| Wallet {
             id,
             name,
@@ -270,7 +276,7 @@ pub fn arb_wallet_transaction() -> impl Strategy<Value = WalletTransaction> {
     (
         arb_uuid(),
         arb_uuid(),
-        arb_positive_f64(),
+        arb_money(),
         arb_description(),
         prop::option::of(arb_uuid()),
         arb_datetime(),
@@ -288,7 +294,7 @@ pub fn arb_wallet_transaction() -> impl Strategy<Value = WalletTransaction> {
 }
 
 pub fn arb_fund_transfer() -> impl Strategy<Value = FundTransfer> {
-    (arb_uuid(), arb_uuid(), arb_uuid(), arb_positive_f64(), arb_datetime())
+    (arb_uuid(), arb_uuid(), arb_uuid(), arb_money(), arb_datetime())
         .prop_map(|(id, source_wallet_id, destination_wallet_id, amount, timestamp)| {
             FundTransfer {
                 id,
@@ -306,8 +312,8 @@ pub fn arb_debt_record() -> impl Strategy<Value = DebtRecord> {
         arb_uuid(),
         arb_name(),
         arb_uuid(),
-        arb_positive_f64(),
-        arb_positive_f64(),
+        arb_money(),
+        arb_money(),
         arb_datetime(),
         0..365i32,
         any::<bool>(),
@@ -332,7 +338,7 @@ pub fn arb_debt_record() -> impl Strategy<Value = DebtRecord> {
 }
 
 pub fn arb_debt_allocation() -> impl Strategy<Value = DebtAllocation> {
-    (arb_uuid(), arb_positive_f64())
+    (arb_uuid(), arb_money())
         .prop_map(|(debt_record_id, amount_applied)| DebtAllocation {
             debt_record_id,
             amount_applied,
@@ -343,15 +349,17 @@ pub fn arb_debt_payment() -> impl Strategy<Value = DebtPayment> {
     (
         arb_uuid(),
         arb_uuid(),
-        arb_positive_f64(),
+        arb_money(),
+        arb_money(),
         arb_uuid(),
         prop::collection::vec(arb_debt_allocation(), 1..=5),
         arb_datetime(),
     )
-        .prop_map(|(id, customer_id, amount, wallet_id, allocations, timestamp)| DebtPayment {
+        .prop_map(|(id, customer_id, amount, unallocated, wallet_id, allocations, timestamp)| DebtPayment {
             id,
             customer_id,
             amount,
+            unallocated,
             wallet_id,
             allocations,
             timestamp,
@@ -362,7 +370,7 @@ pub fn arb_expense() -> impl Strategy<Value = Expense> {
     (
         arb_uuid(),
         arb_description(),
-        arb_positive_f64(),
+        arb_money(),
         arb_expense_category(),
         arb_uuid(),
         arb_name(),
@@ -387,9 +395,9 @@ pub fn arb_expense() -> impl Strategy<Value = Expense> {
 
 pub fn arb_financial_summary() -> impl Strategy<Value = FinancialSummary> {
     (
-        arb_positive_f64(),
-        arb_positive_f64(),
-        arb_positive_f64(),
+        arb_money(),
+        arb_money(),
+        arb_money(),
         prop::collection::vec(arb_wallet(), 0..=3),
         arb_datetime(),
         arb_datetime(),
@@ -436,9 +444,9 @@ pub fn arb_invoice() -> impl Strategy<Value = Invoice> {
         arb_name(),
         arb_mobile(),
         prop::collection::vec(arb_sale_line_item(), 1..=5),
-        arb_positive_f64(),
-        arb_positive_f64(),
-        arb_positive_f64(),
+        arb_money(),
+        arb_money(),
+        arb_money(),
         arb_name(),
         arb_name(),
     )

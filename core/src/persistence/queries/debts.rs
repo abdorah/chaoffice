@@ -1,6 +1,7 @@
 use sqlx::{Executor, SqlitePool};
 
 use crate::error::{AppError, AppResult};
+use crate::models::domain::Pagination;
 
 /// Row type matching the `debt_records` table schema.
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -8,8 +9,8 @@ pub struct DebtRecordRow {
     pub id: String,
     pub customer_id: String,
     pub sale_id: String,
-    pub original_amount: f64,
-    pub remaining_amount: f64,
+    pub original_amount: i64,
+    pub remaining_amount: i64,
     pub sale_date: String,
     pub is_settled: bool,
     pub sync_status: String,
@@ -23,8 +24,8 @@ pub struct DebtRecordWithCustomerRow {
     pub customer_id: String,
     pub customer_name: String,
     pub sale_id: String,
-    pub original_amount: f64,
-    pub remaining_amount: f64,
+    pub original_amount: i64,
+    pub remaining_amount: i64,
     pub sale_date: String,
     pub is_settled: bool,
 }
@@ -35,8 +36,8 @@ pub async fn insert_debt<'e, E>(
     id: &str,
     customer_id: &str,
     sale_id: &str,
-    original_amount: f64,
-    remaining_amount: f64,
+    original_amount: i64,
+    remaining_amount: i64,
     sale_date: &str,
     now: &str,
 ) -> AppResult<()>
@@ -87,7 +88,7 @@ where
 pub async fn update_remaining<'e, E>(
     executor: E,
     id: &str,
-    new_remaining: f64,
+    new_remaining: i64,
     now: &str,
 ) -> AppResult<()>
 where
@@ -136,33 +137,39 @@ where
 }
 
 /// Fetch all active (unsettled) debts with customer names for the aging report.
-pub async fn get_aging_report(pool: &SqlitePool) -> AppResult<Vec<DebtRecordWithCustomerRow>> {
-    let rows = sqlx::query_as::<_, DebtRecordWithCustomerRow>(
+pub async fn get_aging_report(pool: &SqlitePool, pagination: &Pagination) -> AppResult<Vec<DebtRecordWithCustomerRow>> {
+    let sql = format!(
         "SELECT d.id, d.customer_id, c.name AS customer_name, d.sale_id,
                 d.original_amount, d.remaining_amount, d.sale_date, d.is_settled
          FROM debt_records d
          JOIN customers c ON d.customer_id = c.id
          WHERE d.is_settled = 0
-         ORDER BY d.sale_date ASC",
-    )
-    .fetch_all(pool)
-    .await?;
+         ORDER BY d.sale_date ASC
+         LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, DebtRecordWithCustomerRow>(&sql)
+        .fetch_all(pool)
+        .await?;
 
     Ok(rows)
 }
 
 /// Fetch all active (unsettled) debts across all customers.
-pub async fn get_all_active(pool: &SqlitePool) -> AppResult<Vec<DebtRecordWithCustomerRow>> {
-    let rows = sqlx::query_as::<_, DebtRecordWithCustomerRow>(
+pub async fn get_all_active(pool: &SqlitePool, pagination: &Pagination) -> AppResult<Vec<DebtRecordWithCustomerRow>> {
+    let sql = format!(
         "SELECT d.id, d.customer_id, c.name AS customer_name, d.sale_id,
                 d.original_amount, d.remaining_amount, d.sale_date, d.is_settled
          FROM debt_records d
          JOIN customers c ON d.customer_id = c.id
          WHERE d.is_settled = 0
-         ORDER BY d.sale_date ASC",
-    )
-    .fetch_all(pool)
-    .await?;
+         ORDER BY d.sale_date ASC
+         LIMIT {} OFFSET {}",
+        pagination.limit, pagination.offset
+    );
+    let rows = sqlx::query_as::<_, DebtRecordWithCustomerRow>(&sql)
+        .fetch_all(pool)
+        .await?;
 
     Ok(rows)
 }

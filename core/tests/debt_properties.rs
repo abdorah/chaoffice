@@ -9,6 +9,7 @@ use tokio::runtime::Runtime;
 
 use chrono::{Duration, Utc};
 use sweet_lab_core::debt::tracker::DebtServiceImpl;
+use sweet_lab_core::models::Money;
 use sweet_lab_core::persistence::db;
 use sweet_lab_core::persistence::queries::customers as customer_queries;
 use sweet_lab_core::persistence::queries::debts as debt_queries;
@@ -33,7 +34,7 @@ async fn seed_wallet(pool: &sqlx::SqlitePool, id: &str) {
     let now = Utc::now().to_rfc3339();
     sqlx::query(
         "INSERT INTO wallets (id, name, wallet_type, current_balance, sync_status, updated_at)
-         VALUES (?, 'TestWallet', 'Cash', 100000.0, 'Synced', ?)",
+         VALUES (?, 'TestWallet', 'Cash', 10000000, 'Synced', ?)",
     )
     .bind(id)
     .bind(&now)
@@ -46,7 +47,7 @@ async fn seed_sale(pool: &sqlx::SqlitePool, sale_id: &str, customer_id: &str, wa
     let now = Utc::now().to_rfc3339();
     sqlx::query(
         "INSERT INTO sales (id, customer_id, total_amount, amount_paid, payment_wallet_id, timestamp, sync_status, updated_at)
-         VALUES (?, ?, 100.0, 0.0, ?, ?, 'Synced', ?)",
+         VALUES (?, ?, 10000, 0, ?, ?, 'Synced', ?)",
     )
     .bind(sale_id)
     .bind(customer_id)
@@ -92,15 +93,15 @@ proptest! {
                 &debt_id.to_string(),
                 &cust_id.to_string(),
                 &sale_id.to_string(),
-                100.0,
-                100.0,
+                10000,
+                10000,
                 &sale_date.to_rfc3339(),
                 &Utc::now().to_rfc3339(),
             )
             .await
             .expect("insert debt failed");
 
-            let debts = svc.get_active_debts().await.unwrap();
+            let debts = svc.get_active_debts(None).await.unwrap();
             prop_assert_eq!(debts.len(), 1);
 
             // The overdue_days should equal the number of days since sale_date.
@@ -156,8 +157,8 @@ proptest! {
                     &debt_id.to_string(),
                     &cust_id.to_string(),
                     &sale_id.to_string(),
-                    (i as f64 + 1.0) * 50.0,
-                    (i as f64 + 1.0) * 50.0,
+                    ((i as i64) + 1) * 5000,
+                    ((i as i64) + 1) * 5000,
                     &sale_date.to_rfc3339(),
                     &Utc::now().to_rfc3339(),
                 )
@@ -165,7 +166,7 @@ proptest! {
                 .expect("insert debt failed");
             }
 
-            let report = svc.get_debt_aging_report().await.unwrap();
+            let report = svc.get_debt_aging_report(None).await.unwrap();
             prop_assert_eq!(report.len(), debt_days.len());
 
             // Verify descending order by overdue_days
@@ -196,8 +197,8 @@ proptest! {
 
     #[test]
     fn prop29_payment_fifo_allocation(
-        // Generate 2-4 debt amounts (in cents, converted to dollars)
-        debt_amounts in prop::collection::vec(100u64..10_000u64, 2..=4),
+        // Generate 2-4 debt amounts (in cents)
+        debt_amounts_cents in prop::collection::vec(100i64..10_000i64, 2..=4),
         // Payment as a percentage (1-150%) of total debt
         payment_pct in 1u32..=150u32,
     ) {
@@ -214,16 +215,16 @@ proptest! {
 
             // Create debts with increasing sale_dates (oldest first)
             let mut debt_ids = Vec::new();
-            let mut amounts_f64 = Vec::new();
-            let num_debts = debt_amounts.len();
+            let mut amounts = Vec::new();
+            let num_debts = debt_amounts_cents.len();
 
-            for (i, &cents) in debt_amounts.iter().enumerate() {
+            for (i, &cents) in debt_amounts_cents.iter().enumerate() {
                 let sale_id = Uuid::new_v4();
                 let debt_id = Uuid::new_v4();
                 seed_sale(&pool, &sale_id.to_string(), &cust_id.to_string(), &wallet_id.to_string()).await;
 
-                let amount = cents as f64 / 100.0;
-                amounts_f64.push(amount);
+                let amount = Money(cents);
+                amounts.push(amount);
 
                 // Oldest debt is furthest in the past
                 let days_ago = ((num_debts - i) * 10) as i64;
@@ -234,8 +235,8 @@ proptest! {
                     &debt_id.to_string(),
                     &cust_id.to_string(),
                     &sale_id.to_string(),
-                    amount,
-                    amount,
+                    amount.0,
+                    amount.0,
                     &sale_date.to_rfc3339(),
                     &Utc::now().to_rfc3339(),
                 )
@@ -245,13 +246,9 @@ proptest! {
                 debt_ids.push(debt_id);
             }
 
-            let total_debt: f64 = amounts_f64.iter().sum();
-            let payment_amount = (total_debt * payment_pct as f64 / 100.0 * 100.0).floor() / 100.0;
-
-            // Skip zero payments
-            if payment_amount <= 0.0 {
-                return Ok(());
-            }
+            let total_debt: Money = amounts.iter().copied().sum();
+            let payment_cents = (total_debt.0 * payment_pct as i64 / 100).max(1);
+            let payment_amount = Money(payment_cents);
 
             let payment = svc.record_payment(cust_id, payment_amount, wallet_id).await.unwrap();
 
@@ -265,27 +262,27 @@ proptest! {
                     "Allocation {} should target debt_ids[{}]", i, i
                 );
 
-                let expected_alloc = remaining_payment.min(amounts_f64[i]);
-                prop_assert!(
-                    (alloc.amount_applied - expected_alloc).abs() < 1e-9,
+                let expected_alloc = if remaining_payment >= amounts[i] { amounts[i] } else { remaining_payment };
+                prop_assert_eq!(
+                    alloc.amount_applied, expected_alloc,
                     "Allocation {} should be {} but was {}",
                     i, expected_alloc, alloc.amount_applied
                 );
 
-                remaining_payment -= expected_alloc;
-                if remaining_payment <= 0.0 {
+                remaining_payment = remaining_payment - expected_alloc;
+                if remaining_payment <= Money::ZERO {
                     break;
                 }
             }
 
             // Verify settled debts are no longer active
-            let active = svc.get_active_debts().await.unwrap();
+            let active = svc.get_active_debts(None).await.unwrap();
             let mut paid_so_far = payment_amount;
             let mut expected_settled = 0;
-            for &amt in &amounts_f64 {
+            for &amt in &amounts {
                 if paid_so_far >= amt {
                     expected_settled += 1;
-                    paid_so_far -= amt;
+                    paid_so_far = paid_so_far - amt;
                 } else {
                     break;
                 }
@@ -338,15 +335,15 @@ proptest! {
                 &debt_id.to_string(),
                 &cust_id.to_string(),
                 &sale_id.to_string(),
-                100.0,
-                100.0,
+                10000,
+                10000,
                 &sale_date.to_rfc3339(),
                 &Utc::now().to_rfc3339(),
             )
             .await
             .expect("insert debt failed");
 
-            let debts = svc.get_active_debts().await.unwrap();
+            let debts = svc.get_active_debts(None).await.unwrap();
             prop_assert_eq!(debts.len(), 1);
 
             let debt = &debts[0];

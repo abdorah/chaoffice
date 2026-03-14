@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::error::AppResult;
 use crate::models::domain::UserRole;
 
-/// A simple in-memory permission table that replaces Casbin.
+/// A simple in-memory permission table.
 ///
 /// Each role maps to a set of (resource, action) pairs.
 /// This is equivalent to the old `policies/policy.csv` but expressed in code.
