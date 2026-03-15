@@ -1,12 +1,12 @@
 package org.sweetlab.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -44,27 +45,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.SafeUser
+import org.sweetlab.core.UserRole
 
-// Placeholder data class until UniFFI bindings are generated
-private data class UserItem(
-    val id: String,
-    val username: String,
-    val fullName: String,
-    val role: String // "Admin", "Chef", "Representative"
-)
-
-private val ROLE_OPTIONS = listOf("Admin", "Chef", "Representative")
+private val ROLE_OPTIONS = listOf(UserRole.ADMIN, UserRole.CHEF, UserRole.REPRESENTATIVE)
 private val ROLE_LABELS = mapOf(
-    "Admin" to "مدير",
-    "Chef" to "طاهٍ",
-    "Representative" to "مندوب"
+    UserRole.ADMIN to "مدير",
+    UserRole.CHEF to "طاهٍ",
+    UserRole.REPRESENTATIVE to "مندوب"
 )
+
+/** Display label for a [UserRole]. */
+private fun UserRole.label(): String = ROLE_LABELS[this] ?: name
 
 /**
  * User Management screen — list users, create new users, update roles.
  *
- * Requirements 2.2: Admin creates user with username, password, full_name, role.
- * Requirements 2.3: Admin updates user role, applied on next login.
+ * Requirements 24.4: Admin navigates to user management, fetches user list,
+ * supports creating new users and updating roles via the Core_Engine.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,15 +71,47 @@ fun UserManagementScreen(
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val users = remember { mutableStateListOf<UserItem>() }
+    val users = remember { mutableStateListOf<SafeUser>() }
     var showCreateDialog by remember { mutableStateOf(false) }
-    var showRoleDialog by remember { mutableStateOf<UserItem?>(null) }
+    var showRoleDialog by remember { mutableStateOf<SafeUser?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
+    // Fetch users on screen entry
     LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore call
-        // val result = SweetLabApp.core?.listUsers() ?: emptyList()
-        // users.addAll(result.map { UserItem(it.id, it.username, it.fullName, it.role.name) })
+        val token = SweetLabApp.currentSession?.sessionId
+        val core = SweetLabApp.core
+        if (token == null || core == null) {
+            errorMessage = "الجلسة غير متوفرة" // "Session not available"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        try {
+            isLoading = true
+            errorMessage = null
+            val result = core.listUsers(token)
+            users.clear()
+            users.addAll(result)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل المستخدمين" // "Failed to load users"
+        } finally {
+            isLoading = false
+        }
+    }
+
+    /** Re-fetch the user list from the core engine. */
+    fun refreshUsers() {
+        scope.launch {
+            val token = SweetLabApp.currentSession?.sessionId ?: return@launch
+            val core = SweetLabApp.core ?: return@launch
+            try {
+                val result = core.listUsers(token)
+                users.clear()
+                users.addAll(result)
+                errorMessage = null
+            } catch (_: Exception) { /* keep stale list visible */ }
+        }
     }
 
     Scaffold(
@@ -119,7 +150,14 @@ fun UserManagementScreen(
                 )
             }
 
-            if (users.isEmpty()) {
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (users.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -150,15 +188,23 @@ fun UserManagementScreen(
             onDismiss = { showCreateDialog = false },
             onCreate = { username, password, fullName, role ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    if (token == null || core == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        return@launch
+                    }
                     try {
-                        // TODO: Replace with SweetLabCore call
-                        // val newUser = SweetLabApp.core?.createUser(username, password, fullName, role)
-                        // users.add(UserItem(newUser.id, newUser.username, newUser.fullName, newUser.role.name))
+                        isSubmitting = true
+                        core.createUser(token, username, password, fullName, role)
                         showCreateDialog = false
                         errorMessage = null
+                        refreshUsers()
                     } catch (e: Exception) {
                         errorMessage = "فشل إنشاء المستخدم: ${e.message}"
                         // "Failed to create user"
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -172,18 +218,23 @@ fun UserManagementScreen(
             onDismiss = { showRoleDialog = null },
             onUpdateRole = { userId, newRole ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    if (token == null || core == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        return@launch
+                    }
                     try {
-                        // TODO: Replace with SweetLabCore call
-                        // SweetLabApp.core?.updateUserRole(userId, newRole)
-                        val idx = users.indexOfFirst { it.id == userId }
-                        if (idx >= 0) {
-                            users[idx] = users[idx].copy(role = newRole)
-                        }
+                        isSubmitting = true
+                        core.updateUserRole(token, userId, newRole)
                         showRoleDialog = null
                         errorMessage = null
+                        refreshUsers()
                     } catch (e: Exception) {
                         errorMessage = "فشل تحديث الدور: ${e.message}"
                         // "Failed to update role"
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -192,7 +243,7 @@ fun UserManagementScreen(
 }
 
 @Composable
-private fun UserCard(user: UserItem, onChangeRole: () -> Unit) {
+private fun UserCard(user: SafeUser, onChangeRole: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -216,7 +267,7 @@ private fun UserCard(user: UserItem, onChangeRole: () -> Unit) {
                 )
             }
             TextButton(onClick = onChangeRole) {
-                Text(ROLE_LABELS[user.role] ?: user.role)
+                Text(user.role.label())
             }
         }
     }
@@ -226,7 +277,7 @@ private fun UserCard(user: UserItem, onChangeRole: () -> Unit) {
 @Composable
 private fun CreateUserDialog(
     onDismiss: () -> Unit,
-    onCreate: (username: String, password: String, fullName: String, role: String) -> Unit
+    onCreate: (username: String, password: String, fullName: String, role: UserRole) -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -265,7 +316,7 @@ private fun CreateUserDialog(
                     onExpandedChange = { roleExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = ROLE_LABELS[selectedRole] ?: selectedRole,
+                        value = selectedRole.label(),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("الدور") }, // "Role"
@@ -280,7 +331,7 @@ private fun CreateUserDialog(
                     ) {
                         ROLE_OPTIONS.forEach { role ->
                             DropdownMenuItem(
-                                text = { Text(ROLE_LABELS[role] ?: role) },
+                                text = { Text(role.label()) },
                                 onClick = {
                                     selectedRole = role
                                     roleExpanded = false
@@ -310,9 +361,9 @@ private fun CreateUserDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RoleUpdateDialog(
-    user: UserItem,
+    user: SafeUser,
     onDismiss: () -> Unit,
-    onUpdateRole: (userId: String, newRole: String) -> Unit
+    onUpdateRole: (userId: String, newRole: UserRole) -> Unit
 ) {
     var selectedRole by remember { mutableStateOf(user.role) }
     var roleExpanded by remember { mutableStateOf(false) }
@@ -331,7 +382,7 @@ private fun RoleUpdateDialog(
                     onExpandedChange = { roleExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = ROLE_LABELS[selectedRole] ?: selectedRole,
+                        value = selectedRole.label(),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("الدور الجديد") }, // "New Role"
@@ -346,7 +397,7 @@ private fun RoleUpdateDialog(
                     ) {
                         ROLE_OPTIONS.forEach { role ->
                             DropdownMenuItem(
-                                text = { Text(ROLE_LABELS[role] ?: role) },
+                                text = { Text(role.label()) },
                                 onClick = {
                                     selectedRole = role
                                     roleExpanded = false

@@ -1,6 +1,7 @@
 package org.sweetlab.ui.representative
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,11 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -26,7 +27,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryTabRow
@@ -34,8 +34,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,29 +48,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.AppException
+import org.sweetlab.core.Expense
+import org.sweetlab.core.ExpenseCategory
+import org.sweetlab.core.Wallet
+import org.sweetlab.ui.util.toMoneyCents
+import org.sweetlab.ui.util.toMoneyDisplay
 
-// ── Placeholder data classes until UniFFI bindings are generated ──
-
-private data class ExpenseWalletItem(
-    val id: String,
-    val name: String,
-    val walletType: String,
-    val currentBalance: Double
-)
-
-private enum class ExpenseCategory(val label: String) {
-    Purchase("شراء"),           // Purchase
-    OperatingCost("تكاليف تشغيلية") // Operating Cost
+/** Map ExpenseCategory enum to Arabic display label. */
+private fun expenseCategoryLabel(category: ExpenseCategory): String = when (category) {
+    ExpenseCategory.PURCHASE -> "شراء"
+    ExpenseCategory.OPERATING_COST -> "تكاليف تشغيلية"
 }
-
-private data class ExpenseItem(
-    val id: String,
-    val description: String,
-    val amount: Double,
-    val category: String,
-    val walletName: String,
-    val timestamp: String
-)
 
 /**
  * Expense Recording screen — Representative role.
@@ -80,9 +68,7 @@ private data class ExpenseItem(
  * Provides expense recording form with description, amount, category
  * (Purchase / Operating Cost), wallet selector, and expense history list.
  *
- * Requirement 11.1: Record expense with description, amount, category, wallet source, timestamp.
- * Requirement 11.2: Debit the specified wallet by the expense amount.
- * Requirement 11.3: Reject if expense amount exceeds wallet balance (insufficient funds).
+ * Requirement 24.11: Representative navigates to expenses screen, records expenses via Core_Engine.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,40 +78,49 @@ fun ExpenseRecordingScreen(
     val scope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    // Data lists
-    val wallets = remember { mutableStateListOf<ExpenseWalletItem>() }
-    val expenseHistory = remember { mutableStateListOf<ExpenseItem>() }
+    // Data lists — using UniFFI types directly
+    val wallets = remember { mutableStateListOf<Wallet>() }
+    val expenseHistory = remember { mutableStateListOf<Expense>() }
 
-    // Dialog state
-    var showCreateExpenseDialog by remember { mutableStateOf(false) }
+    // UI state
+    var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
+    var showCreateExpenseDialog by remember { mutableStateOf(false) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    // Use a wide date range to fetch all expenses
+    val startDate = "2000-01-01T00:00:00Z"
+    val endDate = "2099-12-31T23:59:59Z"
+
+    suspend fun loadData() {
+        val token = SweetLabApp.currentSession?.sessionId ?: return
+        val core = SweetLabApp.core ?: return
+        try {
+            isLoading = true
+            errorMessage = null
+
+            val walletList = core.getWallets(token, null)
+            wallets.clear()
+            wallets.addAll(walletList)
+
+            val expenses = core.getExpenses(token, startDate, endDate, null)
+            expenseHistory.clear()
+            expenseHistory.addAll(expenses)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل بيانات المصروفات" // "Failed to load expense data"
+        } finally {
+            isLoading = false
+        }
+    }
 
     LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore calls
-        // val walletList = SweetLabApp.core?.getWallets() ?: emptyList()
-        // wallets.addAll(walletList.map { ExpenseWalletItem(it.id, it.name, it.walletType.name, it.currentBalance) })
-        // val expenses = SweetLabApp.core?.getExpenses(startDate, endDate) ?: emptyList()
-        // expenseHistory.addAll(expenses.map { ExpenseItem(it.id, it.description, it.amount, it.category.name, it.walletName, it.timestamp.toString()) })
+        loadData()
     }
 
     val tabs = listOf("تسجيل مصروف", "سجل المصروفات") // "Record Expense", "Expense History"
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("تسجيل المصروفات") }, // "Expense Recording"
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        },
         floatingActionButton = {
             if (selectedTab == 0) {
                 FloatingActionButton(onClick = { showCreateExpenseDialog = true }) {
@@ -167,31 +162,50 @@ fun ExpenseRecordingScreen(
                 }
             }
 
-            when (selectedTab) {
-                0 -> ExpenseFormTab(
-                    wallets = wallets,
-                    onRecordExpense = { description, amount, category, walletId ->
-                        scope.launch {
-                            try {
-                                // TODO: Replace with SweetLabCore call
-                                // val expense = SweetLabApp.core?.recordExpense(
-                                //     description, amount, category, walletId, currentUserId
-                                // )
-                                // expenseHistory.add(0, ExpenseItem(
-                                //     expense.id, expense.description, expense.amount,
-                                //     expense.category.name, expense.walletName, expense.timestamp.toString()
-                                // ))
-
-                                successMessage = "تم تسجيل المصروف بنجاح" // "Expense recorded successfully"
-                                errorMessage = null
-                            } catch (e: Exception) {
-                                errorMessage = "فشل تسجيل المصروف: ${e.message}" // "Expense recording failed"
-                                successMessage = null
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                when (selectedTab) {
+                    0 -> ExpenseFormTab(
+                        wallets = wallets,
+                        isSubmitting = isSubmitting,
+                        onRecordExpense = { description, amountCents, category, walletId ->
+                            scope.launch {
+                                val token = SweetLabApp.currentSession?.sessionId
+                                val core = SweetLabApp.core
+                                val userId = SweetLabApp.currentUserId
+                                if (token == null || core == null || userId == null) {
+                                    errorMessage = "الجلسة غير متوفرة" // "Session not available"
+                                    return@launch
+                                }
+                                try {
+                                    isSubmitting = true
+                                    core.recordExpense(
+                                        token, description, amountCents, category, walletId, userId
+                                    )
+                                    successMessage = "تم تسجيل المصروف بنجاح" // "Expense recorded successfully"
+                                    errorMessage = null
+                                    // Refresh expense history and wallet balances
+                                    loadData()
+                                } catch (e: AppException.InsufficientFunds) {
+                                    errorMessage = "رصيد المحفظة غير كافٍ" // "Insufficient wallet balance"
+                                    successMessage = null
+                                } catch (e: Exception) {
+                                    errorMessage = "فشل تسجيل المصروف: ${e.message}" // "Expense recording failed"
+                                    successMessage = null
+                                } finally {
+                                    isSubmitting = false
+                                }
                             }
                         }
-                    }
-                )
-                1 -> ExpenseHistoryTab(expenses = expenseHistory)
+                    )
+                    1 -> ExpenseHistoryTab(expenses = expenseHistory)
+                }
             }
         }
     }
@@ -201,24 +215,34 @@ fun ExpenseRecordingScreen(
         CreateExpenseDialog(
             wallets = wallets,
             onDismiss = { showCreateExpenseDialog = false },
-            onConfirm = { description, amount, category, walletId ->
+            onConfirm = { description, amountCents, category, walletId ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    val userId = SweetLabApp.currentUserId
+                    if (token == null || core == null || userId == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        showCreateExpenseDialog = false
+                        return@launch
+                    }
                     try {
-                        // TODO: Replace with SweetLabCore call
-                        // val expense = SweetLabApp.core?.recordExpense(
-                        //     description, amount, category, walletId, currentUserId
-                        // )
-                        // expenseHistory.add(0, ExpenseItem(
-                        //     expense.id, expense.description, expense.amount,
-                        //     expense.category.name, expense.walletName, expense.timestamp.toString()
-                        // ))
-
+                        isSubmitting = true
+                        core.recordExpense(
+                            token, description, amountCents, category, walletId, userId
+                        )
                         successMessage = "تم تسجيل المصروف بنجاح"
                         errorMessage = null
                         showCreateExpenseDialog = false
+                        // Refresh expense history and wallet balances
+                        loadData()
+                    } catch (e: AppException.InsufficientFunds) {
+                        errorMessage = "رصيد المحفظة غير كافٍ"
+                        successMessage = null
                     } catch (e: Exception) {
                         errorMessage = "فشل تسجيل المصروف: ${e.message}"
                         successMessage = null
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -226,37 +250,40 @@ fun ExpenseRecordingScreen(
     }
 }
 
+
 // ── Expense Form Tab ─────────────────────────────────────────────────
 
 /**
  * Inline expense recording form with description, amount, category dropdown,
- * and wallet selector.
+ * and wallet selector. Uses UniFFI Wallet type directly.
  *
- * Requirement 11.1: Description, amount, category (purchase or operating cost), wallet source.
- * Requirement 11.3: Wallet balance shown to help user avoid insufficient funds.
+ * Wallet balance is displayed in decimal (cents / 100) to help user avoid insufficient funds.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpenseFormTab(
-    wallets: List<ExpenseWalletItem>,
-    onRecordExpense: (description: String, amount: Double, category: String, walletId: String) -> Unit
+    wallets: List<Wallet>,
+    isSubmitting: Boolean,
+    onRecordExpense: (description: String, amountCents: Long, category: ExpenseCategory, walletId: String) -> Unit
 ) {
     // Form state
     var description by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
-    var selectedWallet by remember { mutableStateOf<ExpenseWalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<Wallet?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
-    val amount = amountText.toDoubleOrNull() ?: 0.0
-    val exceedsBalance = selectedWallet != null && amount > selectedWallet!!.currentBalance
+    // Convert user-entered decimal to cents for comparison
+    val amountCents = (amountText.toDoubleOrNull() ?: 0.0).toMoneyCents()
+    val exceedsBalance = selectedWallet != null && amountCents > selectedWallet!!.currentBalance
 
     val canSubmit = description.isNotBlank() &&
-            amount > 0 &&
+            amountCents > 0 &&
             selectedCategory != null &&
             selectedWallet != null &&
-            !exceedsBalance
+            !exceedsBalance &&
+            !isSubmitting
 
     Column(
         modifier = Modifier
@@ -301,7 +328,7 @@ private fun ExpenseFormTab(
             onExpandedChange = { categoryExpanded = it }
         ) {
             OutlinedTextField(
-                value = selectedCategory?.label ?: "",
+                value = selectedCategory?.let { expenseCategoryLabel(it) } ?: "",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("اختر التصنيف") }, // "Select Category"
@@ -316,7 +343,7 @@ private fun ExpenseFormTab(
             ) {
                 ExpenseCategory.entries.forEach { category ->
                     DropdownMenuItem(
-                        text = { Text(category.label) },
+                        text = { Text(expenseCategoryLabel(category)) },
                         onClick = {
                             selectedCategory = category
                             categoryExpanded = false
@@ -333,7 +360,7 @@ private fun ExpenseFormTab(
             onExpandedChange = { walletExpanded = it }
         ) {
             OutlinedTextField(
-                value = selectedWallet?.let { "${it.name} (${"%.2f".format(it.currentBalance)})" } ?: "",
+                value = selectedWallet?.let { "${it.name} (${it.currentBalance.toMoneyDisplay()})" } ?: "",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("اختر المحفظة") }, // "Select Wallet"
@@ -348,7 +375,7 @@ private fun ExpenseFormTab(
             ) {
                 wallets.forEach { wallet ->
                     DropdownMenuItem(
-                        text = { Text("${wallet.name} (${"%.2f".format(wallet.currentBalance)})") },
+                        text = { Text("${wallet.name} (${wallet.currentBalance.toMoneyDisplay()})") },
                         onClick = {
                             selectedWallet = wallet
                             walletExpanded = false
@@ -366,8 +393,8 @@ private fun ExpenseFormTab(
                 if (canSubmit && selectedCategory != null && selectedWallet != null) {
                     onRecordExpense(
                         description,
-                        amount,
-                        selectedCategory!!.name,
+                        amountCents,
+                        selectedCategory!!,
                         selectedWallet!!.id
                     )
                     // Reset form
@@ -391,11 +418,11 @@ private fun ExpenseFormTab(
 
 /**
  * Displays the list of past expenses with description, amount, category,
- * wallet, and timestamp.
+ * wallet, and timestamp. Uses UniFFI Expense type directly.
  */
 @Composable
 private fun ExpenseHistoryTab(
-    expenses: List<ExpenseItem>
+    expenses: List<Expense>
 ) {
     if (expenses.isEmpty()) {
         Column(
@@ -422,13 +449,7 @@ private fun ExpenseHistoryTab(
 }
 
 @Composable
-private fun ExpenseHistoryCard(expense: ExpenseItem) {
-    val categoryLabel = when (expense.category) {
-        "Purchase" -> "شراء"
-        "OperatingCost" -> "تكاليف تشغيلية"
-        else -> expense.category
-    }
-
+private fun ExpenseHistoryCard(expense: Expense) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -445,7 +466,7 @@ private fun ExpenseHistoryCard(expense: ExpenseItem) {
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = "%.2f".format(expense.amount),
+                    text = expense.amount.toMoneyDisplay(),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -456,7 +477,7 @@ private fun ExpenseHistoryCard(expense: ExpenseItem) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = categoryLabel,
+                    text = expenseCategoryLabel(expense.category),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -475,34 +496,35 @@ private fun ExpenseHistoryCard(expense: ExpenseItem) {
     }
 }
 
+
 // ── Create Expense Dialog ────────────────────────────────────────────
 
 /**
  * Dialog for recording a new expense with description, amount,
- * category dropdown, and wallet selector.
+ * category dropdown, and wallet selector. Uses UniFFI types directly.
  *
- * Requirement 11.1: Description, amount, category, wallet source.
- * Requirement 11.3: Validates amount does not exceed wallet balance.
+ * Validates amount does not exceed wallet balance (client-side check).
+ * Server-side InsufficientFunds error is handled by the caller.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateExpenseDialog(
-    wallets: List<ExpenseWalletItem>,
+    wallets: List<Wallet>,
     onDismiss: () -> Unit,
-    onConfirm: (description: String, amount: Double, category: String, walletId: String) -> Unit
+    onConfirm: (description: String, amountCents: Long, category: ExpenseCategory, walletId: String) -> Unit
 ) {
     var description by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
     var categoryExpanded by remember { mutableStateOf(false) }
-    var selectedWallet by remember { mutableStateOf<ExpenseWalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<Wallet?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
-    val amount = amountText.toDoubleOrNull() ?: 0.0
-    val exceedsBalance = selectedWallet != null && amount > selectedWallet!!.currentBalance
+    val amountCents = (amountText.toDoubleOrNull() ?: 0.0).toMoneyCents()
+    val exceedsBalance = selectedWallet != null && amountCents > selectedWallet!!.currentBalance
 
     val canSubmit = description.isNotBlank() &&
-            amount > 0 &&
+            amountCents > 0 &&
             selectedCategory != null &&
             selectedWallet != null &&
             !exceedsBalance
@@ -546,7 +568,7 @@ private fun CreateExpenseDialog(
                     onExpandedChange = { categoryExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = selectedCategory?.label ?: "",
+                        value = selectedCategory?.let { expenseCategoryLabel(it) } ?: "",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("التصنيف") }, // "Category"
@@ -561,7 +583,7 @@ private fun CreateExpenseDialog(
                     ) {
                         ExpenseCategory.entries.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(category.label) },
+                                text = { Text(expenseCategoryLabel(category)) },
                                 onClick = {
                                     selectedCategory = category
                                     categoryExpanded = false
@@ -577,7 +599,7 @@ private fun CreateExpenseDialog(
                     onExpandedChange = { walletExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = selectedWallet?.let { "${it.name} (${"%.2f".format(it.currentBalance)})" } ?: "",
+                        value = selectedWallet?.let { "${it.name} (${it.currentBalance.toMoneyDisplay()})" } ?: "",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("المحفظة") }, // "Wallet"
@@ -592,7 +614,7 @@ private fun CreateExpenseDialog(
                     ) {
                         wallets.forEach { wallet ->
                             DropdownMenuItem(
-                                text = { Text("${wallet.name} (${"%.2f".format(wallet.currentBalance)})") },
+                                text = { Text("${wallet.name} (${wallet.currentBalance.toMoneyDisplay()})") },
                                 onClick = {
                                     selectedWallet = wallet
                                     walletExpanded = false
@@ -607,7 +629,7 @@ private fun CreateExpenseDialog(
             TextButton(
                 onClick = {
                     if (canSubmit && selectedCategory != null && selectedWallet != null) {
-                        onConfirm(description, amount, selectedCategory!!.name, selectedWallet!!.id)
+                        onConfirm(description, amountCents, selectedCategory!!, selectedWallet!!.id)
                     }
                 },
                 enabled = canSubmit

@@ -2,6 +2,7 @@ package org.sweetlab.ui.admin
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,14 +34,17 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import org.sweetlab.SweetLabApp
+import org.sweetlab.ui.util.toMoneyDisplay
 
 /**
  * Admin Dashboard — overview cards for wallet balances, active debts,
@@ -56,20 +61,39 @@ fun AdminDashboard(
     onNavigateToWallets: () -> Unit,
     onNavigateToReports: () -> Unit
 ) {
-    // Summary state — will be populated from SweetLabCore once bindings are ready
-    var totalWalletBalance by remember { mutableDoubleStateOf(0.0) }
+    // Summary state — populated from SweetLabCore on screen entry
+    var totalWalletBalance by remember { mutableLongStateOf(0L) }
     var activeDebtsCount by remember { mutableIntStateOf(0) }
     var lowStockCount by remember { mutableIntStateOf(0) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        // TODO: Replace with actual SweetLabCore calls
-        // val wallets = SweetLabApp.core?.getWallets() ?: emptyList()
-        // totalWalletBalance = wallets.sumOf { it.currentBalance }
-        // val debts = SweetLabApp.core?.getDebtAgingReport() ?: emptyList()
-        // activeDebtsCount = debts.size
-        // val report = SweetLabApp.core?.getInventoryReport(10.0)
-        // lowStockCount = (report?.rawMaterials?.count { it.isLowStock } ?: 0) +
-        //                 (report?.finishedGoods?.count { it.isLowStock } ?: 0)
+        val token = SweetLabApp.currentSession?.sessionId
+        val core = SweetLabApp.core
+        if (token == null || core == null) {
+            errorMessage = "الجلسة غير متوفرة" // "Session not available"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        try {
+            isLoading = true
+            errorMessage = null
+
+            val wallets = core.getWallets(token, null)
+            totalWalletBalance = wallets.sumOf { it.currentBalance }
+
+            val debts = core.getActiveDebts(token, null)
+            activeDebtsCount = debts.size
+
+            val report = core.getInventoryReport(token, 10.0)
+            lowStockCount = report.rawMaterials.count { it.isLowStock } +
+                report.finishedGoods.count { it.isLowStock }
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل البيانات" // "Failed to load data"
+        } finally {
+            isLoading = false
+        }
     }
 
     Scaffold(
@@ -83,6 +107,29 @@ fun AdminDashboard(
             )
         }
     ) { innerPadding ->
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (errorMessage != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        } else {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -103,7 +150,7 @@ fun AdminDashboard(
             ) {
                 SummaryCard(
                     title = "رصيد المحافظ", // "Wallet Balance"
-                    value = "%.2f".format(totalWalletBalance),
+                    value = totalWalletBalance.toMoneyDisplay(),
                     icon = Icons.Default.AccountBalance,
                     modifier = Modifier.weight(1f)
                 )
@@ -162,6 +209,7 @@ fun AdminDashboard(
                 onClick = onNavigateToReports
             )
         }
+        } // else
     }
 }
 

@@ -1,6 +1,7 @@
 package org.sweetlab.ui.representative
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.Person
@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -33,8 +34,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,17 +47,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-
-// Placeholder data class until UniFFI bindings are generated
-private data class CustomerData(
-    val id: String,
-    val name: String,
-    val city: String,
-    val mobile: String,
-    val reliabilityRating: Int, // 0-5, 0 = initial
-    val totalDebt: Double,
-    val overdueDays: Int
-)
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.AppException
+import org.sweetlab.core.Customer
+import org.sweetlab.ui.util.toMoneyDisplay
 
 /**
  * Customer Management screen — Representative role.
@@ -78,48 +70,54 @@ fun CustomerManagementScreen(
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val customers = remember { mutableStateListOf<CustomerData>() }
+    val customers = remember { mutableStateListOf<Customer>() }
     var searchQuery by remember { mutableStateOf("") }
     var showCreateDialog by remember { mutableStateOf(false) }
-    var showProfileDialog by remember { mutableStateOf<CustomerData?>(null) }
-    var showRatingDialog by remember { mutableStateOf<CustomerData?>(null) }
+    var showProfileDialog by remember { mutableStateOf<Customer?>(null) }
+    var showRatingDialog by remember { mutableStateOf<Customer?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore call
-        // val result = SweetLabApp.core?.getCustomers() ?: emptyList()
-        // customers.addAll(result.map {
-        //     CustomerData(it.id, it.name, it.city, it.mobile, it.reliabilityRating, it.totalDebt, it.overdueDays)
-        // })
-    }
-
-    // Filter customers based on search query (Req 7.4)
-    val filteredCustomers = if (searchQuery.isBlank()) {
-        customers.toList()
-    } else {
-        customers.filter { customer ->
-            customer.name.contains(searchQuery, ignoreCase = true) ||
-                    customer.city.contains(searchQuery, ignoreCase = true) ||
-                    customer.mobile.contains(searchQuery)
+    suspend fun loadCustomers() {
+        val token = SweetLabApp.currentSession?.sessionId ?: return
+        val core = SweetLabApp.core ?: return
+        try {
+            isLoading = true
+            errorMessage = null
+            val result = core.getCustomers(token, null)
+            customers.clear()
+            customers.addAll(result)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل بيانات العملاء" // "Failed to load customer data"
+        } finally {
+            isLoading = false
         }
     }
 
+    suspend fun searchCustomers(query: String) {
+        val token = SweetLabApp.currentSession?.sessionId ?: return
+        val core = SweetLabApp.core ?: return
+        try {
+            errorMessage = null
+            val result = if (query.isBlank()) {
+                core.getCustomers(token, null)
+            } else {
+                core.searchCustomers(token, query, null)
+            }
+            customers.clear()
+            customers.addAll(result)
+        } catch (e: Exception) {
+            errorMessage = "فشل البحث عن العملاء" // "Failed to search customers"
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        loadCustomers()
+    }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("إدارة العملاء") }, // "Customer Management"
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreateDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "إضافة عميل") // "Add Customer"
@@ -155,14 +153,9 @@ fun CustomerManagementScreen(
                 value = searchQuery,
                 onValueChange = { newQuery ->
                     searchQuery = newQuery
-                    // TODO: Replace with SweetLabCore call for server-side search
-                    // scope.launch {
-                    //     val results = SweetLabApp.core?.searchCustomers(newQuery) ?: emptyList()
-                    //     customers.clear()
-                    //     customers.addAll(results.map {
-                    //         CustomerData(it.id, it.name, it.city, it.mobile, it.reliabilityRating, it.totalDebt, it.overdueDays)
-                    //     })
-                    // }
+                    scope.launch {
+                        searchCustomers(newQuery)
+                    }
                 },
                 label = { Text("بحث بالاسم أو المدينة أو الجوال") }, // "Search by name, city, or mobile"
                 leadingIcon = {
@@ -175,7 +168,14 @@ fun CustomerManagementScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // ── Customer List ──
-            if (filteredCustomers.isEmpty()) {
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (customers.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -190,7 +190,7 @@ fun CustomerManagementScreen(
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(filteredCustomers, key = { it.id }) { customer ->
+                    items(customers.toList(), key = { it.id }) { customer ->
                         CustomerCard(
                             customer = customer,
                             onViewProfile = { showProfileDialog = customer },
@@ -208,20 +208,29 @@ fun CustomerManagementScreen(
             onDismiss = { showCreateDialog = false },
             onCreate = { name, city, mobile ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    if (token == null || core == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        showCreateDialog = false
+                        return@launch
+                    }
                     try {
-                        // TODO: Replace with SweetLabCore call
-                        // val newCustomer = SweetLabApp.core?.createCustomer(name, city, mobile)
-                        // customers.add(CustomerData(
-                        //     newCustomer.id, newCustomer.name, newCustomer.city,
-                        //     newCustomer.mobile, newCustomer.reliabilityRating,
-                        //     newCustomer.totalDebt, newCustomer.overdueDays
-                        // ))
+                        isSubmitting = true
+                        core.createCustomer(token, name, city, mobile)
                         showCreateDialog = false
                         successMessage = "تم إنشاء العميل بنجاح" // "Customer created successfully"
                         errorMessage = null
+                        // Refresh customer list after creation
+                        loadCustomers()
+                    } catch (e: AppException.Duplicate) {
+                        errorMessage = "رقم الجوال مسجل مسبقاً" // "Mobile number already registered"
+                        successMessage = null
                     } catch (e: Exception) {
                         errorMessage = "فشل إنشاء العميل: ${e.message}" // "Failed to create customer"
                         successMessage = null
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -247,19 +256,26 @@ fun CustomerManagementScreen(
             onDismiss = { showRatingDialog = null },
             onUpdateRating = { customerId, newRating ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    if (token == null || core == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        showRatingDialog = null
+                        return@launch
+                    }
                     try {
-                        // TODO: Replace with SweetLabCore call
-                        // SweetLabApp.core?.updateReliabilityRating(customerId, newRating)
-                        val idx = customers.indexOfFirst { it.id == customerId }
-                        if (idx >= 0) {
-                            customers[idx] = customers[idx].copy(reliabilityRating = newRating)
-                        }
+                        isSubmitting = true
+                        core.updateReliabilityRating(token, customerId, newRating)
                         showRatingDialog = null
                         successMessage = "تم تحديث التقييم بنجاح" // "Rating updated successfully"
                         errorMessage = null
+                        // Refresh customer list after rating update
+                        loadCustomers()
                     } catch (e: Exception) {
                         errorMessage = "فشل تحديث التقييم: ${e.message}" // "Failed to update rating"
                         successMessage = null
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -273,10 +289,11 @@ fun CustomerManagementScreen(
 /**
  * Card displaying customer summary: name, city, mobile, rating stars, debt info.
  * Tapping the card opens the profile dialog (Req 7.5).
+ * Money totalDebt is i64 cents — divide by 100 for display.
  */
 @Composable
 private fun CustomerCard(
-    customer: CustomerData,
+    customer: Customer,
     onViewProfile: () -> Unit,
     onUpdateRating: () -> Unit
 ) {
@@ -344,11 +361,11 @@ private fun CustomerCard(
                     }
                 }
 
-                // Debt info
+                // Debt info — totalDebt is Money (i64 cents)
                 if (customer.totalDebt > 0) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "دين: ${"%.2f".format(customer.totalDebt)}", // "Debt:"
+                            text = "دين: ${customer.totalDebt.toMoneyDisplay()}", // "Debt:"
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -419,7 +436,7 @@ private fun StarRatingSelector(
  * Dialog for creating a new customer with name, city, and mobile fields.
  *
  * Requirement 7.1: Store customer name, city, mobile, initial rating = 0.
- * Requirement 7.3: Unique mobile number (enforced server-side).
+ * Requirement 7.3: Unique mobile number (enforced server-side, Duplicate error handled).
  */
 @Composable
 private fun CreateCustomerDialog(
@@ -485,14 +502,15 @@ private fun CreateCustomerDialog(
 
 /**
  * Dialog displaying the full customer profile with debt summary and reliability rating.
+ * Money totalDebt is i64 cents — divide by 100 for display.
  *
  * Requirement 7.5: Display name, city, mobile, reliability rating, total debt, overdue days.
  */
 @Composable
 private fun CustomerProfileDialog(
-    customer: CustomerData,
+    customer: Customer,
     onDismiss: () -> Unit,
-    onUpdateRating: (CustomerData) -> Unit
+    onUpdateRating: (Customer) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -577,7 +595,7 @@ private fun CustomerProfileDialog(
                     }
                 }
 
-                // Debt Summary
+                // Debt Summary — totalDebt is Money (i64 cents)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -601,7 +619,7 @@ private fun CustomerProfileDialog(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = "%.2f".format(customer.totalDebt),
+                                text = customer.totalDebt.toMoneyDisplay(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (customer.totalDebt > 0)
                                     MaterialTheme.colorScheme.error
@@ -653,7 +671,7 @@ private fun CustomerProfileDialog(
  */
 @Composable
 private fun RatingUpdateDialog(
-    customer: CustomerData,
+    customer: Customer,
     onDismiss: () -> Unit,
     onUpdateRating: (customerId: String, newRating: Int) -> Unit
 ) {

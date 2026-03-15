@@ -20,7 +20,7 @@ mkdir -p "${JNILIBS_DIR}/x86_64"
 echo "[1/4] Building container image (first time takes a few minutes)..."
 podman build -t "$IMAGE_NAME" -f android-build/Containerfile .
 
-echo "[2/4] Cross-compiling Rust core for Android targets..."
+echo "[2/4] Cross-compiling Rust core and generating Kotlin bindings..."
 podman run --rm \
     -v "${SCRIPT_DIR}:/build:Z" \
     -v "${JNILIBS_DIR}:/output:Z" \
@@ -36,6 +36,14 @@ for abi in arm64-v8a armeabi-v7a x86_64; do
     fi
 done
 
+BINDINGS_DIR="${SCRIPT_DIR}/android/app/src/main/kotlin/org/sweetlab/core"
+if [ -f "${BINDINGS_DIR}/sweet_lab_core.kt" ]; then
+    echo "  Kotlin bindings: OK"
+else
+    echo "  Kotlin bindings: MISSING"
+fi
+
 echo "[4/4] Done! .so files are in android/app/src/main/jniLibs/"
+echo "Kotlin bindings are in android/app/src/main/kotlin/org/sweetlab/core/"
 echo "You can now build the APK:"
 echo "  cd android && ./gradlew assembleDebug"

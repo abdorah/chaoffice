@@ -88,7 +88,7 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
 - [x] 3. Checkpoint — Foundation complete
   - Ensure all tests pass after Money type migration and schema changes, ask the user if questions arise.
 
-- [ ] 4. Security: Auth guard, session persistence, password validation
+- [x] 4. Security: Auth guard, session persistence, password validation
   - [x] 4.1 Implement session persistence in SQLite
     - Update `core/src/auth/service.rs`: replace `Arc<Mutex<HashMap<Uuid, Session>>>` with SQLite queries
     - Add `core/src/persistence/queries/sessions.rs` with insert_session, get_session, delete_session, update_last_activity, delete_expired
@@ -136,7 +136,7 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
 - [x] 5. Checkpoint — Security complete
   - Ensure all tests pass after auth guard, session persistence, and password validation, ask the user if questions arise.
 
-- [ ] 6. Data integrity: Atomic operations, input validation, wallet fixes
+- [x] 6. Data integrity: Atomic operations, input validation, wallet fixes
   - [x] 6.1 Implement atomic single-item inventory deduction
     - Update `core/src/persistence/queries/raw_materials.rs`: change `deduct_quantity()` to use single `UPDATE ... WHERE id = ? AND current_quantity >= ?`
     - If rows_affected == 0, SELECT to distinguish NotFound vs InsufficientStock
@@ -209,7 +209,7 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
 - [x] 7. Checkpoint — Data integrity complete
   - Ensure all tests pass after atomic operations, input validation, and wallet fixes, ask the user if questions arise.
 
-- [ ] 8. Financial and query fixes
+- [x] 8. Financial and query fixes
   - [x] 8.1 Fix financial summary to use amount_paid for revenue
     - Update `core/src/reports/financial.rs` `get_financial_summary()`:
       - Change `total_revenue` to sum `amount_paid` instead of `total_amount`
@@ -273,7 +273,7 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
 - [x] 9. Checkpoint — Financial and query fixes complete
   - Ensure all tests pass after financial fixes, pagination, and query consolidation, ask the user if questions arise.
 
-- [ ] 10. Configuration, sync, and code cleanup
+- [x] 10. Configuration, sync, and code cleanup
   - [x] 10.1 Make business name configurable
     - Add `business_name: String` field to `SweetLabCore`
     - Update `SweetLabCore::new()` to accept `business_name` parameter
@@ -415,6 +415,182 @@ Incremental hardening of the Sweet Lab ERP core engine addressing all 39 code re
 
 - [x] 15. Final checkpoint — Full hardening complete
   - Run `cargo test` for core crate, build desktop binary with `cargo build -p desktop`, verify all screens load with live data, ask the user if questions arise.
+
+- [ ] 16. Android mobile: UniFFI binding setup and core initialization
+  - [x] 16.1 Generate UniFFI Kotlin bindings
+    - Add `uniffi-bindgen` binary target to `core/Cargo.toml` and create `core/uniffi-bindgen.rs`
+    - Cross-compile the Rust library for Android targets (arm64-v8a, armeabi-v7a, x86_64) using Android NDK via `cargo ndk`
+    - Run `cargo run --bin uniffi-bindgen -- generate --library ... --language kotlin --out-dir ../android/app/src/main/kotlin/org/sweetlab/bindings/`
+    - Copy compiled `.so` files to `android/app/src/main/jniLibs/{abi}/`
+    - Verify generated Kotlin bindings compile with the Android project
+    - _Requirements: 21.1, 21.2_
+
+  - [x] 16.2 Wire SweetLabCore initialization in SweetLabApp.kt
+    - Uncomment and update `SweetLabApp.kt`:
+      - Import `org.sweetlab.bindings.SweetLabCore`
+      - Call `SweetLabCore.new(dbPath, "Sweet Lab", null, null)` in `initializeCore()`
+      - Store result in `companion object` `core` property
+      - Set `isInitialized = true` on success, `initError` on failure
+    - Add shared session state: `var currentSession: Session? = null` and `var currentUserId: String? = null` in companion object
+    - _Requirements: 24.1_
+
+  - [x] 16.3 Wire login screen to core engine
+    - Update `LoginScreen.kt`:
+      - Import `SweetLabApp` and UniFFI bindings
+      - Replace placeholder login with `SweetLabApp.core!!.login(username, password)`
+      - Store session in `SweetLabApp.currentSession`, user ID in `SweetLabApp.currentUserId`
+      - Pass `session.role.name.lowercase()` to `onLoginSuccess`
+      - On error: show generic Arabic error message (never reveal which field is wrong)
+    - _Requirements: 24.2_
+
+  - [x] 16.4 Add logout support to NavGraph
+    - Update `NavGraph.kt` `SweetLabNavHost`:
+      - Add logout callback that calls `SweetLabApp.core!!.logout(SweetLabApp.currentSession!!.sessionId)`
+      - Clear `SweetLabApp.currentSession` and `currentUserId`
+      - Navigate back to `Routes.AUTH` clearing the back stack
+    - Wire offline indicator to `SweetLabApp.core!!.isOnline()` periodic check
+    - _Requirements: 24.2_
+
+- [x] 17. Android mobile: Admin screen wiring
+  - [x] 17.1 Wire admin dashboard with live data
+    - Update `AdminDashboard.kt`:
+      - Remove placeholder state, replace with calls to `SweetLabApp.core!!.getWallets(token, null)`, `getActiveDebts(token, null)`, `getInventoryReport(token, 10.0)`
+      - Compute `totalWalletBalance` from wallet list (sum `currentBalance`, convert from Money/i64 cents to display)
+      - Compute `activeDebtsCount` and `lowStockCount` from results
+      - Add loading and error state handling
+    - _Requirements: 24.3_
+
+  - [x] 17.2 Wire user management screen
+    - Update `UserManagementScreen.kt`:
+      - Remove private `UserItem` data class, use UniFFI-generated `SafeUser` type
+      - Wire `LaunchedEffect` to fetch users (note: core API doesn't have `listUsers` — use `getCustomers` pattern or add if needed)
+      - Wire `createUser()` callback to `SweetLabApp.core!!.createUser(token, username, password, fullName, role)`
+      - Wire `updateUserRole()` callback to `SweetLabApp.core!!.updateUserRole(token, userId, newRole)`
+      - Convert `UserRole` enum between UniFFI type and display strings
+      - Refresh user list after mutations
+    - _Requirements: 24.4_
+
+  - [x] 17.3 Wire inventory screen with live data
+    - Update `InventoryScreen.kt`:
+      - Remove private placeholder data classes
+      - Use UniFFI-generated `RawMaterial` and `FinishedGood` types
+      - Wire `LaunchedEffect` to `SweetLabApp.core!!.getRawMaterials(token, null)` and `getFinishedGoods(token, null)`
+      - Convert `Money` (i64 cents) to display format for `unitPrice`
+      - Add loading state
+    - _Requirements: 24.3_
+
+  - [x] 17.4 Wire recipe management screen
+    - Update `RecipeManagementScreen.kt`:
+      - Remove private placeholder data classes, use UniFFI `Recipe`, `RecipeIngredient`, `RawMaterial`
+      - Wire `LaunchedEffect` to `SweetLabApp.core!!.getRecipes(token, null)` and `getRawMaterials(token, null)`
+      - Wire create callback to `core.createRecipe(token, name, finishedGoodId, ingredients)`
+      - Wire update callback to `core.updateRecipe(token, recipe)`
+      - Wire delete callback to `core.deleteRecipe(token, recipeId)`
+      - Handle `DeletionBlocked` error for recipes with production logs
+      - Refresh recipe list after mutations
+    - _Requirements: 24.6_
+
+  - [x] 17.5 Wire wallet summary screen
+    - Update `WalletSummaryScreen.kt`:
+      - Remove private placeholder data classes, use UniFFI `Wallet`, `WalletTransaction`, `WalletType`
+      - Wire `LaunchedEffect` to `SweetLabApp.core!!.getWallets(token, null)`
+      - Wire transaction history to `core.getTransactionHistory(token, walletId, null)` on wallet selection
+      - Wire fund transfer to `core.transferFunds(token, sourceId, destId, amount)` (convert amount to Money cents)
+      - Refresh wallets after transfer
+    - _Requirements: 24.5_
+
+  - [x] 17.6 Wire reporting screen
+    - Update `ReportingScreen.kt`:
+      - Remove private placeholder data classes, use UniFFI `FinancialSummary`, `InventoryReport`, `DebtRecord`, `ExpenseCategoryGroup`
+      - Wire financial summary tab to `core.getFinancialSummary(token, startDate, endDate)` (convert millis to ISO DateTime string)
+      - Wire inventory report tab to `core.getInventoryReport(token, 10.0)`
+      - Wire debt aging tab to `core.getDebtAgingReport(token, null)`
+      - Wire expense report tab to `core.getExpensesByCategory(token, startDate, endDate, null)`
+      - Wire PDF export to `core.exportToPdf(invoice)` — save bytes to file and share via Android intent
+      - Convert `Money` (i64 cents) to display format throughout
+    - _Requirements: 24.7_
+
+- [x] 18. Android mobile: Chef screen wiring
+  - [x] 18.1 Wire production screen
+    - Update `ProductionScreen.kt`:
+      - Remove private placeholder data classes, use UniFFI `RecipeAvailability`, `ProductionLog`, `RecipeIngredient`
+      - Wire `LaunchedEffect` to `SweetLabApp.core!!.getRecipeAvailability(token, null)` and `getProductionHistory(token, null)`
+      - Wire execute production to `core.executeProduction(token, recipeId, quantity, SweetLabApp.currentUserId!!)`
+      - Handle `InsufficientStock` error to display insufficient materials
+      - Refresh availability and history after production
+      - Convert `materialsConsumed` map (Uuid keys) to display names
+    - _Requirements: 24.8_
+
+- [x] 19. Android mobile: Representative screen wiring
+  - [x] 19.1 Wire sales screen
+    - Update `SalesScreen.kt`:
+      - Remove private placeholder data classes, use UniFFI `Customer`, `FinishedGood`, `Wallet`, `Sale`, `SaleLineItem`, `Receipt`
+      - Wire `LaunchedEffect` to `core.getCustomers(token, null)`, `getFinishedGoods(token, null)`, `getWallets(token, null)`, `getSalesHistory(token, null)`
+      - Wire create sale to `core.createSale(token, customerId, lineItems, amountPaid, walletId)` — construct `SaleLineItem` list from form, convert amounts to Money cents
+      - Wire receipt generation to `core.generateReceipt(token, saleId)` — populate `ReceiptDialog` from UniFFI `Receipt` type
+      - Refresh sales history and inventory after sale creation
+    - _Requirements: 24.9_
+
+  - [x] 19.2 Wire customer management screen
+    - Update `CustomerManagementScreen.kt`:
+      - Remove private `CustomerData` class, use UniFFI `Customer` type
+      - Wire `LaunchedEffect` to `SweetLabApp.core!!.getCustomers(token, null)`
+      - Wire search to `core.searchCustomers(token, query, null)`
+      - Wire create customer to `core.createCustomer(token, name, city, mobile)`
+      - Wire rating update to `core.updateReliabilityRating(token, customerId, rating)`
+      - Handle `Duplicate` error for unique mobile constraint
+      - Convert `Money` total_debt to display format
+      - Refresh customer list after mutations
+    - _Requirements: 24.10_
+
+  - [x] 19.3 Wire expense recording screen
+    - Update `ExpenseRecordingScreen.kt`:
+      - Remove private placeholder data classes and enum, use UniFFI `Expense`, `Wallet`, `ExpenseCategory`
+      - Wire `LaunchedEffect` to `core.getWallets(token, null)` and `core.getExpenses(token, startDate, endDate, null)`
+      - Wire record expense to `core.recordExpense(token, description, amount, category, walletId, SweetLabApp.currentUserId!!)`
+      - Convert amount to Money cents, map `ExpenseCategory` enum
+      - Handle `InsufficientFunds` error
+      - Refresh expense history and wallet balances after recording
+    - _Requirements: 24.11_
+
+  - [x] 19.4 Wire customer payment screen
+    - Update `CustomerPaymentScreen.kt`:
+      - Remove private placeholder data classes, use UniFFI `Customer`, `Wallet`, `DebtRecord`, `DebtPayment`
+      - Wire `LaunchedEffect` to `core.getCustomers(token, null)` and `core.getWallets(token, null)`
+      - Wire customer selection to `core.getActiveDebts(token, null)` filtered by customer
+      - Wire payment to `core.recordDebtPayment(token, customerId, amount, walletId)` — convert amount to Money cents
+      - Update local customer debt state from `DebtPayment.unallocated` response
+      - Refresh debts and wallet balances after payment
+    - _Requirements: 24.12_
+
+- [x] 20. Android mobile: Auto-refresh, loading states, and navigation polish
+  - [x] 20.1 Add representative bottom navigation
+    - Update `NavGraph.kt` representative sub-graph:
+      - Add a `BottomNavigationBar` or equivalent for representative screens (Sales, Customers, Expenses, Payments)
+      - Ensure all four screens are accessible from the bottom nav
+      - Add logout option in top bar or navigation drawer
+    - _Requirements: 24.13_
+
+  - [x] 20.2 Implement loading and error states across all screens
+    - Add `isLoading` state to all screens that make async core calls
+    - Show `CircularProgressIndicator` during loading
+    - Show error `Snackbar` or inline error text on failure
+    - After every successful mutation, re-fetch and update the affected data lists
+    - _Requirements: 24.14_
+
+  - [x] 20.3 Create shared Money display utility
+    - Create `android/app/src/main/kotlin/org/sweetlab/ui/util/MoneyFormatter.kt`:
+      - `fun Money.toDisplay(): String` — convert i64 cents to "X.XX" format
+      - `fun Double.toMoneyCents(): Long` — convert user-entered double to i64 cents
+    - Update all screens to use these utilities instead of raw double formatting
+    - _Requirements: 24.15_
+
+- [x] 21. Final Android checkpoint
+  - Build Android APK with `./gradlew assembleDebug` in `android/` directory
+  - Verify all screens load with live data from the core engine
+  - Verify login/logout flow works end-to-end
+  - Verify offline indicator reflects actual connectivity state
+  - Ask the user if questions arise.
 
 ## Notes
 

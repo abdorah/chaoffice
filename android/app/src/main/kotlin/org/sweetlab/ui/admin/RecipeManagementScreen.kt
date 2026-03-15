@@ -1,6 +1,7 @@
 package org.sweetlab.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -51,23 +53,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-
-// Placeholder data classes until UniFFI bindings are generated
-private data class IngredientEntry(
-    val rawMaterialId: String,
-    val rawMaterialName: String,
-    val requiredQuantity: Double
-)
-
-private data class RecipeItem(
-    val id: String,
-    val name: String,
-    val finishedGoodId: String,
-    val finishedGoodName: String,
-    val ingredients: List<IngredientEntry>
-)
-
-private data class MaterialOption(val id: String, val name: String, val unit: String)
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.AppException
+import org.sweetlab.core.RawMaterial
+import org.sweetlab.core.Recipe
+import org.sweetlab.core.RecipeIngredient
 
 private const val MAX_INGREDIENTS = 10
 private const val MIN_INGREDIENTS = 1
@@ -75,11 +65,8 @@ private const val MIN_INGREDIENTS = 1
 /**
  * Recipe Management screen — list, create, edit, and delete recipes.
  *
- * Requirement 4.1: Recipe with name, finished good, 1-10 ingredients.
- * Requirement 4.2: Validate raw materials exist before saving.
- * Requirement 4.3: Each recipe produces exactly one finished good.
- * Requirement 4.4: Reject recipe if material doesn't exist.
- * Requirement 4.5: Prevent deletion if recipe has production logs.
+ * Requirement 24.6: Admin navigates to recipes screen, fetches recipes from
+ * the Core_Engine, and supports create, edit, and delete operations.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,21 +74,53 @@ fun RecipeManagementScreen(
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val recipes = remember { mutableStateListOf<RecipeItem>() }
+    val recipes = remember { mutableStateListOf<Recipe>() }
     var showCreateDialog by remember { mutableStateOf(false) }
-    var editingRecipe by remember { mutableStateOf<RecipeItem?>(null) }
-    var showDeleteConfirm by remember { mutableStateOf<RecipeItem?>(null) }
+    var editingRecipe by remember { mutableStateOf<Recipe?>(null) }
+    var showDeleteConfirm by remember { mutableStateOf<Recipe?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
     // Available materials for ingredient picker
-    val availableMaterials = remember { mutableStateListOf<MaterialOption>() }
+    val availableMaterials = remember { mutableStateListOf<RawMaterial>() }
+
+    /** Re-fetch recipes from the core engine. */
+    fun refreshRecipes() {
+        scope.launch {
+            val token = SweetLabApp.currentSession?.sessionId ?: return@launch
+            val core = SweetLabApp.core ?: return@launch
+            try {
+                val result = core.getRecipes(token, null)
+                recipes.clear()
+                recipes.addAll(result)
+                errorMessage = null
+            } catch (_: Exception) { /* keep stale list visible */ }
+        }
+    }
 
     LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore calls
-        // val result = SweetLabApp.core?.getRecipes() ?: emptyList()
-        // recipes.addAll(result.map { ... })
-        // val rms = SweetLabApp.core?.getRawMaterials() ?: emptyList()
-        // availableMaterials.addAll(rms.map { MaterialOption(it.id, it.name, it.unit) })
+        val token = SweetLabApp.currentSession?.sessionId
+        val core = SweetLabApp.core
+        if (token == null || core == null) {
+            errorMessage = "الجلسة غير متوفرة" // "Session not available"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        try {
+            isLoading = true
+            errorMessage = null
+            val result = core.getRecipes(token, null)
+            recipes.clear()
+            recipes.addAll(result)
+            val rms = core.getRawMaterials(token, null)
+            availableMaterials.clear()
+            availableMaterials.addAll(rms)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل الوصفات" // "Failed to load recipes"
+        } finally {
+            isLoading = false
+        }
     }
 
     Scaffold(
@@ -120,7 +139,11 @@ fun RecipeManagementScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showCreateDialog = true }) {
+            FloatingActionButton(
+                onClick = { showCreateDialog = true },
+                containerColor = if (isSubmitting) MaterialTheme.colorScheme.surfaceVariant
+                else MaterialTheme.colorScheme.primaryContainer
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "إضافة وصفة") // "Add recipe"
             }
         }
@@ -140,7 +163,14 @@ fun RecipeManagementScreen(
                 )
             }
 
-            if (recipes.isEmpty()) {
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (recipes.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -177,17 +207,32 @@ fun RecipeManagementScreen(
             },
             onSave = { name, finishedGoodId, ingredients ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    if (token == null || core == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        return@launch
+                    }
                     try {
+                        isSubmitting = true
                         if (editingRecipe != null) {
-                            // TODO: SweetLabApp.core?.updateRecipe(...)
+                            val updated = editingRecipe!!.copy(
+                                name = name,
+                                finishedGoodId = finishedGoodId,
+                                ingredients = ingredients
+                            )
+                            core.updateRecipe(token, updated)
                         } else {
-                            // TODO: SweetLabApp.core?.createRecipe(name, finishedGoodId, ingredients)
+                            core.createRecipe(token, name, finishedGoodId, ingredients)
                         }
                         showCreateDialog = false
                         editingRecipe = null
                         errorMessage = null
+                        refreshRecipes()
                     } catch (e: Exception) {
                         errorMessage = "فشل حفظ الوصفة: ${e.message}" // "Failed to save recipe"
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -215,15 +260,28 @@ fun RecipeManagementScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        val recipeToDelete = showDeleteConfirm!!
+                        showDeleteConfirm = null
                         scope.launch {
+                            val token = SweetLabApp.currentSession?.sessionId
+                            val core = SweetLabApp.core
+                            if (token == null || core == null) {
+                                errorMessage = "الجلسة غير متوفرة"
+                                return@launch
+                            }
                             try {
-                                // TODO: SweetLabApp.core?.deleteRecipe(showDeleteConfirm!!.id)
-                                recipes.removeAll { it.id == showDeleteConfirm!!.id }
-                                showDeleteConfirm = null
+                                isSubmitting = true
+                                core.deleteRecipe(token, recipeToDelete.id)
                                 errorMessage = null
+                                refreshRecipes()
+                            } catch (e: AppException.DeletionBlocked) {
+                                errorMessage = "لا يمكن حذف الوصفة لأنها مستخدمة في سجلات الإنتاج"
+                                // "Cannot delete recipe because it is used in production logs"
                             } catch (e: Exception) {
                                 errorMessage = "فشل حذف الوصفة: ${e.message}"
-                                showDeleteConfirm = null
+                                // "Failed to delete recipe"
+                            } finally {
+                                isSubmitting = false
                             }
                         }
                     }
@@ -242,7 +300,7 @@ fun RecipeManagementScreen(
 
 @Composable
 private fun RecipeCard(
-    recipe: RecipeItem,
+    recipe: Recipe,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -294,15 +352,15 @@ private fun RecipeCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RecipeFormDialog(
-    recipe: RecipeItem?,
-    availableMaterials: List<MaterialOption>,
+    recipe: Recipe?,
+    availableMaterials: List<RawMaterial>,
     onDismiss: () -> Unit,
-    onSave: (name: String, finishedGoodId: String, ingredients: List<IngredientEntry>) -> Unit
+    onSave: (name: String, finishedGoodId: String, ingredients: List<RecipeIngredient>) -> Unit
 ) {
     var name by remember { mutableStateOf(recipe?.name ?: "") }
     var finishedGoodId by remember { mutableStateOf(recipe?.finishedGoodId ?: "") }
     val ingredients = remember {
-        mutableStateListOf<IngredientEntry>().apply {
+        mutableStateListOf<RecipeIngredient>().apply {
             if (recipe != null) addAll(recipe.ingredients)
         }
     }
@@ -422,7 +480,11 @@ private fun RecipeFormDialog(
                                 val qty = ingredientQuantity.toDoubleOrNull()
                                 if (selectedMaterialId.isNotBlank() && qty != null && qty > 0) {
                                     ingredients.add(
-                                        IngredientEntry(selectedMaterialId, selectedMaterialName, qty)
+                                        RecipeIngredient(
+                                            rawMaterialId = selectedMaterialId,
+                                            rawMaterialName = selectedMaterialName,
+                                            requiredQuantity = qty
+                                        )
                                     )
                                     selectedMaterialId = ""
                                     selectedMaterialName = ""

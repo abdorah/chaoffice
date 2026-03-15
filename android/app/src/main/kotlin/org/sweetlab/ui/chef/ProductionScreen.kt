@@ -1,6 +1,7 @@
 package org.sweetlab.ui.chef
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,30 +45,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-
-// Placeholder data classes until UniFFI bindings are generated
-private data class IngredientInfo(
-    val rawMaterialName: String,
-    val requiredQuantity: Double
-)
-
-private data class RecipeAvailabilityItem(
-    val recipeId: String,
-    val recipeName: String,
-    val finishedGoodName: String,
-    val maxProducible: Int,
-    val ingredients: List<IngredientInfo>,
-    val insufficientMaterials: List<String>
-)
-
-private data class ProductionLogItem(
-    val id: String,
-    val recipeName: String,
-    val chefName: String,
-    val productionQuantity: Int,
-    val materialsConsumed: Map<String, Double>,
-    val timestamp: String
-)
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.AppException
+import org.sweetlab.core.ProductionLog
+import org.sweetlab.core.RawMaterial
+import org.sweetlab.core.RecipeAvailability
 
 /**
  * Production screen — Chef role.
@@ -74,11 +57,8 @@ private data class ProductionLogItem(
  * Displays available recipes with availability status, allows executing
  * production runs, and shows production history.
  *
- * Requirement 5.1: Chef selects recipe + quantity, system calculates raw material requirements.
- * Requirement 5.2: Atomic deduction of raw materials + increment of finished goods.
- * Requirement 5.3: Reject production if insufficient stock, list insufficient materials.
- * Requirement 5.4: Log production with chef identity, recipe, quantity, timestamp, materials consumed.
- * Requirement 5.5: Display available recipes with current availability status.
+ * Requirement 24.8: Chef navigates to production screen, fetches recipe availability,
+ * and supports executing production runs.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,38 +67,53 @@ fun ProductionScreen(
 ) {
     val scope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
-    val recipeAvailabilities = remember { mutableStateListOf<RecipeAvailabilityItem>() }
-    val productionHistory = remember { mutableStateListOf<ProductionLogItem>() }
-    var showProductionDialog by remember { mutableStateOf<RecipeAvailabilityItem?>(null) }
+    val recipeAvailabilities = remember { mutableStateListOf<RecipeAvailability>() }
+    val productionHistory = remember { mutableStateListOf<ProductionLog>() }
+    // Map of raw material UUID -> name for resolving materialsConsumed keys
+    val rawMaterialNames = remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var showProductionDialog by remember { mutableStateOf<RecipeAvailability?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    suspend fun loadData() {
+        val token = SweetLabApp.currentSession?.sessionId ?: return
+        val core = SweetLabApp.core ?: return
+        try {
+            isLoading = true
+            errorMessage = null
+
+            val availabilities = core.getRecipeAvailability(token, null)
+            recipeAvailabilities.clear()
+            recipeAvailabilities.addAll(availabilities)
+
+            val history = core.getProductionHistory(token, null)
+            productionHistory.clear()
+            productionHistory.addAll(history)
+
+            // Build raw material name lookup from recipe ingredients
+            val nameMap = mutableMapOf<String, String>()
+            availabilities.forEach { avail ->
+                avail.recipe.ingredients.forEach { ing ->
+                    nameMap[ing.rawMaterialId] = ing.rawMaterialName
+                }
+            }
+            // Also fetch raw materials to cover any IDs not in current recipes
+            try {
+                val rms = core.getRawMaterials(token, null)
+                rms.forEach { rm -> nameMap[rm.id] = rm.name }
+            } catch (_: Exception) { /* best-effort */ }
+            rawMaterialNames.value = nameMap
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل بيانات الإنتاج" // "Failed to load production data"
+        } finally {
+            isLoading = false
+        }
+    }
 
     LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore calls
-        // val availabilities = SweetLabApp.core?.getRecipeAvailability() ?: emptyList()
-        // recipeAvailabilities.addAll(availabilities.map {
-        //     RecipeAvailabilityItem(
-        //         recipeId = it.recipe.id,
-        //         recipeName = it.recipe.name,
-        //         finishedGoodName = it.recipe.finishedGoodName,
-        //         maxProducible = it.maxProducible,
-        //         ingredients = it.recipe.ingredients.map { ing ->
-        //             IngredientInfo(ing.rawMaterialName, ing.requiredQuantity)
-        //         },
-        //         insufficientMaterials = it.insufficientMaterials
-        //     )
-        // })
-        // val history = SweetLabApp.core?.getProductionHistory() ?: emptyList()
-        // productionHistory.addAll(history.map {
-        //     ProductionLogItem(
-        //         id = it.id,
-        //         recipeName = it.recipeName,
-        //         chefName = it.chefName,
-        //         productionQuantity = it.productionQuantity,
-        //         materialsConsumed = it.materialsConsumed,
-        //         timestamp = it.timestamp.toString()
-        //     )
-        // })
+        loadData()
     }
 
     val tabs = listOf("الوصفات المتاحة", "سجل الإنتاج") // "Available Recipes", "Production History"
@@ -167,12 +162,24 @@ fun ProductionScreen(
                 }
             }
 
-            when (selectedTab) {
-                0 -> RecipeAvailabilityList(
-                    recipes = recipeAvailabilities,
-                    onExecute = { recipe -> showProductionDialog = recipe }
-                )
-                1 -> ProductionHistoryList(history = productionHistory)
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                when (selectedTab) {
+                    0 -> RecipeAvailabilityList(
+                        recipes = recipeAvailabilities,
+                        onExecute = { recipe -> showProductionDialog = recipe }
+                    )
+                    1 -> ProductionHistoryList(
+                        history = productionHistory,
+                        rawMaterialNames = rawMaterialNames.value
+                    )
+                }
             }
         }
     }
@@ -184,30 +191,32 @@ fun ProductionScreen(
             onDismiss = { showProductionDialog = null },
             onExecute = { recipeId, quantity ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    val chefId = SweetLabApp.currentUserId
+                    if (token == null || core == null || chefId == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        showProductionDialog = null
+                        return@launch
+                    }
                     try {
-                        // TODO: Replace with SweetLabCore call
-                        // val chefId = SweetLabApp.currentSession?.userId ?: return@launch
-                        // val log = SweetLabApp.core?.executeProduction(recipeId, quantity, chefId)
-                        // productionHistory.add(0, ProductionLogItem(
-                        //     id = log.id,
-                        //     recipeName = log.recipeName,
-                        //     chefName = log.chefName,
-                        //     productionQuantity = log.productionQuantity,
-                        //     materialsConsumed = log.materialsConsumed,
-                        //     timestamp = log.timestamp.toString()
-                        // ))
-                        // // Refresh availability after production
-                        // recipeAvailabilities.clear()
-                        // val updated = SweetLabApp.core?.getRecipeAvailability() ?: emptyList()
-                        // recipeAvailabilities.addAll(updated.map { ... })
-
+                        isSubmitting = true
+                        core.executeProduction(token, recipeId, quantity, chefId)
                         successMessage = "تم تنفيذ الإنتاج بنجاح" // "Production executed successfully"
                         errorMessage = null
+                        showProductionDialog = null
+                        // Refresh availability and history after production
+                        loadData()
+                    } catch (e: AppException.InsufficientStock) {
+                        errorMessage = "مواد غير كافية: ${e.message}" // "Insufficient materials"
+                        successMessage = null
                         showProductionDialog = null
                     } catch (e: Exception) {
                         errorMessage = "فشل تنفيذ الإنتاج: ${e.message}" // "Production execution failed"
                         successMessage = null
                         showProductionDialog = null
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -216,14 +225,14 @@ fun ProductionScreen(
 }
 
 /**
- * Displays the list of recipes with their availability status (Req 5.5).
+ * Displays the list of recipes with their availability status.
  * Each card shows max producible quantity and ingredient details.
  * Recipes with insufficient materials are visually flagged.
  */
 @Composable
 private fun RecipeAvailabilityList(
-    recipes: List<RecipeAvailabilityItem>,
-    onExecute: (RecipeAvailabilityItem) -> Unit
+    recipes: List<RecipeAvailability>,
+    onExecute: (RecipeAvailability) -> Unit
 ) {
     if (recipes.isEmpty()) {
         Column(
@@ -242,7 +251,7 @@ private fun RecipeAvailabilityList(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(recipes, key = { it.recipeId }) { recipe ->
+            items(recipes, key = { it.recipe.id }) { recipe ->
                 RecipeAvailabilityCard(recipe = recipe, onExecute = { onExecute(recipe) })
             }
         }
@@ -251,7 +260,7 @@ private fun RecipeAvailabilityList(
 
 @Composable
 private fun RecipeAvailabilityCard(
-    recipe: RecipeAvailabilityItem,
+    recipe: RecipeAvailability,
     onExecute: () -> Unit
 ) {
     val isAvailable = recipe.maxProducible > 0
@@ -272,9 +281,9 @@ private fun RecipeAvailabilityCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = recipe.recipeName, style = MaterialTheme.typography.titleSmall)
+                    Text(text = recipe.recipe.name, style = MaterialTheme.typography.titleSmall)
                     Text(
-                        text = "المنتج: ${recipe.finishedGoodName}", // "Product:"
+                        text = "المنتج: ${recipe.recipe.finishedGoodName}", // "Product:"
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -314,7 +323,7 @@ private fun RecipeAvailabilityCard(
                 )
             }
 
-            // Insufficient materials warning (Req 5.3)
+            // Insufficient materials warning
             if (recipe.insufficientMaterials.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -338,7 +347,7 @@ private fun RecipeAvailabilityCard(
                 text = "المكونات (لكل وحدة):", // "Ingredients (per unit):"
                 style = MaterialTheme.typography.labelMedium
             )
-            recipe.ingredients.forEach { ingredient ->
+            recipe.recipe.ingredients.forEach { ingredient ->
                 Text(
                     text = "• ${ingredient.rawMaterialName}: ${ingredient.requiredQuantity}",
                     style = MaterialTheme.typography.bodySmall,
@@ -351,12 +360,12 @@ private fun RecipeAvailabilityCard(
 }
 
 /**
- * Production execution dialog — select quantity and confirm (Req 5.1, 5.2).
+ * Production execution dialog — select quantity and confirm.
  * Shows calculated raw material requirements based on entered quantity.
  */
 @Composable
 private fun ProductionExecutionDialog(
-    recipe: RecipeAvailabilityItem,
+    recipe: RecipeAvailability,
     onDismiss: () -> Unit,
     onExecute: (recipeId: String, quantity: Int) -> Unit
 ) {
@@ -373,11 +382,11 @@ private fun ProductionExecutionDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "الوصفة: ${recipe.recipeName}", // "Recipe:"
+                    text = "الوصفة: ${recipe.recipe.name}", // "Recipe:"
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(
-                    text = "المنتج: ${recipe.finishedGoodName}", // "Product:"
+                    text = "المنتج: ${recipe.recipe.finishedGoodName}", // "Product:"
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -405,14 +414,14 @@ private fun ProductionExecutionDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Calculated material requirements (Req 5.1)
+                // Calculated material requirements
                 if (quantity > 0) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "المواد الخام المطلوبة:", // "Required raw materials:"
                         style = MaterialTheme.typography.labelMedium
                     )
-                    recipe.ingredients.forEach { ingredient ->
+                    recipe.recipe.ingredients.forEach { ingredient ->
                         val totalRequired = ingredient.requiredQuantity * quantity
                         Text(
                             text = "• ${ingredient.rawMaterialName}: ${"%.2f".format(totalRequired)}",
@@ -426,7 +435,7 @@ private fun ProductionExecutionDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onExecute(recipe.recipeId, quantity) },
+                onClick = { onExecute(recipe.recipe.id, quantity) },
                 enabled = isValid
             ) {
                 Text("تنفيذ") // "Execute"
@@ -441,11 +450,14 @@ private fun ProductionExecutionDialog(
 }
 
 /**
- * Production history log (Req 5.4).
+ * Production history log.
  * Shows all past production runs with chef, recipe, quantity, timestamp, and materials consumed.
  */
 @Composable
-private fun ProductionHistoryList(history: List<ProductionLogItem>) {
+private fun ProductionHistoryList(
+    history: List<ProductionLog>,
+    rawMaterialNames: Map<String, String>
+) {
     if (history.isEmpty()) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -464,14 +476,17 @@ private fun ProductionHistoryList(history: List<ProductionLogItem>) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(history, key = { it.id }) { log ->
-                ProductionLogCard(log = log)
+                ProductionLogCard(log = log, rawMaterialNames = rawMaterialNames)
             }
         }
     }
 }
 
 @Composable
-private fun ProductionLogCard(log: ProductionLogItem) {
+private fun ProductionLogCard(
+    log: ProductionLog,
+    rawMaterialNames: Map<String, String>
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -501,16 +516,17 @@ private fun ProductionLogCard(log: ProductionLogItem) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // Materials consumed
+            // Materials consumed — convert Uuid keys to display names
             if (log.materialsConsumed.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "المواد المستهلكة:", // "Materials consumed:"
                     style = MaterialTheme.typography.labelMedium
                 )
-                log.materialsConsumed.forEach { (materialName, quantity) ->
+                log.materialsConsumed.forEach { (materialId, quantity) ->
+                    val displayName = rawMaterialNames[materialId] ?: materialId
                     Text(
-                        text = "• $materialName: ${"%.2f".format(quantity)}",
+                        text = "• $displayName: ${"%.2f".format(quantity)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 8.dp)

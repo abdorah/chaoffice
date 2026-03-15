@@ -1,6 +1,7 @@
 package org.sweetlab.ui.representative
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,20 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -37,12 +37,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,65 +51,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.Customer
+import org.sweetlab.core.FinishedGood
+import org.sweetlab.core.Receipt
+import org.sweetlab.core.Sale
+import org.sweetlab.core.SaleLineItem
+import org.sweetlab.core.Wallet
+import org.sweetlab.ui.util.toMoneyCents
+import org.sweetlab.ui.util.toMoneyDisplay
 
-// ── Placeholder data classes until UniFFI bindings are generated ──
-
-private data class CustomerItem(
-    val id: String,
-    val name: String,
-    val city: String,
-    val mobile: String
-)
-
-private data class FinishedGoodItem(
-    val id: String,
-    val name: String,
-    val currentQuantity: Double,
-    val unitPrice: Double
-)
-
-private data class SalesWalletItem(
-    val id: String,
-    val name: String,
-    val walletType: String,
-    val currentBalance: Double
-)
-
+/**
+ * Local form entry for building line items before submission.
+ * Uses UniFFI FinishedGood directly and stores price as Money (i64 cents).
+ */
 private data class LineItemEntry(
-    val finishedGood: FinishedGoodItem,
+    val finishedGood: FinishedGood,
     val quantity: Int,
-    val unitPrice: Double
+    val unitPriceCents: Long
 ) {
-    val subtotal: Double get() = quantity * unitPrice
+    val subtotalCents: Long get() = quantity.toLong() * unitPriceCents
 }
-
-private data class SaleItem(
-    val id: String,
-    val customerName: String,
-    val totalAmount: Double,
-    val amountPaid: Double,
-    val timestamp: String,
-    val lineItemCount: Int
-)
-
-private data class ReceiptData(
-    val customerName: String,
-    val customerCity: String,
-    val customerMobile: String,
-    val businessName: String,
-    val lineItems: List<ReceiptLineItem>,
-    val totalAmount: Double,
-    val amountPaid: Double,
-    val remainingBalance: Double,
-    val formattedDate: String
-)
-
-private data class ReceiptLineItem(
-    val finishedGoodName: String,
-    val quantity: Int,
-    val unitPrice: Double,
-    val subtotal: Double
-)
 
 /**
  * Sales screen — Representative role.
@@ -121,11 +80,8 @@ private data class ReceiptLineItem(
  * payment entry, wallet selector, auto-calculated total, and
  * sales history with receipt generation.
  *
- * Requirement 8.1: Record sale with customer, line items, total, payment wallet, timestamp.
- * Requirement 8.2: Full payment → credit wallet + deduct inventory.
- * Requirement 8.3: Partial/no payment → create debt record for unpaid balance.
- * Requirement 8.4: Sale total = sum(qty × unit_price).
- * Requirement 8.5: Generate printable receipt with customer name, items, total, paid, remaining, date.
+ * Requirement 24.9: Representative navigates to sales screen, creates sales
+ * with customer selection, line item entry, and payment via the Core_Engine.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,47 +91,56 @@ fun SalesScreen(
     val scope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    // Data lists
-    val customers = remember { mutableStateListOf<CustomerItem>() }
-    val finishedGoods = remember { mutableStateListOf<FinishedGoodItem>() }
-    val wallets = remember { mutableStateListOf<SalesWalletItem>() }
-    val salesHistory = remember { mutableStateListOf<SaleItem>() }
+    // Data lists — using UniFFI types directly
+    val customers = remember { mutableStateListOf<Customer>() }
+    val finishedGoods = remember { mutableStateListOf<FinishedGood>() }
+    val wallets = remember { mutableStateListOf<Wallet>() }
+    val salesHistory = remember { mutableStateListOf<Sale>() }
 
     // Dialog state
     var showCreateSaleDialog by remember { mutableStateOf(false) }
-    var showReceiptDialog by remember { mutableStateOf<ReceiptData?>(null) }
+    var showReceiptDialog by remember { mutableStateOf<Receipt?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    suspend fun loadData() {
+        val token = SweetLabApp.currentSession?.sessionId ?: return
+        val core = SweetLabApp.core ?: return
+        try {
+            isLoading = true
+            errorMessage = null
+
+            val customerList = core.getCustomers(token, null)
+            customers.clear()
+            customers.addAll(customerList)
+
+            val goods = core.getFinishedGoods(token, null)
+            finishedGoods.clear()
+            finishedGoods.addAll(goods)
+
+            val walletList = core.getWallets(token, null)
+            wallets.clear()
+            wallets.addAll(walletList)
+
+            val sales = core.getSalesHistory(token, null)
+            salesHistory.clear()
+            salesHistory.addAll(sales)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل بيانات المبيعات" // "Failed to load sales data"
+        } finally {
+            isLoading = false
+        }
+    }
 
     LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore calls
-        // val customerList = SweetLabApp.core?.getCustomers() ?: emptyList()
-        // customers.addAll(customerList.map { CustomerItem(it.id, it.name, it.city, it.mobile) })
-        // val goods = SweetLabApp.core?.getFinishedGoods() ?: emptyList()
-        // finishedGoods.addAll(goods.map { FinishedGoodItem(it.id, it.name, it.currentQuantity, it.unitPrice) })
-        // val walletList = SweetLabApp.core?.getWallets() ?: emptyList()
-        // wallets.addAll(walletList.map { SalesWalletItem(it.id, it.name, it.walletType.name, it.currentBalance) })
-        // val sales = SweetLabApp.core?.getSalesHistory() ?: emptyList()
-        // salesHistory.addAll(sales.map { SaleItem(it.id, it.customerName, it.totalAmount, it.amountPaid, it.timestamp.toString(), it.lineItems.size) })
+        loadData()
     }
 
     val tabs = listOf("إنشاء عملية بيع", "سجل المبيعات") // "Create Sale", "Sales History"
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("شاشة المبيعات") }, // "Sales Screen"
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        },
         floatingActionButton = {
             if (selectedTab == 0) {
                 FloatingActionButton(onClick = { showCreateSaleDialog = true }) {
@@ -217,61 +182,80 @@ fun SalesScreen(
                 }
             }
 
-            when (selectedTab) {
-                0 -> SaleCreationTab(
-                    customers = customers,
-                    finishedGoods = finishedGoods,
-                    wallets = wallets,
-                    onCreateSale = { customerId, lineItems, amountPaid, walletId ->
-                        scope.launch {
-                            try {
-                                // TODO: Replace with SweetLabCore call
-                                // val sale = SweetLabApp.core?.createSale(
-                                //     customerId, lineItems.map {
-                                //         SaleLineItem(it.finishedGood.id, it.finishedGood.name, it.quantity, it.unitPrice)
-                                //     }, amountPaid, walletId
-                                // )
-                                // salesHistory.add(0, SaleItem(
-                                //     sale.id, sale.customerName, sale.totalAmount,
-                                //     sale.amountPaid, sale.timestamp.toString(), sale.lineItems.size
-                                // ))
-
-                                successMessage = "تم إنشاء عملية البيع بنجاح" // "Sale created successfully"
-                                errorMessage = null
-                            } catch (e: Exception) {
-                                errorMessage = "فشل إنشاء عملية البيع: ${e.message}" // "Sale creation failed"
-                                successMessage = null
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                when (selectedTab) {
+                    0 -> SaleCreationTab(
+                        customers = customers,
+                        finishedGoods = finishedGoods,
+                        wallets = wallets,
+                        isSubmitting = isSubmitting,
+                        onCreateSale = { customerId, lineItems, amountPaidCents, walletId ->
+                            scope.launch {
+                                val token = SweetLabApp.currentSession?.sessionId
+                                val core = SweetLabApp.core
+                                if (token == null || core == null) {
+                                    errorMessage = "الجلسة غير متوفرة"
+                                    return@launch
+                                }
+                                try {
+                                    isSubmitting = true
+                                    // Construct SaleLineItem list from form entries
+                                    val saleLineItems = lineItems.map { entry ->
+                                        SaleLineItem(
+                                            finishedGoodId = entry.finishedGood.id,
+                                            finishedGoodName = entry.finishedGood.name,
+                                            quantity = entry.quantity,
+                                            unitPrice = entry.unitPriceCents
+                                        )
+                                    }
+                                    core.createSale(
+                                        token,
+                                        customerId,
+                                        saleLineItems,
+                                        amountPaidCents,
+                                        walletId
+                                    )
+                                    successMessage = "تم إنشاء عملية البيع بنجاح" // "Sale created successfully"
+                                    errorMessage = null
+                                    // Refresh sales history and inventory after sale creation
+                                    loadData()
+                                } catch (e: Exception) {
+                                    errorMessage = "فشل إنشاء عملية البيع: ${e.message}" // "Sale creation failed"
+                                    successMessage = null
+                                } finally {
+                                    isSubmitting = false
+                                }
                             }
                         }
-                    }
-                )
-                1 -> SalesHistoryTab(
-                    sales = salesHistory,
-                    onGenerateReceipt = { saleId ->
-                        scope.launch {
-                            try {
-                                // TODO: Replace with SweetLabCore call
-                                // val receipt = SweetLabApp.core?.generateReceipt(saleId)
-                                // showReceiptDialog = ReceiptData(
-                                //     customerName = receipt.customerName,
-                                //     customerCity = receipt.customerCity,
-                                //     customerMobile = receipt.customerMobile,
-                                //     businessName = receipt.businessName,
-                                //     lineItems = receipt.sale.lineItems.map {
-                                //         ReceiptLineItem(it.finishedGoodName, it.quantity, it.unitPrice, it.quantity * it.unitPrice)
-                                //     },
-                                //     totalAmount = receipt.sale.totalAmount,
-                                //     amountPaid = receipt.sale.amountPaid,
-                                //     remainingBalance = receipt.remainingBalance,
-                                //     formattedDate = receipt.formattedDate
-                                // )
-                                errorMessage = null
-                            } catch (e: Exception) {
-                                errorMessage = "فشل إنشاء الإيصال: ${e.message}" // "Receipt generation failed"
+                    )
+                    1 -> SalesHistoryTab(
+                        sales = salesHistory,
+                        onGenerateReceipt = { saleId ->
+                            scope.launch {
+                                val token = SweetLabApp.currentSession?.sessionId
+                                val core = SweetLabApp.core
+                                if (token == null || core == null) {
+                                    errorMessage = "الجلسة غير متوفرة"
+                                    return@launch
+                                }
+                                try {
+                                    val receipt = core.generateReceipt(token, saleId)
+                                    showReceiptDialog = receipt
+                                    errorMessage = null
+                                } catch (e: Exception) {
+                                    errorMessage = "فشل إنشاء الإيصال: ${e.message}" // "Receipt generation failed"
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -283,17 +267,42 @@ fun SalesScreen(
             finishedGoods = finishedGoods,
             wallets = wallets,
             onDismiss = { showCreateSaleDialog = false },
-            onConfirm = { customerId, lineItems, amountPaid, walletId ->
+            onConfirm = { customerId, lineItems, amountPaidCents, walletId ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    if (token == null || core == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        showCreateSaleDialog = false
+                        return@launch
+                    }
                     try {
-                        // TODO: Replace with SweetLabCore call
-                        // val sale = SweetLabApp.core?.createSale(customerId, lineItems, amountPaid, walletId)
+                        isSubmitting = true
+                        val saleLineItems = lineItems.map { entry ->
+                            SaleLineItem(
+                                finishedGoodId = entry.finishedGood.id,
+                                finishedGoodName = entry.finishedGood.name,
+                                quantity = entry.quantity,
+                                unitPrice = entry.unitPriceCents
+                            )
+                        }
+                        core.createSale(
+                            token,
+                            customerId,
+                            saleLineItems,
+                            amountPaidCents,
+                            walletId
+                        )
                         successMessage = "تم إنشاء عملية البيع بنجاح"
                         errorMessage = null
                         showCreateSaleDialog = false
+                        // Refresh sales history and inventory after sale creation
+                        loadData()
                     } catch (e: Exception) {
                         errorMessage = "فشل إنشاء عملية البيع: ${e.message}"
                         successMessage = null
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -315,41 +324,42 @@ fun SalesScreen(
  * Inline sale creation form with customer picker, line item builder,
  * auto-calculated total, payment entry, and wallet selector.
  *
- * Requirement 8.1: Customer, line items (goods + quantities + prices), total, payment wallet.
- * Requirement 8.4: Sale total = sum(qty × unit_price).
+ * Requirement 24.9: Customer, line items (goods + quantities + prices), total, payment wallet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SaleCreationTab(
-    customers: List<CustomerItem>,
-    finishedGoods: List<FinishedGoodItem>,
-    wallets: List<SalesWalletItem>,
-    onCreateSale: (customerId: String, lineItems: List<LineItemEntry>, amountPaid: Double, walletId: String) -> Unit
+    customers: List<Customer>,
+    finishedGoods: List<FinishedGood>,
+    wallets: List<Wallet>,
+    isSubmitting: Boolean,
+    onCreateSale: (customerId: String, lineItems: List<LineItemEntry>, amountPaidCents: Long, walletId: String) -> Unit
 ) {
     // Form state
-    var selectedCustomer by remember { mutableStateOf<CustomerItem?>(null) }
+    var selectedCustomer by remember { mutableStateOf<Customer?>(null) }
     var customerExpanded by remember { mutableStateOf(false) }
     val lineItems = remember { mutableStateListOf<LineItemEntry>() }
     var amountPaidText by remember { mutableStateOf("") }
-    var selectedWallet by remember { mutableStateOf<SalesWalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<Wallet?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
     // Line item builder state
-    var selectedGood by remember { mutableStateOf<FinishedGoodItem?>(null) }
+    var selectedGood by remember { mutableStateOf<FinishedGood?>(null) }
     var goodExpanded by remember { mutableStateOf(false) }
     var lineQtyText by remember { mutableStateOf("") }
     var linePriceText by remember { mutableStateOf("") }
 
-    // Auto-calculated total (Req 8.4)
-    val saleTotal = lineItems.sumOf { it.subtotal }
-    val amountPaid = amountPaidText.toDoubleOrNull() ?: 0.0
-    val remainingBalance = saleTotal - amountPaid
+    // Auto-calculated total in cents
+    val saleTotalCents = lineItems.sumOf { it.subtotalCents }
+    val amountPaidCents = (amountPaidText.toDoubleOrNull() ?: 0.0).toMoneyCents()
+    val remainingBalanceCents = saleTotalCents - amountPaidCents
 
     val canSubmit = selectedCustomer != null &&
             lineItems.isNotEmpty() &&
             selectedWallet != null &&
-            amountPaid >= 0 &&
-            amountPaid <= saleTotal
+            amountPaidCents >= 0 &&
+            amountPaidCents <= saleTotalCents &&
+            !isSubmitting
 
     Column(
         modifier = Modifier
@@ -425,10 +435,10 @@ private fun SaleCreationTab(
                     ) {
                         finishedGoods.forEach { good ->
                             DropdownMenuItem(
-                                text = { Text("${good.name} (متوفر: ${"%.0f".format(good.currentQuantity)}) — ${"%.2f".format(good.unitPrice)}") },
+                                text = { Text("${good.name} (متوفر: ${"%.0f".format(good.currentQuantity)}) — ${good.unitPrice.toMoneyDisplay()}") },
                                 onClick = {
                                     selectedGood = good
-                                    linePriceText = "%.2f".format(good.unitPrice)
+                                    linePriceText = good.unitPrice.toMoneyDisplay()
                                     goodExpanded = false
                                 }
                             )
@@ -466,11 +476,12 @@ private fun SaleCreationTab(
                 TextButton(
                     onClick = {
                         if (canAddLine && selectedGood != null) {
+                            val priceCents = (linePrice * 100).toLong()
                             lineItems.add(
                                 LineItemEntry(
                                     finishedGood = selectedGood!!,
                                     quantity = lineQty,
-                                    unitPrice = linePrice
+                                    unitPriceCents = priceCents
                                 )
                             )
                             selectedGood = null
@@ -505,7 +516,7 @@ private fun SaleCreationTab(
 
         HorizontalDivider()
 
-        // ── Sale Total (auto-calculated, Req 8.4) ──
+        // ── Sale Total (auto-calculated) ──
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -517,18 +528,18 @@ private fun SaleCreationTab(
                 ) {
                     Text(text = "إجمالي البيع:", style = MaterialTheme.typography.titleMedium) // "Sale Total:"
                     Text(
-                        text = "%.2f".format(saleTotal),
+                        text = saleTotalCents.toMoneyDisplay(),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                if (amountPaid > 0) {
+                if (amountPaidCents > 0) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = "المبلغ المدفوع:", style = MaterialTheme.typography.bodyMedium) // "Amount Paid:"
-                        Text(text = "%.2f".format(amountPaid), style = MaterialTheme.typography.bodyMedium)
+                        Text(text = amountPaidCents.toMoneyDisplay(), style = MaterialTheme.typography.bodyMedium)
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -537,13 +548,13 @@ private fun SaleCreationTab(
                         Text(
                             text = "الرصيد المتبقي:", // "Remaining Balance:"
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (remainingBalance > 0) MaterialTheme.colorScheme.error
+                            color = if (remainingBalanceCents > 0) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "%.2f".format(remainingBalance),
+                            text = remainingBalanceCents.toMoneyDisplay(),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = if (remainingBalance > 0) MaterialTheme.colorScheme.error
+                            color = if (remainingBalanceCents > 0) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary
                         )
                     }
@@ -560,9 +571,9 @@ private fun SaleCreationTab(
             label = { Text("المبلغ المدفوع") }, // "Amount Paid"
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            isError = amountPaid > saleTotal,
+            isError = amountPaidCents > saleTotalCents,
             supportingText = {
-                if (amountPaid > saleTotal) {
+                if (amountPaidCents > saleTotalCents) {
                     Text("المبلغ المدفوع لا يمكن أن يتجاوز الإجمالي") // "Amount paid cannot exceed total"
                 }
             },
@@ -575,7 +586,7 @@ private fun SaleCreationTab(
             onExpandedChange = { walletExpanded = it }
         ) {
             OutlinedTextField(
-                value = selectedWallet?.let { "${it.name} (${"%.2f".format(it.currentBalance)})" } ?: "",
+                value = selectedWallet?.let { "${it.name} (${it.currentBalance.toMoneyDisplay()})" } ?: "",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("محفظة الدفع") }, // "Payment Wallet"
@@ -590,7 +601,7 @@ private fun SaleCreationTab(
             ) {
                 wallets.forEach { wallet ->
                     DropdownMenuItem(
-                        text = { Text("${wallet.name} (${"%.2f".format(wallet.currentBalance)})") },
+                        text = { Text("${wallet.name} (${wallet.currentBalance.toMoneyDisplay()})") },
                         onClick = {
                             selectedWallet = wallet
                             walletExpanded = false
@@ -607,7 +618,7 @@ private fun SaleCreationTab(
                     onCreateSale(
                         selectedCustomer!!.id,
                         lineItems.toList(),
-                        amountPaid,
+                        amountPaidCents,
                         selectedWallet!!.id
                     )
                     // Reset form
@@ -647,13 +658,13 @@ private fun LineItemCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = item.finishedGood.name, style = MaterialTheme.typography.titleSmall)
                 Text(
-                    text = "${item.quantity} × ${"%.2f".format(item.unitPrice)}",
+                    text = "${item.quantity} × ${item.unitPriceCents.toMoneyDisplay()}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
-                text = "%.2f".format(item.subtotal),
+                text = item.subtotalCents.toMoneyDisplay(),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(end = 8.dp)
@@ -676,7 +687,7 @@ private fun LineItemCard(
  */
 @Composable
 private fun SalesHistoryTab(
-    sales: List<SaleItem>,
+    sales: List<Sale>,
     onGenerateReceipt: (saleId: String) -> Unit
 ) {
     if (sales.isEmpty()) {
@@ -705,11 +716,11 @@ private fun SalesHistoryTab(
 
 @Composable
 private fun SaleHistoryCard(
-    sale: SaleItem,
+    sale: Sale,
     onGenerateReceipt: () -> Unit
 ) {
-    val remaining = sale.totalAmount - sale.amountPaid
-    val isFullyPaid = remaining <= 0
+    val remainingCents = sale.totalAmount - sale.amountPaid
+    val isFullyPaid = remainingCents <= 0
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -724,12 +735,12 @@ private fun SaleHistoryCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = sale.customerName, style = MaterialTheme.typography.titleSmall)
                     Text(
-                        text = "${sale.lineItemCount} بنود", // "X items"
+                        text = "${sale.lineItems.size} بنود", // "X items"
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                // Receipt generation button (Req 8.5)
+                // Receipt generation button
                 IconButton(onClick = onGenerateReceipt) {
                     Icon(
                         Icons.Default.Receipt,
@@ -747,7 +758,7 @@ private fun SaleHistoryCard(
             ) {
                 Text(text = "الإجمالي:", style = MaterialTheme.typography.bodyMedium) // "Total:"
                 Text(
-                    text = "%.2f".format(sale.totalAmount),
+                    text = sale.totalAmount.toMoneyDisplay(),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -757,7 +768,7 @@ private fun SaleHistoryCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "المدفوع:", style = MaterialTheme.typography.bodyMedium) // "Paid:"
-                Text(text = "%.2f".format(sale.amountPaid), style = MaterialTheme.typography.bodyMedium)
+                Text(text = sale.amountPaid.toMoneyDisplay(), style = MaterialTheme.typography.bodyMedium)
             }
             if (!isFullyPaid) {
                 Row(
@@ -770,7 +781,7 @@ private fun SaleHistoryCard(
                         color = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        text = "%.2f".format(remaining),
+                        text = remainingCents.toMoneyDisplay(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -789,43 +800,36 @@ private fun SaleHistoryCard(
 
 // ── Create Sale Dialog ───────────────────────────────────────────────
 
-/**
- * Dialog for creating a new sale — customer picker, line item builder,
- * payment amount, wallet selector.
- *
- * Requirement 8.1: Record sale with customer, line items, total, payment wallet, timestamp.
- * Requirement 8.4: Sale total = sum(qty × unit_price).
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateSaleDialog(
-    customers: List<CustomerItem>,
-    finishedGoods: List<FinishedGoodItem>,
-    wallets: List<SalesWalletItem>,
+    customers: List<Customer>,
+    finishedGoods: List<FinishedGood>,
+    wallets: List<Wallet>,
     onDismiss: () -> Unit,
-    onConfirm: (customerId: String, lineItems: List<LineItemEntry>, amountPaid: Double, walletId: String) -> Unit
+    onConfirm: (customerId: String, lineItems: List<LineItemEntry>, amountPaidCents: Long, walletId: String) -> Unit
 ) {
-    var selectedCustomer by remember { mutableStateOf<CustomerItem?>(null) }
+    var selectedCustomer by remember { mutableStateOf<Customer?>(null) }
     var customerExpanded by remember { mutableStateOf(false) }
     val lineItems = remember { mutableStateListOf<LineItemEntry>() }
     var amountPaidText by remember { mutableStateOf("") }
-    var selectedWallet by remember { mutableStateOf<SalesWalletItem?>(null) }
+    var selectedWallet by remember { mutableStateOf<Wallet?>(null) }
     var walletExpanded by remember { mutableStateOf(false) }
 
     // Line item builder state
-    var selectedGood by remember { mutableStateOf<FinishedGoodItem?>(null) }
+    var selectedGood by remember { mutableStateOf<FinishedGood?>(null) }
     var goodExpanded by remember { mutableStateOf(false) }
     var lineQtyText by remember { mutableStateOf("") }
     var linePriceText by remember { mutableStateOf("") }
 
-    val saleTotal = lineItems.sumOf { it.subtotal }
-    val amountPaid = amountPaidText.toDoubleOrNull() ?: 0.0
+    val saleTotalCents = lineItems.sumOf { it.subtotalCents }
+    val amountPaidCents = (amountPaidText.toDoubleOrNull() ?: 0.0).toMoneyCents()
 
     val canSubmit = selectedCustomer != null &&
             lineItems.isNotEmpty() &&
             selectedWallet != null &&
-            amountPaid >= 0 &&
-            amountPaid <= saleTotal
+            amountPaidCents >= 0 &&
+            amountPaidCents <= saleTotalCents
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -869,7 +873,7 @@ private fun CreateSaleDialog(
                 HorizontalDivider()
                 Text(text = "بنود البيع", style = MaterialTheme.typography.labelLarge) // "Line Items"
 
-                // Add line item
+                // Add line item — product picker
                 ExposedDropdownMenuBox(
                     expanded = goodExpanded,
                     onExpandedChange = { goodExpanded = it }
@@ -890,10 +894,10 @@ private fun CreateSaleDialog(
                     ) {
                         finishedGoods.forEach { good ->
                             DropdownMenuItem(
-                                text = { Text("${good.name} (${"%.2f".format(good.unitPrice)})") },
+                                text = { Text("${good.name} (${good.unitPrice.toMoneyDisplay()})") },
                                 onClick = {
                                     selectedGood = good
-                                    linePriceText = "%.2f".format(good.unitPrice)
+                                    linePriceText = good.unitPrice.toMoneyDisplay()
                                     goodExpanded = false
                                 }
                             )
@@ -926,7 +930,8 @@ private fun CreateSaleDialog(
                 TextButton(
                     onClick = {
                         if (selectedGood != null && lineQty > 0 && linePrice > 0) {
-                            lineItems.add(LineItemEntry(selectedGood!!, lineQty, linePrice))
+                            val priceCents = (linePrice * 100).toLong()
+                            lineItems.add(LineItemEntry(selectedGood!!, lineQty, priceCents))
                             selectedGood = null
                             lineQtyText = ""
                             linePriceText = ""
@@ -946,7 +951,7 @@ private fun CreateSaleDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "${item.finishedGood.name}: ${item.quantity}×${"%.2f".format(item.unitPrice)} = ${"%.2f".format(item.subtotal)}",
+                            text = "${item.finishedGood.name}: ${item.quantity}×${item.unitPriceCents.toMoneyDisplay()} = ${item.subtotalCents.toMoneyDisplay()}",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f)
                         )
@@ -964,7 +969,7 @@ private fun CreateSaleDialog(
                     ) {
                         Text(text = "الإجمالي:", style = MaterialTheme.typography.titleSmall) // "Total:"
                         Text(
-                            text = "%.2f".format(saleTotal),
+                            text = saleTotalCents.toMoneyDisplay(),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -989,7 +994,7 @@ private fun CreateSaleDialog(
                     onExpandedChange = { walletExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = selectedWallet?.let { "${it.name} (${"%.2f".format(it.currentBalance)})" } ?: "",
+                        value = selectedWallet?.let { "${it.name} (${it.currentBalance.toMoneyDisplay()})" } ?: "",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("محفظة الدفع") }, // "Payment Wallet"
@@ -1004,7 +1009,7 @@ private fun CreateSaleDialog(
                     ) {
                         wallets.forEach { wallet ->
                             DropdownMenuItem(
-                                text = { Text("${wallet.name} (${"%.2f".format(wallet.currentBalance)})") },
+                                text = { Text("${wallet.name} (${wallet.currentBalance.toMoneyDisplay()})") },
                                 onClick = {
                                     selectedWallet = wallet
                                     walletExpanded = false
@@ -1019,7 +1024,7 @@ private fun CreateSaleDialog(
             TextButton(
                 onClick = {
                     if (canSubmit && selectedCustomer != null && selectedWallet != null) {
-                        onConfirm(selectedCustomer!!.id, lineItems.toList(), amountPaid, selectedWallet!!.id)
+                        onConfirm(selectedCustomer!!.id, lineItems.toList(), amountPaidCents, selectedWallet!!.id)
                     }
                 },
                 enabled = canSubmit
@@ -1038,12 +1043,12 @@ private fun CreateSaleDialog(
 // ── Receipt Dialog ───────────────────────────────────────────────────
 
 /**
- * Displays a printable receipt with all required fields (Req 8.5):
- * customer name, itemized list, total, amount paid, remaining balance, date.
+ * Displays a receipt populated from the UniFFI Receipt type.
+ * Shows customer info, itemized list, total, amount paid, remaining balance, date.
  */
 @Composable
 private fun ReceiptDialog(
-    receipt: ReceiptData,
+    receipt: Receipt,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -1064,27 +1069,27 @@ private fun ReceiptDialog(
                 HorizontalDivider()
 
                 // Customer info
-                Text(text = "العميل: ${receipt.customerName}", style = MaterialTheme.typography.bodyMedium) // "Customer:"
-                Text(text = "المدينة: ${receipt.customerCity}", style = MaterialTheme.typography.bodySmall) // "City:"
-                Text(text = "الهاتف: ${receipt.customerMobile}", style = MaterialTheme.typography.bodySmall) // "Phone:"
-                Text(text = "التاريخ: ${receipt.formattedDate}", style = MaterialTheme.typography.bodySmall) // "Date:"
+                Text(text = "العميل: ${receipt.customerName}", style = MaterialTheme.typography.bodyMedium)
+                Text(text = "المدينة: ${receipt.customerCity}", style = MaterialTheme.typography.bodySmall)
+                Text(text = "الهاتف: ${receipt.customerMobile}", style = MaterialTheme.typography.bodySmall)
+                Text(text = "التاريخ: ${receipt.formattedDate}", style = MaterialTheme.typography.bodySmall)
 
                 HorizontalDivider()
 
                 // Itemized list
                 Text(text = "البنود:", style = MaterialTheme.typography.labelLarge) // "Items:"
-                receipt.lineItems.forEach { item ->
+                receipt.sale.lineItems.forEach { item ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "${item.finishedGoodName} (${item.quantity}×${"%.2f".format(item.unitPrice)})",
+                            text = "${item.finishedGoodName} (${item.quantity}×${item.unitPrice.toMoneyDisplay()})",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            text = "%.2f".format(item.subtotal),
+                            text = (item.quantity.toLong() * item.unitPrice).toMoneyDisplay(),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -1099,7 +1104,7 @@ private fun ReceiptDialog(
                 ) {
                     Text(text = "الإجمالي:", style = MaterialTheme.typography.titleSmall) // "Total:"
                     Text(
-                        text = "%.2f".format(receipt.totalAmount),
+                        text = receipt.sale.totalAmount.toMoneyDisplay(),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -1109,7 +1114,7 @@ private fun ReceiptDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = "المدفوع:", style = MaterialTheme.typography.bodyMedium) // "Paid:"
-                    Text(text = "%.2f".format(receipt.amountPaid), style = MaterialTheme.typography.bodyMedium)
+                    Text(text = receipt.sale.amountPaid.toMoneyDisplay(), style = MaterialTheme.typography.bodyMedium)
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1122,7 +1127,7 @@ private fun ReceiptDialog(
                         else MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "%.2f".format(receipt.remainingBalance),
+                        text = receipt.remainingBalance.toMoneyDisplay(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (receipt.remainingBalance > 0) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.primary

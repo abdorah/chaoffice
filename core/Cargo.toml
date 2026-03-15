@@ -7,6 +7,10 @@ edition = "2021"
 crate-type = ["lib", "cdylib"]
 name = "sweet_lab_core"
 
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+
 [dependencies]
 prost = "0.13"
 prost-types = "0.13"

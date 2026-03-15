@@ -4,19 +4,37 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.sweetlab.SweetLabApp
 import org.sweetlab.ui.admin.AdminDashboard
 import org.sweetlab.ui.admin.InventoryScreen
 import org.sweetlab.ui.admin.RecipeManagementScreen
@@ -89,6 +107,23 @@ fun roleToGraphRoute(role: String): String = when (role.lowercase()) {
     else -> Routes.AUTH
 }
 
+// ── Representative bottom navigation items ───────────────────────────
+
+/**
+ * Defines the four representative bottom navigation destinations
+ * with Arabic labels and Material icons.
+ */
+enum class RepresentativeNavItem(
+    val route: String,
+    val label: String,
+    val icon: ImageVector
+) {
+    SALES(Screen.SALES, "المبيعات", Icons.Default.ShoppingCart),
+    CUSTOMERS(Screen.CUSTOMER_MANAGEMENT, "العملاء", Icons.Default.People),
+    EXPENSES(Screen.EXPENSE_RECORDING, "المصروفات", Icons.Default.AccountBalanceWallet),
+    PAYMENTS(Screen.CUSTOMER_PAYMENT, "المدفوعات", Icons.Default.Payments);
+}
+
 // ── Main NavHost ─────────────────────────────────────────────────────
 
 /**
@@ -99,8 +134,43 @@ fun roleToGraphRoute(role: String): String = when (role.lowercase()) {
 fun SweetLabNavHost(
     navController: NavHostController = rememberNavController()
 ) {
-    // Offline state — will be driven by SweetLabCore.isOnline() once bindings are ready
+    // Offline state — driven by SweetLabCore.isOnline() periodic check
     var isOffline by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    // Periodic connectivity check every 15 seconds
+    LaunchedEffect(Unit) {
+        while (true) {
+            try {
+                val online = SweetLabApp.core?.isOnline() ?: false
+                isOffline = !online
+            } catch (_: Exception) {
+                isOffline = true
+            }
+            delay(15_000L)
+        }
+    }
+
+    // Logout callback: calls core.logout(), clears session state, navigates to AUTH
+    val onLogout: () -> Unit = {
+        scope.launch {
+            try {
+                val sessionId = SweetLabApp.currentSession?.sessionId
+                if (sessionId != null) {
+                    SweetLabApp.core?.logout(sessionId)
+                }
+            } catch (_: Exception) {
+                // Best-effort logout — proceed with local cleanup regardless
+            } finally {
+                SweetLabApp.currentSession = null
+                SweetLabApp.currentUserId = null
+            }
+        }
+        // Navigate to auth immediately (don't wait for the network call)
+        navController.navigate(Routes.AUTH) {
+            popUpTo(0) { inclusive = true }
+        }
+    }
 
     Scaffold { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
@@ -190,27 +260,119 @@ fun SweetLabNavHost(
                     route = Routes.REPRESENTATIVE
                 ) {
                     composable(Screen.SALES) {
-                        SalesScreen(
-                            onNavigateBack = { navController.popBackStack() }
-                        )
+                        RepresentativeScaffold(
+                            currentRoute = Screen.SALES,
+                            navController = navController,
+                            onLogout = onLogout
+                        ) {
+                            SalesScreen(onNavigateBack = {})
+                        }
                     }
                     composable(Screen.CUSTOMER_MANAGEMENT) {
-                        CustomerManagementScreen(
-                            onNavigateBack = { navController.popBackStack() }
-                        )
+                        RepresentativeScaffold(
+                            currentRoute = Screen.CUSTOMER_MANAGEMENT,
+                            navController = navController,
+                            onLogout = onLogout
+                        ) {
+                            CustomerManagementScreen(onNavigateBack = {})
+                        }
                     }
                     composable(Screen.EXPENSE_RECORDING) {
-                        ExpenseRecordingScreen(
-                            onNavigateBack = { navController.popBackStack() }
-                        )
+                        RepresentativeScaffold(
+                            currentRoute = Screen.EXPENSE_RECORDING,
+                            navController = navController,
+                            onLogout = onLogout
+                        ) {
+                            ExpenseRecordingScreen(onNavigateBack = {})
+                        }
                     }
                     composable(Screen.CUSTOMER_PAYMENT) {
-                        CustomerPaymentScreen(
-                            onNavigateBack = { navController.popBackStack() }
-                        )
+                        RepresentativeScaffold(
+                            currentRoute = Screen.CUSTOMER_PAYMENT,
+                            navController = navController,
+                            onLogout = onLogout
+                        ) {
+                            CustomerPaymentScreen(onNavigateBack = {})
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+
+// ── Representative scaffold with bottom navigation ───────────────────
+
+/**
+ * Wraps representative screens with a top app bar (with logout) and
+ * a Material3 [NavigationBar] for switching between Sales, Customers,
+ * Expenses, and Payments screens.
+ *
+ * Requirement: 24.13
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RepresentativeScaffold(
+    currentRoute: String,
+    navController: NavHostController,
+    onLogout: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    val title = RepresentativeNavItem.entries
+                        .firstOrNull { it.route == currentRoute }?.label ?: ""
+                    Text(text = title)
+                },
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "تسجيل الخروج"
+                        )
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            NavigationBar {
+                RepresentativeNavItem.entries.forEach { item ->
+                    NavigationBarItem(
+                        selected = currentRoute == item.route,
+                        onClick = {
+                            if (currentRoute != item.route) {
+                                navController.navigate(item.route) {
+                                    // Pop up to the representative graph root to avoid
+                                    // building up a large back stack of sibling screens
+                                    popUpTo(Routes.REPRESENTATIVE) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label
+                            )
+                        },
+                        label = { Text(text = item.label) }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            content()
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.sweetlab.ui.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,28 +31,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
-// Placeholder data classes until UniFFI bindings are generated
-private data class RawMaterialItem(
-    val id: String,
-    val name: String,
-    val unit: String,
-    val currentQuantity: Double,
-    val lastUpdated: String
-)
-
-private data class FinishedGoodItem(
-    val id: String,
-    val name: String,
-    val currentQuantity: Double,
-    val unitPrice: Double,
-    val lastUpdated: String
-)
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.FinishedGood
+import org.sweetlab.core.RawMaterial
+import org.sweetlab.ui.util.toMoneyDisplay
 
 /**
  * Inventory screen — tabbed view for raw materials and finished goods.
@@ -64,15 +54,33 @@ fun InventoryScreen(
     onNavigateBack: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val rawMaterials = remember { mutableStateListOf<RawMaterialItem>() }
-    val finishedGoods = remember { mutableStateListOf<FinishedGoodItem>() }
+    val rawMaterials = remember { mutableStateListOf<RawMaterial>() }
+    val finishedGoods = remember { mutableStateListOf<FinishedGood>() }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore calls
-        // val rms = SweetLabApp.core?.getRawMaterials() ?: emptyList()
-        // rawMaterials.addAll(rms.map { RawMaterialItem(it.id, it.name, it.unit, it.currentQuantity, it.lastUpdated.toString()) })
-        // val fgs = SweetLabApp.core?.getFinishedGoods() ?: emptyList()
-        // finishedGoods.addAll(fgs.map { FinishedGoodItem(it.id, it.name, it.currentQuantity, it.unitPrice, it.lastUpdated.toString()) })
+        val token = SweetLabApp.currentSession?.sessionId
+        val core = SweetLabApp.core
+        if (token == null || core == null) {
+            errorMessage = "الجلسة غير متوفرة" // "Session not available"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        try {
+            isLoading = true
+            errorMessage = null
+            val rms = core.getRawMaterials(token, null)
+            rawMaterials.clear()
+            rawMaterials.addAll(rms)
+            val fgs = core.getFinishedGoods(token, null)
+            finishedGoods.clear()
+            finishedGoods.addAll(fgs)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل بيانات المخزون" // "Failed to load inventory data"
+        } finally {
+            isLoading = false
+        }
     }
 
     val tabs = listOf("المواد الخام", "المنتجات النهائية") // "Raw Materials", "Finished Goods"
@@ -108,16 +116,34 @@ fun InventoryScreen(
                 }
             }
 
-            when (selectedTab) {
-                0 -> RawMaterialsList(rawMaterials)
-                1 -> FinishedGoodsList(finishedGoods)
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                when (selectedTab) {
+                    0 -> RawMaterialsList(rawMaterials)
+                    1 -> FinishedGoodsList(finishedGoods)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun RawMaterialsList(materials: List<RawMaterialItem>) {
+private fun RawMaterialsList(materials: List<RawMaterial>) {
     if (materials.isEmpty()) {
         EmptyInventoryMessage("لا توجد مواد خام مسجلة") // "No raw materials recorded"
     } else {
@@ -157,7 +183,7 @@ private fun RawMaterialsList(materials: List<RawMaterialItem>) {
 }
 
 @Composable
-private fun FinishedGoodsList(goods: List<FinishedGoodItem>) {
+private fun FinishedGoodsList(goods: List<FinishedGood>) {
     if (goods.isEmpty()) {
         EmptyInventoryMessage("لا توجد منتجات نهائية مسجلة") // "No finished goods recorded"
     } else {
@@ -189,7 +215,7 @@ private fun FinishedGoodsList(goods: List<FinishedGoodItem>) {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "سعر الوحدة: %.2f".format(good.unitPrice), // "Unit price:"
+                                text = "سعر الوحدة: ${good.unitPrice.toMoneyDisplay()}", // "Unit price:"
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

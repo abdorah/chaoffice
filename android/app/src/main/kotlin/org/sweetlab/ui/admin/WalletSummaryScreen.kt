@@ -2,6 +2,7 @@ package org.sweetlab.ui.admin
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -47,37 +48,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-
-// Placeholder data classes until UniFFI bindings are generated
-private data class WalletItem(
-    val id: String,
-    val name: String,
-    val walletType: String, // "Bank", "Cash", "Representative"
-    val currentBalance: Double
-)
-
-private data class TransactionItem(
-    val id: String,
-    val walletId: String,
-    val amount: Double,
-    val description: String,
-    val relatedEntityId: String?,
-    val timestamp: String
-)
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.Wallet
+import org.sweetlab.core.WalletTransaction
+import org.sweetlab.core.WalletType
+import org.sweetlab.ui.util.toMoneyDisplay
+import org.sweetlab.ui.util.toMoneyDisplayWithSign
 
 private val WALLET_TYPE_LABELS = mapOf(
-    "Bank" to "بنك",
-    "Cash" to "نقدي",
-    "Representative" to "مندوب"
+    WalletType.BANK to "بنك",
+    WalletType.CASH to "نقدي",
+    WalletType.REPRESENTATIVE to "مندوب"
 )
 
 /**
  * Wallet Summary screen — wallet list with balances, transaction history,
  * and fund transfer dialog.
  *
- * Requirement 9.1: Three wallet types with current balance.
- * Requirement 9.2: Atomic fund transfers between wallets.
- * Requirement 9.6: Display wallets with name, balance, and transaction history.
+ * Requirement 24.5: Admin navigates to wallets screen, fetches wallet balances
+ * and transaction history from the Core_Engine, and supports fund transfers.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,25 +74,65 @@ fun WalletSummaryScreen(
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val wallets = remember { mutableStateListOf<WalletItem>() }
-    var selectedWallet by remember { mutableStateOf<WalletItem?>(null) }
-    val transactions = remember { mutableStateListOf<TransactionItem>() }
+    val wallets = remember { mutableStateListOf<Wallet>() }
+    var selectedWallet by remember { mutableStateOf<Wallet?>(null) }
+    val transactions = remember { mutableStateListOf<WalletTransaction>() }
     var showTransferDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
+    /** Re-fetch the wallet list from the core engine. */
+    fun refreshWallets() {
+        scope.launch {
+            val token = SweetLabApp.currentSession?.sessionId ?: return@launch
+            val core = SweetLabApp.core ?: return@launch
+            try {
+                val result = core.getWallets(token, null)
+                wallets.clear()
+                wallets.addAll(result)
+                // Update selectedWallet reference if it was set
+                selectedWallet = selectedWallet?.let { sel ->
+                    result.find { it.id == sel.id }
+                }
+                errorMessage = null
+            } catch (_: Exception) { /* keep stale list visible */ }
+        }
+    }
+
+    // Fetch wallets on screen entry
     LaunchedEffect(Unit) {
-        // TODO: Replace with SweetLabCore calls
-        // val result = SweetLabApp.core?.getWallets() ?: emptyList()
-        // wallets.addAll(result.map { WalletItem(it.id, it.name, it.walletType.name, it.currentBalance) })
+        val token = SweetLabApp.currentSession?.sessionId
+        val core = SweetLabApp.core
+        if (token == null || core == null) {
+            errorMessage = "الجلسة غير متوفرة" // "Session not available"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        try {
+            isLoading = true
+            errorMessage = null
+            val result = core.getWallets(token, null)
+            wallets.clear()
+            wallets.addAll(result)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل بيانات المحافظ" // "Failed to load wallet data"
+        } finally {
+            isLoading = false
+        }
     }
 
     // Load transactions when a wallet is selected
-    LaunchedEffect(selectedWallet) {
+    LaunchedEffect(selectedWallet?.id) {
         transactions.clear()
-        if (selectedWallet != null) {
-            // TODO: Replace with SweetLabCore call
-            // val txns = SweetLabApp.core?.getTransactionHistory(selectedWallet!!.id) ?: emptyList()
-            // transactions.addAll(txns.map { TransactionItem(it.id, it.walletId, it.amount, it.description, it.relatedEntityId, it.timestamp.toString()) })
+        val wallet = selectedWallet ?: return@LaunchedEffect
+        val token = SweetLabApp.currentSession?.sessionId ?: return@LaunchedEffect
+        val core = SweetLabApp.core ?: return@LaunchedEffect
+        try {
+            val txns = core.getTransactionHistory(token, wallet.id, null)
+            transactions.addAll(txns)
+        } catch (_: Exception) {
+            // Transaction fetch failure is non-critical; list stays empty
         }
     }
 
@@ -145,39 +174,48 @@ fun WalletSummaryScreen(
                 )
             }
 
-            // ── Wallet cards ──
-            Text(text = "المحافظ", style = MaterialTheme.typography.titleMedium) // "Wallets"
-            Spacer(modifier = Modifier.height(8.dp))
-
-            wallets.forEach { wallet ->
-                WalletCard(
-                    wallet = wallet,
-                    isSelected = selectedWallet?.id == wallet.id,
-                    onClick = { selectedWallet = wallet }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // ── Transaction history for selected wallet ──
-            if (selectedWallet != null) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                Text(
-                    text = "سجل المعاملات — ${selectedWallet!!.name}",
-                    // "Transaction History — [wallet name]"
-                    style = MaterialTheme.typography.titleMedium
-                )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                // ── Wallet cards ──
+                Text(text = "المحافظ", style = MaterialTheme.typography.titleMedium) // "Wallets"
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if (transactions.isEmpty()) {
-                    Text(
-                        text = "لا توجد معاملات بعد", // "No transactions yet"
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                wallets.forEach { wallet ->
+                    WalletCard(
+                        wallet = wallet,
+                        isSelected = selectedWallet?.id == wallet.id,
+                        onClick = { selectedWallet = wallet }
                     )
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(transactions, key = { it.id }) { txn ->
-                            TransactionRow(txn)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // ── Transaction history for selected wallet ──
+                if (selectedWallet != null) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                    Text(
+                        text = "سجل المعاملات — ${selectedWallet!!.name}",
+                        // "Transaction History — [wallet name]"
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (transactions.isEmpty()) {
+                        Text(
+                            text = "لا توجد معاملات بعد", // "No transactions yet"
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(transactions, key = { it.id }) { txn ->
+                                TransactionRow(txn)
+                            }
                         }
                     }
                 }
@@ -190,15 +228,24 @@ fun WalletSummaryScreen(
         FundTransferDialog(
             wallets = wallets,
             onDismiss = { showTransferDialog = false },
-            onTransfer = { sourceId, destId, amount ->
+            onTransfer = { sourceId, destId, amountCents ->
                 scope.launch {
+                    val token = SweetLabApp.currentSession?.sessionId
+                    val core = SweetLabApp.core
+                    if (token == null || core == null) {
+                        errorMessage = "الجلسة غير متوفرة"
+                        return@launch
+                    }
                     try {
-                        // TODO: SweetLabApp.core?.transferFunds(sourceId, destId, amount)
+                        isSubmitting = true
+                        core.transferFunds(token, sourceId, destId, amountCents)
                         showTransferDialog = false
                         errorMessage = null
-                        // Refresh wallets
+                        refreshWallets()
                     } catch (e: Exception) {
                         errorMessage = "فشل التحويل: ${e.message}" // "Transfer failed"
+                    } finally {
+                        isSubmitting = false
                     }
                 }
             }
@@ -206,9 +253,10 @@ fun WalletSummaryScreen(
     }
 }
 
+
 @Composable
 private fun WalletCard(
-    wallet: WalletItem,
+    wallet: Wallet,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -228,13 +276,13 @@ private fun WalletCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = wallet.name, style = MaterialTheme.typography.titleSmall)
                 Text(
-                    text = WALLET_TYPE_LABELS[wallet.walletType] ?: wallet.walletType,
+                    text = WALLET_TYPE_LABELS[wallet.walletType] ?: wallet.walletType.name,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
-                text = "%.2f".format(wallet.currentBalance),
+                text = wallet.currentBalance.toMoneyDisplay(),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -243,7 +291,7 @@ private fun WalletCard(
 }
 
 @Composable
-private fun TransactionRow(txn: TransactionItem) {
+private fun TransactionRow(txn: WalletTransaction) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -261,7 +309,7 @@ private fun TransactionRow(txn: TransactionItem) {
                 )
             }
             Text(
-                text = "%+.2f".format(txn.amount),
+                text = txn.amount.toMoneyDisplayWithSign(),
                 style = MaterialTheme.typography.titleSmall,
                 color = if (txn.amount >= 0) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.error
@@ -273,12 +321,12 @@ private fun TransactionRow(txn: TransactionItem) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FundTransferDialog(
-    wallets: List<WalletItem>,
+    wallets: List<Wallet>,
     onDismiss: () -> Unit,
-    onTransfer: (sourceId: String, destId: String, amount: Double) -> Unit
+    onTransfer: (sourceId: String, destId: String, amountCents: Long) -> Unit
 ) {
-    var sourceWallet by remember { mutableStateOf<WalletItem?>(null) }
-    var destWallet by remember { mutableStateOf<WalletItem?>(null) }
+    var sourceWallet by remember { mutableStateOf<Wallet?>(null) }
+    var destWallet by remember { mutableStateOf<Wallet?>(null) }
     var amount by remember { mutableStateOf("") }
     var sourceExpanded by remember { mutableStateOf(false) }
     var destExpanded by remember { mutableStateOf(false) }
@@ -294,7 +342,7 @@ private fun FundTransferDialog(
                     onExpandedChange = { sourceExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = sourceWallet?.let { "${it.name} (%.2f)".format(it.currentBalance) } ?: "",
+                        value = sourceWallet?.let { "${it.name} (${it.currentBalance.toMoneyDisplay()})" } ?: "",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("من محفظة") }, // "From wallet"
@@ -309,7 +357,7 @@ private fun FundTransferDialog(
                     ) {
                         wallets.forEach { wallet ->
                             DropdownMenuItem(
-                                text = { Text("${wallet.name} (%.2f)".format(wallet.currentBalance)) },
+                                text = { Text("${wallet.name} (${wallet.currentBalance.toMoneyDisplay()})") },
                                 onClick = {
                                     sourceWallet = wallet
                                     sourceExpanded = false
@@ -325,7 +373,7 @@ private fun FundTransferDialog(
                     onExpandedChange = { destExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = destWallet?.let { "${it.name} (%.2f)".format(it.currentBalance) } ?: "",
+                        value = destWallet?.let { "${it.name} (${it.currentBalance.toMoneyDisplay()})" } ?: "",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("إلى محفظة") }, // "To wallet"
@@ -340,7 +388,7 @@ private fun FundTransferDialog(
                     ) {
                         wallets.filter { it.id != sourceWallet?.id }.forEach { wallet ->
                             DropdownMenuItem(
-                                text = { Text("${wallet.name} (%.2f)".format(wallet.currentBalance)) },
+                                text = { Text("${wallet.name} (${wallet.currentBalance.toMoneyDisplay()})") },
                                 onClick = {
                                     destWallet = wallet
                                     destExpanded = false
@@ -365,7 +413,8 @@ private fun FundTransferDialog(
                 onClick = {
                     val transferAmount = amount.toDoubleOrNull()
                     if (sourceWallet != null && destWallet != null && transferAmount != null && transferAmount > 0) {
-                        onTransfer(sourceWallet!!.id, destWallet!!.id, transferAmount)
+                        val amountCents = (transferAmount * 100).toLong()
+                        onTransfer(sourceWallet!!.id, destWallet!!.id, amountCents)
                     }
                 },
                 enabled = sourceWallet != null && destWallet != null &&

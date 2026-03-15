@@ -307,6 +307,9 @@ interface SweetLabCore {
     void logout(Uuid session_id);
 
     [Async, Throws=AppError]
+    sequence<SafeUser> list_users(Uuid session_token);
+
+    [Async, Throws=AppError]
     SafeUser create_user(Uuid session_token, string username, string password, string full_name, UserRole role);
 
     [Async, Throws=AppError]

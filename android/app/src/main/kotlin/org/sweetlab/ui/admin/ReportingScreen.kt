@@ -1,6 +1,9 @@
 package org.sweetlab.ui.admin
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +43,6 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,47 +51,29 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.launch
+import org.sweetlab.SweetLabApp
+import org.sweetlab.core.DebtRecord
+import org.sweetlab.core.ExpenseCategory
+import org.sweetlab.core.ExpenseCategoryGroup
+import org.sweetlab.core.FinancialSummary
+import org.sweetlab.core.InventoryReport
+import org.sweetlab.core.Invoice
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+import org.sweetlab.ui.util.toMoneyDisplay
 
-// Placeholder data classes until UniFFI bindings are generated
-private data class FinancialSummaryData(
-    val totalRevenue: Double,
-    val totalExpenses: Double,
-    val netProfit: Double
-)
-
-private data class InventoryReportItem(
-    val name: String,
-    val quantity: Double,
-    val unit: String,
-    val isLowStock: Boolean,
-    val isRawMaterial: Boolean
-)
-
-private data class DebtReportItem(
-    val customerName: String,
-    val totalOwed: Double,
-    val overdueDays: Int,
-    val isCritical: Boolean
-)
-
-private data class ExpenseReportGroup(
-    val category: String,
-    val categoryLabel: String,
-    val expenses: List<ExpenseReportItem>,
-    val subtotal: Double
-)
-
-private data class ExpenseReportItem(
-    val description: String,
-    val amount: Double,
-    val walletName: String,
-    val timestamp: String
-)
+private fun millisToIsoDateTime(millis: Long): String {
+    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+    sdf.timeZone = TimeZone.getTimeZone("UTC")
+    return sdf.format(Date(millis))
+}
 
 private fun formatDate(millis: Long?): String {
     if (millis == null) return ""
@@ -96,33 +81,34 @@ private fun formatDate(millis: Long?): String {
     return sdf.format(Date(millis))
 }
 
-/**
- * Reporting screen — tabbed view for financial summary, inventory report,
- * debt aging report, and expense report with PDF export.
- *
- * Requirement 10.2: Debt aging report sorted by overdue days.
- * Requirement 11.4: Expense report grouped by category.
- * Requirement 12.1: Financial summary with revenue, expenses, net profit.
- * Requirement 12.2: Inventory report with low-stock highlights.
- * Requirement 12.4: PDF export support.
- */
+private fun expenseCategoryLabel(category: ExpenseCategory): String = when (category) {
+    ExpenseCategory.PURCHASE -> "مشتريات"
+    ExpenseCategory.OPERATING_COST -> "تكاليف تشغيل"
+}
+
+private fun sharePdf(context: Context, pdfBytes: List<UByte>, fileName: String) {
+    val reportsDir = File(context.cacheDir, "reports")
+    reportsDir.mkdirs()
+    val pdfFile = File(reportsDir, fileName)
+    pdfFile.writeBytes(pdfBytes.map { it.toByte() }.toByteArray())
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", pdfFile)
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "application/pdf"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, "مشاركة التقرير"))
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportingScreen(
-    onNavigateBack: () -> Unit
-) {
+fun ReportingScreen(onNavigateBack: () -> Unit) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf(
-        "مالي",      // "Financial"
-        "المخزون",   // "Inventory"
-        "الديون",    // "Debts"
-        "المصروفات"  // "Expenses"
-    )
-
+    val tabs = listOf("مالي", "المخزون", "الديون", "المصروفات")
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("التقارير") }, // "Reports"
+                title = { Text("التقارير") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع")
@@ -135,21 +121,12 @@ fun ReportingScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             PrimaryTabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
-                    )
+                    Tab(selected = selectedTab == index, onClick = { selectedTab = index }, text = { Text(title) })
                 }
             }
-
             when (selectedTab) {
                 0 -> FinancialSummaryTab()
                 1 -> InventoryReportTab()
@@ -160,207 +137,262 @@ fun ReportingScreen(
     }
 }
 
+
+// ── Financial Summary Tab ──
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FinancialSummaryTab() {
     val scope = rememberCoroutineScope()
-    var startDateMillis by remember { mutableStateOf<Long?>(null) }
-    var endDateMillis by remember { mutableStateOf<Long?>(null) }
+    var summary by remember { mutableStateOf<FinancialSummary?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Date range state — default to last 30 days
+    val now = System.currentTimeMillis()
+    var startDateMillis by remember { mutableStateOf(now - 30L * 24 * 60 * 60 * 1000) }
+    var endDateMillis by remember { mutableStateOf(now) }
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
-    var summary by remember { mutableStateOf<FinancialSummaryData?>(null) }
-    var isExporting by remember { mutableStateOf(false) }
+
+    fun loadSummary() {
+        scope.launch {
+            val token = SweetLabApp.currentSession?.sessionId ?: return@launch
+            val core = SweetLabApp.core ?: return@launch
+            try {
+                isLoading = true
+                errorMessage = null
+                val startIso = millisToIsoDateTime(startDateMillis)
+                val endIso = millisToIsoDateTime(endDateMillis)
+                summary = core.getFinancialSummary(token, startIso, endIso)
+            } catch (e: Exception) {
+                errorMessage = "فشل تحميل الملخص المالي"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) { loadSummary() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .verticalScroll(rememberScrollState())
     ) {
-        Text(text = "الملخص المالي", style = MaterialTheme.typography.titleMedium) // "Financial Summary"
-
-        // Date range picker
+        // Date range selectors
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedButton(
-                onClick = { showStartPicker = true },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(startDateMillis?.let { "من: ${formatDate(it)}" } ?: "تاريخ البداية")
-                // "From: date" / "Start date"
+            OutlinedButton(onClick = { showStartPicker = true }, modifier = Modifier.weight(1f)) {
+                Text("من: ${formatDate(startDateMillis)}")
             }
-            OutlinedButton(
-                onClick = { showEndPicker = true },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(endDateMillis?.let { "إلى: ${formatDate(it)}" } ?: "تاريخ النهاية")
-                // "To: date" / "End date"
+            OutlinedButton(onClick = { showEndPicker = true }, modifier = Modifier.weight(1f)) {
+                Text("إلى: ${formatDate(endDateMillis)}")
             }
+            Button(onClick = { loadSummary() }) { Text("تحديث") }
         }
 
-        Button(
-            onClick = {
-                scope.launch {
-                    // TODO: SweetLabApp.core?.getFinancialSummary(startDate, endDate)
-                    summary = FinancialSummaryData(0.0, 0.0, 0.0) // placeholder
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (errorMessage != null) {
+            Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error)
+        }
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (summary != null) {
+            val s = summary!!
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("الملخص المالي", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SummaryRow("إجمالي الإيرادات", s.totalRevenue.toMoneyDisplay())
+                    SummaryRow("إجمالي المصروفات", s.totalExpenses.toMoneyDisplay())
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    SummaryRow("صافي الربح", s.netProfit.toMoneyDisplay())
                 }
-            },
-            enabled = startDateMillis != null && endDateMillis != null,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("عرض التقرير") // "Show Report"
-        }
+            }
 
-        if (summary != null) {
-            SummaryRow("إجمالي الإيرادات", summary!!.totalRevenue) // "Total Revenue"
-            SummaryRow("إجمالي المصروفات", summary!!.totalExpenses) // "Total Expenses"
-            HorizontalDivider()
-            SummaryRow(
-                "صافي الربح", // "Net Profit"
-                summary!!.netProfit,
-                isHighlight = true
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // PDF export button (Req 12.4)
-            OutlinedButton(
-                onClick = {
-                    scope.launch {
-                        isExporting = true
-                        // TODO: SweetLabApp.core?.exportToPdf(...)
-                        isExporting = false
+            // Wallet balances
+            if (s.walletBalances.isNotEmpty()) {
+                Text("أرصدة المحافظ", style = MaterialTheme.typography.titleSmall)
+                Spacer(modifier = Modifier.height(8.dp))
+                s.walletBalances.forEach { wallet ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp)) {
+                            Text(wallet.name, modifier = Modifier.weight(1f))
+                            Text(wallet.currentBalance.toMoneyDisplay(), color = MaterialTheme.colorScheme.primary)
+                        }
                     }
-                },
-                enabled = !isExporting,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.PictureAsPdf, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("تصدير PDF") // "Export PDF"
+                }
             }
         }
     }
 
     // Date picker dialogs
     if (showStartPicker) {
-        val state = rememberDatePickerState()
+        val state = rememberDatePickerState(initialSelectedDateMillis = startDateMillis)
         DatePickerDialog(
             onDismissRequest = { showStartPicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    startDateMillis = state.selectedDateMillis
+                    state.selectedDateMillis?.let { startDateMillis = it }
                     showStartPicker = false
                 }) { Text("تأكيد") }
             },
-            dismissButton = {
-                TextButton(onClick = { showStartPicker = false }) { Text("إلغاء") }
-            }
+            dismissButton = { TextButton(onClick = { showStartPicker = false }) { Text("إلغاء") } }
         ) { DatePicker(state = state) }
     }
-
     if (showEndPicker) {
-        val state = rememberDatePickerState()
+        val state = rememberDatePickerState(initialSelectedDateMillis = endDateMillis)
         DatePickerDialog(
             onDismissRequest = { showEndPicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    endDateMillis = state.selectedDateMillis
+                    state.selectedDateMillis?.let { endDateMillis = it }
                     showEndPicker = false
                 }) { Text("تأكيد") }
             },
-            dismissButton = {
-                TextButton(onClick = { showEndPicker = false }) { Text("إلغاء") }
-            }
+            dismissButton = { TextButton(onClick = { showEndPicker = false }) { Text("إلغاء") } }
         ) { DatePicker(state = state) }
     }
 }
 
 @Composable
-private fun SummaryRow(label: String, value: Double, isHighlight: Boolean = false) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = if (isHighlight) MaterialTheme.typography.titleSmall
-            else MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = "%.2f".format(value),
-            style = if (isHighlight) MaterialTheme.typography.titleSmall
-            else MaterialTheme.typography.bodyMedium,
-            color = if (isHighlight && value >= 0) MaterialTheme.colorScheme.primary
-            else if (isHighlight) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.onSurface
-        )
+private fun SummaryRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
     }
 }
 
+
+// ── Inventory Report Tab ──
 
 @Composable
 private fun InventoryReportTab() {
-    val items = remember { mutableStateListOf<InventoryReportItem>() }
+    var report by remember { mutableStateOf<InventoryReport?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        // TODO: SweetLabApp.core?.getInventoryReport(10.0)
-        // items.addAll(report.rawMaterials.map { ... } + report.finishedGoods.map { ... })
+        val token = SweetLabApp.currentSession?.sessionId
+        val core = SweetLabApp.core
+        if (token == null || core == null) {
+            errorMessage = "الجلسة غير متوفرة"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        try {
+            isLoading = true
+            errorMessage = null
+            report = core.getInventoryReport(token, 10.0)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل تقرير المخزون"
+        } finally {
+            isLoading = false
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(text = "تقرير المخزون", style = MaterialTheme.typography.titleMedium) // "Inventory Report"
-        Spacer(modifier = Modifier.height(8.dp))
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
-        if (items.isEmpty()) {
-            Text(
-                text = "لا توجد بيانات مخزون", // "No inventory data"
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+    if (errorMessage != null) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+            Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error)
+        }
+        return
+    }
+
+    val r = report ?: return
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Raw materials section
+        item {
+            Text("المواد الخام", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        if (r.rawMaterials.isEmpty()) {
+            item { Text("لا توجد مواد خام", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(items) { item ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (item.isLowStock) MaterialTheme.colorScheme.errorContainer
-                            else MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (item.isLowStock) {
-                                Icon(
-                                    Icons.Default.Warning,
-                                    contentDescription = "مخزون منخفض",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = item.name, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = if (item.isRawMaterial) "مادة خام" else "منتج نهائي",
-                                    // "Raw material" / "Finished good"
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+            items(r.rawMaterials, key = { it.material.id }) { rm ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (rm.isLowStock) MaterialTheme.colorScheme.errorContainer
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(rm.material.name, style = MaterialTheme.typography.bodyMedium)
                             Text(
-                                text = "${item.quantity} ${item.unit}",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = if (item.isLowStock) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.primary
+                                "الكمية: ${"%.1f".format(rm.material.currentQuantity)} ${rm.material.unit}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (rm.isLowStock) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = "مخزون منخفض",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Finished goods section
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("المنتجات النهائية", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        if (r.finishedGoods.isEmpty()) {
+            item { Text("لا توجد منتجات نهائية", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        } else {
+            items(r.finishedGoods, key = { it.good.id }) { fg ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (fg.isLowStock) MaterialTheme.colorScheme.errorContainer
+                        else MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(fg.good.name, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                "الكمية: ${"%.1f".format(fg.good.currentQuantity)} — السعر: ${fg.good.unitPrice.toMoneyDisplay()}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (fg.isLowStock) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = "مخزون منخفض",
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -369,116 +401,240 @@ private fun InventoryReportTab() {
         }
     }
 }
+
+
+// ── Debt Aging Report Tab ──
 
 @Composable
 private fun DebtAgingReportTab() {
-    val debts = remember { mutableStateListOf<DebtReportItem>() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val debts = remember { mutableStateListOf<DebtRecord>() }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var pdfExportingSaleId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        // TODO: SweetLabApp.core?.getDebtAgingReport()
-        // debts.addAll(result.map { DebtReportItem(it.customerName, it.remainingAmount, it.overdueDays, it.isCritical) })
+        val token = SweetLabApp.currentSession?.sessionId
+        val core = SweetLabApp.core
+        if (token == null || core == null) {
+            errorMessage = "الجلسة غير متوفرة"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        try {
+            isLoading = true
+            errorMessage = null
+            val result = core.getDebtAgingReport(token, null)
+            debts.clear()
+            debts.addAll(result)
+        } catch (e: Exception) {
+            errorMessage = "فشل تحميل تقرير الديون"
+        } finally {
+            isLoading = false
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(text = "تقرير أعمار الديون", style = MaterialTheme.typography.titleMedium) // "Debt Aging Report"
-        Spacer(modifier = Modifier.height(8.dp))
+    fun exportInvoicePdf(saleId: String) {
+        scope.launch {
+            val token = SweetLabApp.currentSession?.sessionId ?: return@launch
+            val core = SweetLabApp.core ?: return@launch
+            try {
+                pdfExportingSaleId = saleId
+                val invoice = core.generateInvoice(token, saleId)
+                val pdfBytes = core.exportToPdf(invoice)
+                sharePdf(context, pdfBytes, "invoice_${invoice.invoiceNumber}.pdf")
+            } catch (e: Exception) {
+                errorMessage = "فشل تصدير الفاتورة: ${e.message}"
+            } finally {
+                pdfExportingSaleId = null
+            }
+        }
+    }
 
-        if (debts.isEmpty()) {
-            Text(
-                text = "لا توجد ديون نشطة", // "No active debts"
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                items(debts) { debt ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (debt.isCritical) MaterialTheme.colorScheme.errorContainer
-                            else MaterialTheme.colorScheme.surface
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (errorMessage != null) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+            Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error)
+        }
+        return
+    }
+
+    if (debts.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+            Text("لا توجد ديون نشطة", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Text("تقرير أعمار الديون", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        items(debts, key = { it.id }) { debt ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (debt.isCritical) MaterialTheme.colorScheme.errorContainer
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            debt.customerName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
                         )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        // PDF export button for this debt's sale invoice
+                        IconButton(
+                            onClick = { exportInvoicePdf(debt.saleId) },
+                            enabled = pdfExportingSaleId == null
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = debt.customerName, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = "متأخر ${debt.overdueDays} يوم", // "Overdue X days"
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (debt.isCritical) MaterialTheme.colorScheme.error
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                            if (pdfExportingSaleId == debt.saleId) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.width(20.dp).height(20.dp),
+                                    strokeWidth = 2.dp
                                 )
-                                if (debt.isCritical) {
-                                    Text(
-                                        text = "⚠️ حرج", // "Critical"
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
+                            } else {
+                                Icon(
+                                    Icons.Default.PictureAsPdf,
+                                    contentDescription = "تصدير فاتورة PDF",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                             }
-                            Text(
-                                text = "%.2f".format(debt.totalOwed),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.error
+                        }
+                        if (debt.isCritical) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = "دين حرج",
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            "المبلغ الأصلي: ${debt.originalAmount.toMoneyDisplay()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "المتبقي: ${debt.remainingAmount.toMoneyDisplay()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (debt.isCritical) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Text(
+                        "تاريخ البيع: ${debt.saleDate} — متأخر ${debt.overdueDays} يوم",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
     }
 }
 
+
+// ── Expense Report Tab ──
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpenseReportTab() {
-    val groups = remember { mutableStateListOf<ExpenseReportGroup>() }
-    var grandTotal by remember { mutableDoubleStateOf(0.0) }
+    val scope = rememberCoroutineScope()
+    val groups = remember { mutableStateListOf<ExpenseCategoryGroup>() }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        // TODO: SweetLabApp.core?.getExpensesByCategory(startDate, endDate)
-        // groups.addAll(result.map { ... })
-        // grandTotal = groups.sumOf { it.subtotal }
+    // Date range — default to last 30 days
+    val now = System.currentTimeMillis()
+    var startDateMillis by remember { mutableStateOf(now - 30L * 24 * 60 * 60 * 1000) }
+    var endDateMillis by remember { mutableStateOf(now) }
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+
+    fun loadExpenses() {
+        scope.launch {
+            val token = SweetLabApp.currentSession?.sessionId ?: return@launch
+            val core = SweetLabApp.core ?: return@launch
+            try {
+                isLoading = true
+                errorMessage = null
+                val startIso = millisToIsoDateTime(startDateMillis)
+                val endIso = millisToIsoDateTime(endDateMillis)
+                val result = core.getExpensesByCategory(token, startIso, endIso, null)
+                groups.clear()
+                groups.addAll(result)
+            } catch (e: Exception) {
+                errorMessage = "فشل تحميل تقرير المصروفات"
+            } finally {
+                isLoading = false
+            }
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(text = "تقرير المصروفات", style = MaterialTheme.typography.titleMedium) // "Expense Report"
-        Spacer(modifier = Modifier.height(8.dp))
+    LaunchedEffect(Unit) { loadExpenses() }
 
-        if (groups.isEmpty()) {
-            Text(
-                text = "لا توجد مصروفات مسجلة", // "No expenses recorded"
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp)
+    ) {
+        // Date range selectors
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedButton(onClick = { showStartPicker = true }, modifier = Modifier.weight(1f)) {
+                Text("من: ${formatDate(startDateMillis)}")
+            }
+            OutlinedButton(onClick = { showEndPicker = true }, modifier = Modifier.weight(1f)) {
+                Text("إلى: ${formatDate(endDateMillis)}")
+            }
+            Button(onClick = { loadExpenses() }) { Text("تحديث") }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (errorMessage != null) {
+            Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error)
+        }
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (groups.isEmpty()) {
+            Text("لا توجد مصروفات في هذه الفترة", color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(groups) { group ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(groups, key = { it.category.name }) { group ->
+                    val categoryTotal = group.expenses.sumOf { it.amount }
+                    Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    text = group.categoryLabel,
-                                    style = MaterialTheme.typography.titleSmall
+                                    expenseCategoryLabel(group.category),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    modifier = Modifier.weight(1f)
                                 )
                                 Text(
-                                    text = "%.2f".format(group.subtotal),
+                                    categoryTotal.toMoneyDisplay(),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -486,53 +642,56 @@ private fun ExpenseReportTab() {
                             HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                             group.expenses.forEach { expense ->
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 2.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
+                                        Text(expense.description, style = MaterialTheme.typography.bodySmall)
                                         Text(
-                                            text = expense.description,
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                        Text(
-                                            text = "${expense.walletName} — ${expense.timestamp}",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            expense.timestamp,
+                                            style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                     Text(
-                                        text = "%.2f".format(expense.amount),
-                                        style = MaterialTheme.typography.bodySmall
+                                        expense.amount.toMoneyDisplay(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
                     }
                 }
-
-                // Grand total
-                item {
-                    HorizontalDivider()
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "الإجمالي الكلي", // "Grand Total"
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = "%.2f".format(grandTotal),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
         }
+    }
+
+    // Date picker dialogs
+    if (showStartPicker) {
+        val state = rememberDatePickerState(initialSelectedDateMillis = startDateMillis)
+        DatePickerDialog(
+            onDismissRequest = { showStartPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { startDateMillis = it }
+                    showStartPicker = false
+                }) { Text("تأكيد") }
+            },
+            dismissButton = { TextButton(onClick = { showStartPicker = false }) { Text("إلغاء") } }
+        ) { DatePicker(state = state) }
+    }
+    if (showEndPicker) {
+        val state = rememberDatePickerState(initialSelectedDateMillis = endDateMillis)
+        DatePickerDialog(
+            onDismissRequest = { showEndPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { endDateMillis = it }
+                    showEndPicker = false
+                }) { Text("تأكيد") }
+            },
+            dismissButton = { TextButton(onClick = { showEndPicker = false }) { Text("إلغاء") } }
+        ) { DatePicker(state = state) }
     }
 }

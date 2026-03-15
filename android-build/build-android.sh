@@ -57,6 +57,30 @@ done
 
 echo ""
 echo "========================================="
-echo "All builds complete. Output in /output/"
+echo "All cross-compilation complete."
 echo "========================================="
 ls -lhR "$OUTPUT_DIR"
+
+# ── Generate UniFFI Kotlin bindings ─────────────────────────────────────────
+# Use one of the compiled .so files (arm64) to generate Kotlin bindings.
+# UniFFI reads the embedded metadata from the .so to produce the Kotlin source.
+BINDINGS_DIR="/build/android/app/src/main/kotlin"
+mkdir -p "$BINDINGS_DIR"
+
+echo ""
+echo "========================================="
+echo "Generating UniFFI Kotlin bindings"
+echo "========================================="
+
+# Build the uniffi-bindgen binary for the host (Linux x86_64)
+cargo build --package sweet-lab-core --bin uniffi-bindgen
+
+# Generate Kotlin bindings from the arm64 .so
+cargo run --package sweet-lab-core --bin uniffi-bindgen -- \
+    generate \
+    --library "target/aarch64-linux-android/release/libsweet_lab_core.so" \
+    --language kotlin \
+    --out-dir "$BINDINGS_DIR"
+
+echo "Kotlin bindings generated in: $BINDINGS_DIR"
+ls -la "$BINDINGS_DIR"

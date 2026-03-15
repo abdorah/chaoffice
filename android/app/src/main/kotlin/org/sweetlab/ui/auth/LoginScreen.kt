@@ -39,18 +39,17 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-// UniFFI bindings — uncomment when Rust library is compiled
-// import org.sweetlab.SweetLabApp
+import org.sweetlab.SweetLabApp
 
 /**
  * Login screen composable.
  *
  * Presents username/password fields, a loading indicator during authentication,
- * and a generic error message on failure (Req 1.2 — never reveals which field
+ * and a generic error message on failure (Req 24.2 — never reveals which field
  * is incorrect).
  *
  * On success, invokes [onLoginSuccess] with the authenticated user's role string
- * so the NavGraph can redirect to the correct role-based screen (Req 1.1, 1.3).
+ * so the NavGraph can redirect to the correct role-based screen (Req 24.2).
  */
 @Composable
 fun LoginScreen(
@@ -78,22 +77,21 @@ fun LoginScreen(
         scope.launch {
             try {
                 // Call Rust core via UniFFI bindings
-                // val session = SweetLabApp.core?.login(username, password)
-                //     ?: throw IllegalStateException("Core not initialized")
-                // val role = session.role.name // "Admin", "Chef", or "Representative"
+                val session = SweetLabApp.core?.login(username, password)
+                    ?: throw IllegalStateException("Core not initialized")
 
-                // Placeholder until UniFFI bindings are generated:
-                // Simulate a successful login for development/testing
-                val role = "admin" // Will be replaced by actual session.role
+                // Store session state in the application companion object
+                SweetLabApp.currentSession = session
+                SweetLabApp.currentUserId = session.userId
+
+                val role = session.role.name.lowercase()
 
                 isLoading = false
                 onLoginSuccess(role)
             } catch (e: Exception) {
                 isLoading = false
-                // Generic error message per Req 1.2:
-                // Never reveal whether username or password was wrong
-                errorMessage = "بيانات الاعتماد غير صحيحة. يرجى المحاولة مرة أخرى."
-                // "Invalid credentials. Please try again."
+                // Generic error message — never reveal which field is wrong (Req 24.2)
+                errorMessage = "بيانات الدخول غير صحيحة"
             }
         }
     }
