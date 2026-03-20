@@ -5,6 +5,8 @@ module org.chaos.office {
   requires transitive javafx.controls;
   requires javafx.fxml;
   requires javafx.web;
+  requires javafx.swing;
+  requires javafx.media;
   requires transitive org.slf4j;
   requires org.xerial.sqlitejdbc;
   requires com.github.librepdf.openpdf;

@@ -1,0 +1,22 @@
+{
+  "resources": {
+    "includes": [
+      {"pattern": "sql/.*"},
+      {"pattern": "messages/.*\\.properties$"},
+      {"pattern": "style/.*\\.css$"},
+      {"pattern": "icons/.*\\.png$"},
+      {"pattern": "META-INF/services/.*"},
+      {"pattern": "META-INF/native-image/.*"},
+      {"pattern": "org/sqlite/.*"},
+      {"pattern": "org/apache/poi/.*"},
+      {"pattern": "com/lowagie/.*"},
+      {"pattern": "com/ibm/icu/.*"}
+    ]
+  },
+  "bundles": [
+    {"name": "messages.messages"},
+    {"name": "messages.messages_en_US"},
+    {"name": "messages.messages_fr"},
+    {"name": "messages.messages_ar"}
+  ]
+}
