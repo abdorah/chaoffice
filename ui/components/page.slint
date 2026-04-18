@@ -1,0 +1,38 @@
+// Page — Base page component with title, description, and dark mode toggle
+
+import { Switch, HorizontalBox, VerticalBox, Palette } from "std-widgets.slint";
+import { AppSettings } from "../globals/app_settings.slint";
+
+export component Page inherits VerticalBox {
+    in property <string> title: "title";
+    in property <string> description: "description";
+
+    accessible-role: tab-panel;
+    accessible-label: root.title;
+
+    HorizontalBox {
+        Text {
+            font-size: 20px;
+            text <=> root.title;
+        }
+
+        Rectangle { }
+
+        Switch {
+            horizontal-stretch: 0;
+            text: "Dark Mode";
+            checked: Palette.color-scheme == ColorScheme.dark;
+            toggled => {
+                Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+            }
+        }
+    }
+
+    if root.description != "" : Text {
+        text: root.description;
+        wrap: word-wrap;
+        color: Palette.foreground.transparentize(0.4);
+    }
+
+    @children
+}

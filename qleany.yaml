@@ -1,0 +1,515 @@
+##############################################################################
+# Inventory Management Application — Qleany Manifest
+# Language: Rust | UI: Slint + CLI | Database: redb (internal)
+# External sync: TursoDB + LibSQL (Step 3 — implemented in feature use cases)
+##############################################################################
+
+schema:
+  version: 5
+
+global:
+  language: rust
+  application_name: InventoryManager
+  organisation:
+    name: inventoryapp
+    domain: inventoryapp.com
+  prefix_path: crates
+
+ui:
+  rust_cli: true
+  rust_slint: true
+  rust_ios: false
+  rust_android: false
+  cpp_qt_qtwidgets: false
+  cpp_qt_qtquick: false
+
+##############################################################################
+# ENTITIES
+##############################################################################
+
+entities:
+  # ── Base ──────────────────────────────────────────────────────────────────
+  - name: EntityBase
+    only_for_heritage: true
+    fields:
+      - name: id
+        type: uinteger
+      - name: created_at
+        type: datetime
+      - name: updated_at
+        type: datetime
+
+  # ── Root ──────────────────────────────────────────────────────────────────
+  # Application entry point. Owns all top-level collections.
+  - name: Root
+    inherits_from: EntityBase
+    undoable: false
+    fields:
+      - name: products
+        type: entity
+        entity: Product
+        relationship: ordered_one_to_many
+        strong: true
+      - name: categories
+        type: entity
+        entity: Category
+        relationship: ordered_one_to_many
+        strong: true
+      - name: persons
+        type: entity
+        entity: Person
+        relationship: ordered_one_to_many
+        strong: true
+      - name: locations
+        type: entity
+        entity: Location
+        relationship: ordered_one_to_many
+        strong: true
+      - name: deals
+        type: entity
+        entity: Deal
+        relationship: ordered_one_to_many
+        strong: true
+
+  # ── Product ───────────────────────────────────────────────────────────────
+  - name: Product
+    inherits_from: EntityBase
+    undoable: true
+    fields:
+      - name: name
+        type: string
+      - name: reference
+        type: string
+      - name: description
+        type: string
+      - name: quantity
+        type: integer
+      - name: price_unit
+        type: float
+      - name: status
+        type: enum
+        enum_name: ProductStatus
+        enum_values:
+          - Available
+          - OutOfStock
+          - Discontinued
+          - Reserved
+      - name: category
+        type: entity
+        entity: Category
+        relationship: many_to_one
+        optional: true
+      - name: supplier
+        type: entity
+        entity: Person
+        relationship: many_to_one
+        optional: true
+      - name: location
+        type: entity
+        entity: Location
+        relationship: many_to_one
+        optional: true
+
+  # ── Category (tree structure via self-reference) ──────────────────────────
+  - name: Category
+    inherits_from: EntityBase
+    undoable: true
+    fields:
+      - name: name
+        type: string
+      - name: description
+        type: string
+      - name: parent_category
+        type: entity
+        entity: Category
+        relationship: many_to_one
+        optional: true
+      - name: subcategories
+        type: entity
+        entity: Category
+        relationship: ordered_one_to_many
+        strong: false
+
+  # ── Person (Manager or Supplier) ──────────────────────────────────────────
+  # Replaces the original separate "type" entity with an enum field.
+  - name: Person
+    inherits_from: EntityBase
+    undoable: true
+    fields:
+      - name: name
+        type: string
+      - name: role
+        type: enum
+        enum_name: PersonRole
+        enum_values:
+          - Manager
+          - Supplier
+      - name: contact
+        type: entity
+        entity: Contact
+        relationship: one_to_one
+        strong: true
+        optional: true
+
+  # ── Contact ───────────────────────────────────────────────────────────────
+  - name: Contact
+    inherits_from: EntityBase
+    undoable: true
+    fields:
+      - name: phone
+        type: string
+      - name: email
+        type: string
+
+  # ── Deal ──────────────────────────────────────────────────────────────────
+  - name: Deal
+    inherits_from: EntityBase
+    undoable: true
+    fields:
+      - name: title
+        type: string
+      - name: description
+        type: string
+      - name: start_date
+        type: datetime
+      - name: end_date
+        type: datetime
+      - name: frequency
+        type: enum
+        enum_name: DealFrequency
+        enum_values:
+          - OneTime
+          - Weekly
+          - Monthly
+          - Quarterly
+          - Yearly
+      - name: status
+        type: enum
+        enum_name: DealStatus
+        enum_values:
+          - Draft
+          - Active
+          - Completed
+          - Cancelled
+      - name: product
+        type: entity
+        entity: Product
+        relationship: many_to_one
+        optional: true
+      - name: supplier
+        type: entity
+        entity: Person
+        relationship: many_to_one
+        optional: true
+      - name: manager
+        type: entity
+        entity: Person
+        relationship: many_to_one
+        optional: true
+
+  # ── Location ──────────────────────────────────────────────────────────────
+  - name: Location
+    inherits_from: EntityBase
+    undoable: true
+    fields:
+      - name: name
+        type: string
+      - name: address
+        type: string
+      - name: latitude
+        type: float
+      - name: longitude
+        type: float
+      - name: capacity
+        type: integer
+
+##############################################################################
+# FEATURES & USE CASES
+##############################################################################
+
+features:
+  # ── Inventory Management ──────────────────────────────────────────────────
+  - name: inventory_management
+    use_cases:
+      - name: import_products
+        undoable: false
+        read_only: false
+        long_operation: true
+        entities: [Root, Product, Category, Location, Person]
+        dto_in:
+          name: ImportProductsDto
+          fields:
+            - name: file_path
+              type: string
+            - name: format
+              type: enum
+              enum_name: ImportFormat
+              enum_values:
+                - Csv
+                - Json
+        dto_out:
+          name: ImportProductsReturnDto
+          fields:
+            - name: imported_count
+              type: integer
+            - name: skipped_count
+              type: integer
+            - name: error_messages
+              type: string
+              is_list: true
+
+      - name: export_products
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Root, Product, Category, Location, Person]
+        dto_in:
+          name: ExportProductsDto
+          fields:
+            - name: output_path
+              type: string
+            - name: format
+              type: enum
+              enum_name: ExportFormat
+              enum_values:
+                - Csv
+                - Json
+        dto_out:
+          name: ExportProductsReturnDto
+          fields:
+            - name: exported_count
+              type: integer
+
+      - name: check_stock_levels
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Product, Location]
+        dto_in:
+          name: CheckStockLevelsDto
+          fields:
+            - name: threshold
+              type: integer
+        dto_out:
+          name: StockAlertDto
+          fields:
+            - name: product_id
+              type: integer
+              is_list: true
+            - name: product_names
+              type: string
+              is_list: true
+            - name: quantities
+              type: integer
+              is_list: true
+
+      - name: transfer_stock
+        undoable: true
+        read_only: false
+        long_operation: false
+        entities: [Product, Location]
+        dto_in:
+          name: TransferStockDto
+          fields:
+            - name: product_id
+              type: integer
+            - name: from_location_id
+              type: integer
+            - name: to_location_id
+              type: integer
+            - name: quantity
+              type: integer
+        dto_out:
+          name: TransferStockReturnDto
+          fields:
+            - name: success
+              type: boolean
+            - name: new_quantity_at_source
+              type: integer
+            - name: new_quantity_at_dest
+              type: integer
+
+  # ── Deal Management ───────────────────────────────────────────────────────
+  - name: deal_management
+    use_cases:
+      - name: create_deal
+        undoable: true
+        read_only: false
+        long_operation: false
+        entities: [Root, Deal, Product, Person]
+        dto_in:
+          name: CreateDealDto
+          fields:
+            - name: title
+              type: string
+            - name: description
+              type: string
+            - name: product_id
+              type: integer
+            - name: supplier_id
+              type: integer
+            - name: manager_id
+              type: integer
+            - name: frequency
+              type: enum
+              enum_name: DealFrequencyInput
+              enum_values:
+                - OneTime
+                - Weekly
+                - Monthly
+                - Quarterly
+                - Yearly
+            - name: start_date
+              type: datetime
+            - name: end_date
+              type: datetime
+        dto_out:
+          name: CreateDealReturnDto
+          fields:
+            - name: deal_id
+              type: integer
+
+      - name: get_deals_by_supplier
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Deal, Person, Product]
+        dto_in:
+          name: GetDealsBySupplierDto
+          fields:
+            - name: supplier_id
+              type: integer
+        dto_out:
+          name: DealListDto
+          fields:
+            - name: deal_ids
+              type: integer
+              is_list: true
+            - name: titles
+              type: string
+              is_list: true
+
+      - name: get_active_deals
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Deal, Product, Person]
+        dto_out:
+          name: ActiveDealsDto
+          fields:
+            - name: deal_ids
+              type: integer
+              is_list: true
+            - name: titles
+              type: string
+              is_list: true
+            - name: statuses
+              type: string
+              is_list: true
+
+  # ── Location Management ───────────────────────────────────────────────────
+  - name: location_management
+    use_cases:
+      - name: get_location_inventory
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Location, Product]
+        dto_in:
+          name: GetLocationInventoryDto
+          fields:
+            - name: location_id
+              type: integer
+        dto_out:
+          name: LocationInventoryDto
+          fields:
+            - name: product_ids
+              type: integer
+              is_list: true
+            - name: product_names
+              type: string
+              is_list: true
+            - name: quantities
+              type: integer
+              is_list: true
+            - name: total_capacity
+              type: integer
+            - name: used_capacity
+              type: integer
+
+      - name: find_nearest_locations
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Location]
+        dto_in:
+          name: FindNearestLocationsDto
+          fields:
+            - name: latitude
+              type: float
+            - name: longitude
+              type: float
+            - name: max_results
+              type: integer
+        dto_out:
+          name: NearestLocationsDto
+          fields:
+            - name: location_ids
+              type: integer
+              is_list: true
+            - name: names
+              type: string
+              is_list: true
+            - name: distances_km
+              type: float
+              is_list: true
+
+  # ── Sync Management (TursoDB / LibSQL) ────────────────────────────────────
+  - name: sync_management
+    use_cases:
+      - name: sync_to_remote
+        undoable: false
+        read_only: false
+        long_operation: true
+        entities: [Root, Product, Category, Person, Contact, Deal, Location]
+        dto_out:
+          name: SyncResultDto
+          fields:
+            - name: synced_count
+              type: integer
+            - name: conflict_count
+              type: integer
+            - name: error_messages
+              type: string
+              is_list: true
+
+      - name: sync_from_remote
+        undoable: false
+        read_only: false
+        long_operation: true
+        entities: [Root, Product, Category, Person, Contact, Deal, Location]
+        dto_out:
+          name: SyncFromRemoteResultDto
+          fields:
+            - name: received_count
+              type: integer
+            - name: conflict_count
+              type: integer
+            - name: error_messages
+              type: string
+              is_list: true
+
+      - name: get_sync_status
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Root]
+        dto_out:
+          name: SyncStatusDto
+          fields:
+            - name: last_sync_at
+              type: string
+            - name: pending_changes
+              type: integer
+            - name: is_online
+              type: boolean

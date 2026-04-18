@@ -1,0 +1,21 @@
+// StatusBadge — Colored label for status display
+
+import { Palette } from "std-widgets.slint";
+
+export component StatusBadge inherits Rectangle {
+    in property <string> status: "";
+    in property <color> badge-color: Palette.accent-background;
+
+    border-radius: 4px;
+    background: root.badge-color.transparentize(0.8);
+    min-width: label.preferred-width + 16px;
+    height: label.preferred-height + 8px;
+
+    label := Text {
+        x: 8px;
+        y: 4px;
+        text: root.status;
+        font-size: 11px;
+        color: root.badge-color;
+    }
+}

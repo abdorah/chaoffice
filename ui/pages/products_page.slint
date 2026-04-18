@@ -1,0 +1,133 @@
+// ProductsPage — Product listing with search, table view, and CRUD actions
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button, LineEdit,
+         ComboBox, SpinBox, Palette, StyleMetrics } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { StatusBadge } from "../components/status_badge.slint";
+import { AppState, ProductItem } from "../globals/app_state.slint";
+
+export global ProductsPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    pure callback filter-sort-model([[StandardListViewItem]], string, int, bool) -> [[StandardListViewItem]];
+    filter-sort-model(data, filter, sort-index, sort-ascending) => { return data; }
+}
+
+export component ProductsPage inherits Page {
+    property <int> sort-index: -1;
+    property <bool> sort-ascending;
+    property <bool> show-form: false;
+
+    title: "Products";
+    description: "Manage your product inventory. Add, edit, and track stock levels.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search products...";
+        action-text: "Add Product";
+        action-clicked => { root.show-form = !root.show-form; }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: "New Product";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Name"; }
+                    name-input := LineEdit { placeholder-text: "Product name"; }
+                }
+
+                VerticalBox {
+                    Text { text: "Reference"; }
+                    ref-input := LineEdit { placeholder-text: "SKU / Reference"; }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Description"; }
+                    desc-input := LineEdit { placeholder-text: "Description"; }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Quantity"; }
+                    qty-input := SpinBox { value: 0; minimum: 0; maximum: 999999; }
+                }
+
+                VerticalBox {
+                    Text { text: "Price/Unit"; }
+                    price-input := LineEdit { placeholder-text: "0.00"; }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => { root.show-form = false; }
+                }
+
+                Button {
+                    text: "Create";
+                    primary: true;
+                    clicked => {
+                        // TODO: parse price-input.text to float in Rust adapter
+                        AppState.create-product(
+                            name-input.text,
+                            ref-input.text,
+                            desc-input.text,
+                            qty-input.value,
+                            0.0
+                        );
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Product List";
+        vertical-stretch: 1;
+
+        StandardTableView {
+            sort-ascending(index) => {
+                root.sort-index = index;
+                root.sort-ascending = true;
+            }
+            sort-descending(index) => {
+                root.sort-index = index;
+                root.sort-ascending = false;
+            }
+
+            columns: [
+                { title: "Name" },
+                { title: "Reference" },
+                { title: "Quantity" },
+                { title: "Price/Unit" },
+                { title: "Status" },
+                { title: "Category" },
+                { title: "Location" },
+            ];
+
+            rows: ProductsPageAdapter.filter-sort-model(
+                ProductsPageAdapter.row-data,
+                "",
+                root.sort-index,
+                root.sort-ascending
+            );
+        }
+    }
+}

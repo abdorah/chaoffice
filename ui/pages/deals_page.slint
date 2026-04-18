@@ -1,0 +1,117 @@
+// DealsPage — Deal management with frequency and status tracking
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
+         LineEdit, ComboBox, Palette, StyleMetrics } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { AppState, DealItem } from "../globals/app_state.slint";
+
+export global DealsPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    pure callback filter-sort-model([[StandardListViewItem]], string, int, bool) -> [[StandardListViewItem]];
+    filter-sort-model(data, filter, sort-index, sort-ascending) => { return data; }
+}
+
+export component DealsPage inherits Page {
+    property <int> sort-index: -1;
+    property <bool> sort-ascending;
+    property <bool> show-form: false;
+
+    title: "Deals";
+    description: "Track supplier deals, recurring orders, and contract status.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search deals...";
+        action-text: "New Deal";
+        action-clicked => { root.show-form = !root.show-form; }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: "New Deal";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Title"; }
+                    title-input := LineEdit { placeholder-text: "Deal title"; }
+                }
+
+                VerticalBox {
+                    Text { text: "Description"; }
+                    desc-input := LineEdit { placeholder-text: "Description"; }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Frequency"; }
+                    freq-input := ComboBox {
+                        model: ["OneTime", "Weekly", "Monthly", "Quarterly", "Yearly"];
+                    }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => { root.show-form = false; }
+                }
+
+                Button {
+                    text: "Create";
+                    primary: true;
+                    clicked => {
+                        AppState.create-deal(
+                            title-input.text,
+                            desc-input.text,
+                            0, 0, 0,
+                            freq-input.current-value
+                        );
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Deals";
+        vertical-stretch: 1;
+
+        StandardTableView {
+            sort-ascending(index) => {
+                root.sort-index = index;
+                root.sort-ascending = true;
+            }
+            sort-descending(index) => {
+                root.sort-index = index;
+                root.sort-ascending = false;
+            }
+
+            columns: [
+                { title: "Title" },
+                { title: "Product" },
+                { title: "Supplier" },
+                { title: "Manager" },
+                { title: "Frequency" },
+                { title: "Status" },
+            ];
+
+            rows: DealsPageAdapter.filter-sort-model(
+                DealsPageAdapter.row-data,
+                "",
+                root.sort-index,
+                root.sort-ascending
+            );
+        }
+    }
+}

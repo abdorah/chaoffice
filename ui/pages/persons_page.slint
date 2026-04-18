@@ -1,0 +1,120 @@
+// PersonsPage — Manage managers and suppliers with contact info
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
+         LineEdit, ComboBox, Palette, StyleMetrics } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { AppState, PersonItem } from "../globals/app_state.slint";
+
+export global PersonsPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    pure callback filter-sort-model([[StandardListViewItem]], string, int, bool) -> [[StandardListViewItem]];
+    filter-sort-model(data, filter, sort-index, sort-ascending) => { return data; }
+}
+
+export component PersonsPage inherits Page {
+    property <int> sort-index: -1;
+    property <bool> sort-ascending;
+    property <bool> show-form: false;
+
+    title: "People";
+    description: "Manage managers and suppliers with their contact information.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search people...";
+        action-text: "Add Person";
+        action-clicked => { root.show-form = !root.show-form; }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: "New Person";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Name"; }
+                    name-input := LineEdit { placeholder-text: "Full name"; }
+                }
+
+                VerticalBox {
+                    Text { text: "Role"; }
+                    role-input := ComboBox {
+                        model: ["Manager", "Supplier"];
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Phone"; }
+                    phone-input := LineEdit { placeholder-text: "+1 234 567 890"; }
+                }
+
+                VerticalBox {
+                    Text { text: "Email"; }
+                    email-input := LineEdit { placeholder-text: "email@example.com"; }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => { root.show-form = false; }
+                }
+
+                Button {
+                    text: "Create";
+                    primary: true;
+                    clicked => {
+                        AppState.create-person(
+                            name-input.text,
+                            role-input.current-value,
+                            phone-input.text,
+                            email-input.text
+                        );
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "People";
+        vertical-stretch: 1;
+
+        StandardTableView {
+            sort-ascending(index) => {
+                root.sort-index = index;
+                root.sort-ascending = true;
+            }
+            sort-descending(index) => {
+                root.sort-index = index;
+                root.sort-ascending = false;
+            }
+
+            columns: [
+                { title: "Name" },
+                { title: "Role" },
+                { title: "Phone" },
+                { title: "Email" },
+            ];
+
+            rows: PersonsPageAdapter.filter-sort-model(
+                PersonsPageAdapter.row-data,
+                "",
+                root.sort-index,
+                root.sort-ascending
+            );
+        }
+    }
+}

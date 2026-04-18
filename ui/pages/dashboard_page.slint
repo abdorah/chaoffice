@@ -1,0 +1,99 @@
+// DashboardPage — Overview with KPIs and stock alerts
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardListView, Palette } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { StatCard } from "../components/stat_card.slint";
+import { AppState } from "../globals/app_state.slint";
+
+export component DashboardPage inherits Page {
+    title: "Dashboard";
+    description: "Overview of inventory status, active deals, and stock alerts.";
+
+    HorizontalBox {
+        vertical-stretch: 0;
+        spacing: 12px;
+
+        StatCard {
+            label: "Total Products";
+            value: AppState.total-products;
+            accent-color: #4CAF50;
+        }
+
+        StatCard {
+            label: "Active Deals";
+            value: AppState.active-deals;
+            accent-color: #2196F3;
+        }
+
+        StatCard {
+            label: "Low Stock Items";
+            value: AppState.low-stock-count;
+            accent-color: #FF9800;
+        }
+    }
+
+    HorizontalBox {
+        vertical-stretch: 1;
+        spacing: 12px;
+
+        GroupBox {
+            title: "Stock Alerts";
+            horizontal-stretch: 1;
+
+            VerticalBox {
+                for alert in AppState.stock-alerts : Rectangle {
+                    height: 40px;
+                    border-radius: 4px;
+                    background: Palette.background.darker(0.05);
+
+                    HorizontalBox {
+                        padding: 8px;
+
+                        Text {
+                            text: alert.product-name;
+                            horizontal-stretch: 1;
+                        }
+
+                        Text {
+                            text: "Qty: " + alert.quantity;
+                            color: #FF9800;
+                        }
+
+                        Text {
+                            text: alert.location-name;
+                            color: Palette.foreground.transparentize(0.4);
+                        }
+                    }
+                }
+            }
+        }
+
+        GroupBox {
+            title: "Sync Status";
+            horizontal-stretch: 0;
+            min-width: 220px;
+
+            VerticalBox {
+                spacing: 8px;
+
+                HorizontalBox {
+                    Text { text: "Status:"; }
+                    Text {
+                        text: AppState.sync-status.is-online ? "Online" : "Offline";
+                        color: AppState.sync-status.is-online ? #4CAF50 : #F44336;
+                    }
+                }
+
+                HorizontalBox {
+                    Text { text: "Last sync:"; }
+                    Text { text: AppState.sync-status.last-sync-at; }
+                }
+
+                HorizontalBox {
+                    Text { text: "Pending:"; }
+                    Text { text: AppState.sync-status.pending-changes; }
+                }
+            }
+        }
+    }
+}

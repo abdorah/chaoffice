@@ -1,0 +1,33 @@
+// StatCard — Dashboard KPI card component
+
+import { VerticalBox, Palette } from "std-widgets.slint";
+
+export component StatCard inherits Rectangle {
+    in property <string> label: "";
+    in property <string> value: "0";
+    in property <color> accent-color: Palette.accent-background;
+
+    border-radius: 8px;
+    background: Palette.background.darker(0.05);
+    min-width: 160px;
+    min-height: 80px;
+
+    VerticalBox {
+        padding: 12px;
+        alignment: center;
+
+        Text {
+            text: root.value;
+            font-size: 28px;
+            color: root.accent-color;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.label;
+            font-size: 12px;
+            color: Palette.foreground.transparentize(0.4);
+            horizontal-alignment: center;
+        }
+    }
+}

@@ -1,0 +1,114 @@
+// Global application state — bridges Rust backend to Slint UI
+// These properties are set from Rust via the Slint API
+
+export struct ProductItem {
+    id: int,
+    name: string,
+    reference: string,
+    description: string,
+    quantity: int,
+    price-unit: float,
+    status: string,
+    category-name: string,
+    supplier-name: string,
+    location-name: string,
+}
+
+export struct CategoryItem {
+    id: int,
+    name: string,
+    description: string,
+    parent-id: int,
+    subcategory-count: int,
+}
+
+export struct PersonItem {
+    id: int,
+    name: string,
+    role: string,
+    phone: string,
+    email: string,
+}
+
+export struct DealItem {
+    id: int,
+    title: string,
+    description: string,
+    product-name: string,
+    supplier-name: string,
+    manager-name: string,
+    frequency: string,
+    status: string,
+    start-date: string,
+    end-date: string,
+}
+
+export struct LocationItem {
+    id: int,
+    name: string,
+    address: string,
+    latitude: float,
+    longitude: float,
+    capacity: int,
+    used-capacity: int,
+}
+
+export struct StockAlert {
+    product-name: string,
+    quantity: int,
+    location-name: string,
+}
+
+export struct SyncStatus {
+    last-sync-at: string,
+    pending-changes: int,
+    is-online: bool,
+}
+
+export global AppState {
+    // ── Products ───────────────────────────────────────────────
+    in property <[ProductItem]> products: [];
+    in property <int> product-count: 0;
+    callback create-product(string, string, string, int, float);
+    callback delete-product(int);
+    callback refresh-products();
+
+    // ── Categories ─────────────────────────────────────────────
+    in property <[CategoryItem]> categories: [];
+    callback create-category(string, string, int);
+    callback delete-category(int);
+    callback refresh-categories();
+
+    // ── Persons ────────────────────────────────────────────────
+    in property <[PersonItem]> persons: [];
+    callback create-person(string, string, string, string);
+    callback delete-person(int);
+    callback refresh-persons();
+
+    // ── Deals ──────────────────────────────────────────────────
+    in property <[DealItem]> deals: [];
+    callback create-deal(string, string, int, int, int, string);
+    callback delete-deal(int);
+    callback refresh-deals();
+
+    // ── Locations ──────────────────────────────────────────────
+    in property <[LocationItem]> locations: [];
+    callback create-location(string, string, float, float, int);
+    callback delete-location(int);
+    callback refresh-locations();
+
+    // ── Dashboard ──────────────────────────────────────────────
+    in property <[StockAlert]> stock-alerts: [];
+    in property <int> total-products: 0;
+    in property <int> active-deals: 0;
+    in property <int> low-stock-count: 0;
+
+    // ── Sync ───────────────────────────────────────────────────
+    in property <SyncStatus> sync-status: {
+        last-sync-at: "Never",
+        pending-changes: 0,
+        is-online: false,
+    };
+    callback sync-to-remote();
+    callback sync-from-remote();
+}

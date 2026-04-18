@@ -1,0 +1,45 @@
+// Inventory Manager — Main Application Shell
+// Inspired by Slint Gallery example structure
+
+import { Palette } from "std-widgets.slint";
+import { SideBar } from "components/side_bar.slint";
+import { DashboardPage } from "pages/dashboard_page.slint";
+import { ProductsPage } from "pages/products_page.slint";
+import { CategoriesPage } from "pages/categories_page.slint";
+import { PersonsPage } from "pages/persons_page.slint";
+import { DealsPage } from "pages/deals_page.slint";
+import { LocationsPage } from "pages/locations_page.slint";
+import { SyncPage } from "pages/sync_page.slint";
+import { AppSettings } from "globals/app_settings.slint";
+import { AppState } from "globals/app_state.slint";
+
+export { AppState, AppSettings }
+
+export component App inherits Window {
+    preferred-width: 1024px;
+    preferred-height: 700px;
+    title: "Inventory Manager";
+
+    HorizontalLayout {
+        side-bar := SideBar {
+            title: "Inventory";
+            model: [
+                "Dashboard",
+                "Products",
+                "Categories",
+                "People",
+                "Deals",
+                "Locations",
+                "Sync",
+            ];
+        }
+
+        if (side-bar.current-item == 0) : DashboardPage {}
+        if (side-bar.current-item == 1) : ProductsPage {}
+        if (side-bar.current-item == 2) : CategoriesPage {}
+        if (side-bar.current-item == 3) : PersonsPage {}
+        if (side-bar.current-item == 4) : DealsPage {}
+        if (side-bar.current-item == 5) : LocationsPage {}
+        if (side-bar.current-item == 6) : SyncPage {}
+    }
+}

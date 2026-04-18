@@ -1,0 +1,87 @@
+// SyncPage — TursoDB/LibSQL sync management (online/offline)
+
+import { GroupBox, VerticalBox, HorizontalBox, Button, ProgressIndicator, Palette } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { StatCard } from "../components/stat_card.slint";
+import { AppState } from "../globals/app_state.slint";
+
+export component SyncPage inherits Page {
+    property <bool> syncing: false;
+
+    title: "Sync";
+    description: "Manage online/offline synchronization with TursoDB via LibSQL.";
+
+    HorizontalBox {
+        vertical-stretch: 0;
+        spacing: 12px;
+
+        StatCard {
+            label: "Pending Changes";
+            value: AppState.sync-status.pending-changes;
+            accent-color: AppState.sync-status.pending-changes > 0 ? #FF9800 : #4CAF50;
+        }
+
+        StatCard {
+            label: "Connection";
+            value: AppState.sync-status.is-online ? "Online" : "Offline";
+            accent-color: AppState.sync-status.is-online ? #4CAF50 : #F44336;
+        }
+    }
+
+    GroupBox {
+        title: "Sync Actions";
+        vertical-stretch: 0;
+
+        VerticalBox {
+            spacing: 12px;
+
+            HorizontalBox {
+                Text { text: "Last synchronized:"; }
+                Text {
+                    text: AppState.sync-status.last-sync-at;
+                    color: Palette.foreground.transparentize(0.3);
+                }
+            }
+
+            if root.syncing : ProgressIndicator {
+                indeterminate: true;
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                Button {
+                    text: "Push to Remote";
+                    primary: true;
+                    enabled: !root.syncing && AppState.sync-status.is-online;
+                    clicked => {
+                        root.syncing = true;
+                        AppState.sync-to-remote();
+                    }
+                }
+
+                Button {
+                    text: "Pull from Remote";
+                    enabled: !root.syncing && AppState.sync-status.is-online;
+                    clicked => {
+                        root.syncing = true;
+                        AppState.sync-from-remote();
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Offline Mode";
+        vertical-stretch: 1;
+
+        VerticalBox {
+            Text {
+                text: "When offline, all changes are stored locally and will be synchronized when connectivity is restored. TursoDB with LibSQL provides automatic conflict resolution for concurrent edits.";
+                wrap: word-wrap;
+                color: Palette.foreground.transparentize(0.3);
+            }
+        }
+    }
+}

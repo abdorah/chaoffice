@@ -1,0 +1,29 @@
+// SearchBar — Reusable search input with action button
+
+import { LineEdit, Button, HorizontalBox } from "std-widgets.slint";
+
+export component SearchBar inherits HorizontalBox {
+    in property <string> placeholder: "Search...";
+    in property <string> action-text: "Add";
+    out property <string> search-text <=> input.text;
+
+    callback action-clicked();
+    callback search-changed(string);
+
+    spacing: 8px;
+
+    input := LineEdit {
+        horizontal-stretch: 1;
+        placeholder-text: root.placeholder;
+        edited(text) => {
+            root.search-changed(text);
+        }
+    }
+
+    Button {
+        horizontal-stretch: 0;
+        text: root.action-text;
+        primary: true;
+        clicked => { root.action-clicked(); }
+    }
+}
