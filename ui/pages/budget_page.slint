@@ -1,0 +1,199 @@
+// BudgetPage — Financial tracking with charts and projections
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
+         ComboBox, LineEdit, Palette, StyleMetrics, TabWidget } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { LineChart } from "../components/line_chart.slint";
+import { BarChart, BarData } from "../components/bar_chart.slint";
+import { StatCard } from "../components/stat_card.slint";
+import { AppState } from "../globals/app_state.slint";
+
+export global BudgetPageAdapter {
+    // Monthly breakdown bar chart data
+    in property <[BarData]> monthly-bars: [];
+    in property <float> monthly-max: 100;
+
+    // Projection line chart (SVG path from Rust)
+    in property <string> projection-path: "";
+    in property <string> projection-fill: "";
+    in property <[string]> projection-x-labels: [];
+
+    // Income vs expense line chart
+    in property <string> income-path: "";
+    in property <string> expense-path: "";
+    in property <[string]> trend-x-labels: [];
+
+    // Table data
+    in property <[[StandardListViewItem]]> entry-rows: [];
+}
+
+export component BudgetPage inherits Page {
+    property <bool> show-form: false;
+
+    title: "Budget & Finance";
+    description: "Track purchases, sales, expenses, and project future budgets.";
+
+    HorizontalBox {
+        vertical-stretch: 0;
+        spacing: 12px;
+
+        StatCard {
+            label: "Total Purchases";
+            value: AppState.total-purchases;
+            accent-color: #F44336;
+        }
+
+        StatCard {
+            label: "Total Sales";
+            value: AppState.total-sales;
+            accent-color: #4CAF50;
+        }
+
+        StatCard {
+            label: "Total Expenses";
+            value: AppState.total-expenses;
+            accent-color: #FF9800;
+        }
+
+        StatCard {
+            label: "Net Balance";
+            value: AppState.net-balance;
+            accent-color: #2196F3;
+        }
+    }
+
+    TabWidget {
+        vertical-stretch: 1;
+
+        Tab {
+            title: "Overview";
+
+            VerticalBox {
+                BarChart {
+                    vertical-stretch: 0;
+                    title: "Monthly Breakdown";
+                    bars: BudgetPageAdapter.monthly-bars;
+                    max-value: BudgetPageAdapter.monthly-max;
+                }
+
+                GroupBox {
+                    title: "Recent Entries";
+                    vertical-stretch: 1;
+
+                    StandardTableView {
+                        columns: [
+                            { title: "Date" },
+                            { title: "Type" },
+                            { title: "Amount" },
+                            { title: "Description" },
+                            { title: "Product" },
+                        ];
+                        rows: BudgetPageAdapter.entry-rows;
+                    }
+                }
+            }
+        }
+
+        Tab {
+            title: "Projection";
+
+            VerticalBox {
+                LineChart {
+                    vertical-stretch: 1;
+                    title: "Budget Projection (next 6 months)";
+                    svg-path: BudgetPageAdapter.projection-path;
+                    fill-path: BudgetPageAdapter.projection-fill;
+                    x-labels: BudgetPageAdapter.projection-x-labels;
+                    line-color: #9C27B0;
+                }
+            }
+        }
+
+        Tab {
+            title: "Trends";
+
+            VerticalBox {
+                // Income trend
+                LineChart {
+                    vertical-stretch: 1;
+                    title: "Income vs Expenses";
+                    svg-path: BudgetPageAdapter.income-path;
+                    x-labels: BudgetPageAdapter.trend-x-labels;
+                    line-color: #4CAF50;
+                }
+
+                LineChart {
+                    vertical-stretch: 1;
+                    svg-path: BudgetPageAdapter.expense-path;
+                    x-labels: BudgetPageAdapter.trend-x-labels;
+                    line-color: #F44336;
+                }
+            }
+        }
+    }
+
+    HorizontalBox {
+        vertical-stretch: 0;
+
+        Button {
+            text: "Add Entry";
+            primary: true;
+            clicked => { root.show-form = !root.show-form; }
+        }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: "New Budget Entry";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Type"; }
+                    type-input := ComboBox {
+                        model: ["Purchase", "Sale", "Expense", "Forecast"];
+                    }
+                }
+
+                VerticalBox {
+                    Text { text: "Amount"; }
+                    amount-input := LineEdit { placeholder-text: "0.00"; }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Description"; }
+                    desc-input := LineEdit { placeholder-text: "Description"; }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => { root.show-form = false; }
+                }
+
+                Button {
+                    text: "Record";
+                    primary: true;
+                    clicked => {
+                        AppState.record-budget-entry(
+                            type-input.current-value,
+                            amount-input.text,
+                            desc-input.text
+                        );
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,7 +1,7 @@
 ##############################################################################
 # Inventory Management Application — Qleany Manifest
-# Language: Rust | UI: Slint + CLI | Database: redb (internal)
-# External sync: TursoDB + LibSQL (Step 3 — implemented in feature use cases)
+# Language: Rust | UI: Slint + CLI | Database: redb (internal runtime)
+# Persistent storage & sync: TursoDB + LibSQL (separate inventory_sync crate)
 ##############################################################################
 
 schema:
@@ -40,7 +40,6 @@ entities:
         type: datetime
 
   # ── Root ──────────────────────────────────────────────────────────────────
-  # Application entry point. Owns all top-level collections.
   - name: Root
     inherits_from: EntityBase
     undoable: false
@@ -70,6 +69,138 @@ entities:
         entity: Deal
         relationship: ordered_one_to_many
         strong: true
+      - name: users
+        type: entity
+        entity: User
+        relationship: ordered_one_to_many
+        strong: true
+      - name: stock_movements
+        type: entity
+        entity: StockMovement
+        relationship: ordered_one_to_many
+        strong: true
+      - name: budget_entries
+        type: entity
+        entity: BudgetEntry
+        relationship: ordered_one_to_many
+        strong: true
+
+  # ── User (app identity — NOT a business contact) ──────────────────────────
+  - name: User
+    inherits_from: EntityBase
+    undoable: false
+    fields:
+      - name: username
+        type: string
+      - name: password_hash
+        type: string
+      - name: display_name
+        type: string
+      - name: role
+        type: enum
+        enum_name: UserRole
+        enum_values:
+          - Admin
+          - Manager
+          - Operator
+          - Viewer
+      - name: is_active
+        type: boolean
+      - name: person
+        type: entity
+        entity: Person
+        relationship: many_to_one
+        optional: true
+      - name: session
+        type: entity
+        entity: Session
+        relationship: one_to_one
+        strong: true
+        optional: true
+
+  # ── Session ───────────────────────────────────────────────────────────────
+  - name: Session
+    inherits_from: EntityBase
+    undoable: false
+    fields:
+      - name: token
+        type: string
+      - name: expires_at
+        type: datetime
+
+  # ── StockMovement ─────────────────────────────────────────────────────────
+  - name: StockMovement
+    inherits_from: EntityBase
+    undoable: false
+    fields:
+      - name: movement_type
+        type: enum
+        enum_name: MovementType
+        enum_values:
+          - Inbound
+          - Outbound
+          - Transfer
+          - Adjustment
+          - Return
+      - name: quantity
+        type: integer
+      - name: note
+        type: string
+      - name: product
+        type: entity
+        entity: Product
+        relationship: many_to_one
+        optional: true
+      - name: from_location
+        type: entity
+        entity: Location
+        relationship: many_to_one
+        optional: true
+      - name: to_location
+        type: entity
+        entity: Location
+        relationship: many_to_one
+        optional: true
+      - name: performed_by
+        type: entity
+        entity: User
+        relationship: many_to_one
+        optional: true
+
+  # ── BudgetEntry ───────────────────────────────────────────────────────────
+  - name: BudgetEntry
+    inherits_from: EntityBase
+    undoable: false
+    fields:
+      - name: entry_type
+        type: enum
+        enum_name: BudgetEntryType
+        enum_values:
+          - Purchase
+          - Sale
+          - Expense
+          - Forecast
+      - name: amount
+        type: float
+      - name: description
+        type: string
+      - name: entry_date
+        type: datetime
+      - name: product
+        type: entity
+        entity: Product
+        relationship: many_to_one
+        optional: true
+      - name: deal
+        type: entity
+        entity: Deal
+        relationship: many_to_one
+        optional: true
+      - name: recorded_by
+        type: entity
+        entity: User
+        relationship: many_to_one
+        optional: true
 
   # ── Product ───────────────────────────────────────────────────────────────
   - name: Product
@@ -110,7 +241,7 @@ entities:
         relationship: many_to_one
         optional: true
 
-  # ── Category (tree structure via self-reference) ──────────────────────────
+  # ── Category (tree) ───────────────────────────────────────────────────────
   - name: Category
     inherits_from: EntityBase
     undoable: true
@@ -130,8 +261,7 @@ entities:
         relationship: ordered_one_to_many
         strong: false
 
-  # ── Person (Manager or Supplier) ──────────────────────────────────────────
-  # Replaces the original separate "type" entity with an enum field.
+  # ── Person (business contact — Manager or Supplier) ───────────────────────
   - name: Person
     inherits_from: EntityBase
     undoable: true
@@ -161,7 +291,7 @@ entities:
       - name: email
         type: string
 
-  # ── Deal ──────────────────────────────────────────────────────────────────
+  # ── Deal (purchasing agreement with a supplier) ───────────────────────────
   - name: Deal
     inherits_from: EntityBase
     undoable: true
@@ -170,6 +300,10 @@ entities:
         type: string
       - name: description
         type: string
+      - name: unit_cost
+        type: float
+      - name: total_value
+        type: float
       - name: start_date
         type: datetime
       - name: end_date
@@ -225,6 +359,8 @@ entities:
 
 ##############################################################################
 # FEATURES & USE CASES
+# Note: sync is NOT a Qleany feature — it's the standalone inventory_sync
+# crate that directly accesses redb and LibSQL.
 ##############################################################################
 
 features:
@@ -329,16 +465,16 @@ features:
             - name: new_quantity_at_dest
               type: integer
 
-  # ── Deal Management ───────────────────────────────────────────────────────
-  - name: deal_management
+  # ── Purchasing (buying deals with suppliers) ──────────────────────────────
+  - name: purchasing
     use_cases:
-      - name: create_deal
+      - name: create_purchase_deal
         undoable: true
         read_only: false
         long_operation: false
         entities: [Root, Deal, Product, Person]
         dto_in:
-          name: CreateDealDto
+          name: CreatePurchaseDealDto
           fields:
             - name: title
               type: string
@@ -350,6 +486,10 @@ features:
               type: integer
             - name: manager_id
               type: integer
+            - name: unit_cost
+              type: float
+            - name: total_value
+              type: float
             - name: frequency
               type: enum
               enum_name: DealFrequencyInput
@@ -364,7 +504,7 @@ features:
             - name: end_date
               type: datetime
         dto_out:
-          name: CreateDealReturnDto
+          name: CreatePurchaseDealReturnDto
           fields:
             - name: deal_id
               type: integer
@@ -464,52 +604,451 @@ features:
               type: float
               is_list: true
 
-  # ── Sync Management (TursoDB / LibSQL) ────────────────────────────────────
-  - name: sync_management
+  # ── Authentication ────────────────────────────────────────────────────────
+  - name: authentication
     use_cases:
-      - name: sync_to_remote
+      - name: login
         undoable: false
         read_only: false
-        long_operation: true
-        entities: [Root, Product, Category, Person, Contact, Deal, Location]
-        dto_out:
-          name: SyncResultDto
+        long_operation: false
+        entities: [User, Session]
+        dto_in:
+          name: LoginDto
           fields:
-            - name: synced_count
-              type: integer
-            - name: conflict_count
-              type: integer
-            - name: error_messages
+            - name: username
               type: string
-              is_list: true
+            - name: password
+              type: string
+        dto_out:
+          name: LoginResultDto
+          fields:
+            - name: success
+              type: boolean
+            - name: token
+              type: string
+            - name: user_id
+              type: integer
+            - name: role
+              type: string
+            - name: display_name
+              type: string
+            - name: error_message
+              type: string
 
-      - name: sync_from_remote
+      - name: logout
         undoable: false
         read_only: false
-        long_operation: true
-        entities: [Root, Product, Category, Person, Contact, Deal, Location]
-        dto_out:
-          name: SyncFromRemoteResultDto
+        long_operation: false
+        entities: [User, Session]
+        dto_in:
+          name: LogoutDto
           fields:
-            - name: received_count
-              type: integer
-            - name: conflict_count
-              type: integer
-            - name: error_messages
+            - name: token
               type: string
-              is_list: true
 
-      - name: get_sync_status
+      - name: change_password
+        undoable: false
+        read_only: false
+        long_operation: false
+        entities: [User]
+        dto_in:
+          name: ChangePasswordDto
+          fields:
+            - name: user_id
+              type: integer
+            - name: old_password
+              type: string
+            - name: new_password
+              type: string
+        dto_out:
+          name: ChangePasswordResultDto
+          fields:
+            - name: success
+              type: boolean
+            - name: error_message
+              type: string
+
+  # ── User Management ───────────────────────────────────────────────────────
+  - name: user_management
+    use_cases:
+      - name: create_user
+        undoable: false
+        read_only: false
+        long_operation: false
+        entities: [Root, User]
+        dto_in:
+          name: CreateUserDto
+          fields:
+            - name: username
+              type: string
+            - name: password
+              type: string
+            - name: display_name
+              type: string
+            - name: role
+              type: enum
+              enum_name: CreateUserRole
+              enum_values:
+                - Admin
+                - Manager
+                - Operator
+                - Viewer
+            - name: person_id
+              type: integer
+        dto_out:
+          name: CreateUserResultDto
+          fields:
+            - name: user_id
+              type: integer
+
+      - name: deactivate_user
+        undoable: false
+        read_only: false
+        long_operation: false
+        entities: [User, Session]
+        dto_in:
+          name: DeactivateUserDto
+          fields:
+            - name: user_id
+              type: integer
+
+      - name: list_users
         undoable: false
         read_only: true
         long_operation: false
-        entities: [Root]
+        entities: [User]
         dto_out:
-          name: SyncStatusDto
+          name: UserListDto
           fields:
-            - name: last_sync_at
-              type: string
-            - name: pending_changes
+            - name: user_ids
               type: integer
-            - name: is_online
+              is_list: true
+            - name: usernames
+              type: string
+              is_list: true
+            - name: display_names
+              type: string
+              is_list: true
+            - name: roles
+              type: string
+              is_list: true
+            - name: is_active
               type: boolean
+              is_list: true
+
+  # ── Stock Tracking ────────────────────────────────────────────────────────
+  - name: stock_tracking
+    use_cases:
+      - name: record_stock_movement
+        undoable: false
+        read_only: false
+        long_operation: false
+        entities: [Root, StockMovement, Product, Location, User]
+        dto_in:
+          name: RecordStockMovementDto
+          fields:
+            - name: product_id
+              type: integer
+            - name: movement_type
+              type: enum
+              enum_name: MovementTypeInput
+              enum_values:
+                - Inbound
+                - Outbound
+                - Transfer
+                - Adjustment
+                - Return
+            - name: quantity
+              type: integer
+            - name: from_location_id
+              type: integer
+            - name: to_location_id
+              type: integer
+            - name: note
+              type: string
+        dto_out:
+          name: RecordStockMovementResultDto
+          fields:
+            - name: movement_id
+              type: integer
+            - name: new_product_quantity
+              type: integer
+
+      - name: get_stock_history
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [StockMovement, Product, Location]
+        dto_in:
+          name: GetStockHistoryDto
+          fields:
+            - name: product_id
+              type: integer
+            - name: from_date
+              type: datetime
+            - name: to_date
+              type: datetime
+        dto_out:
+          name: StockHistoryDto
+          fields:
+            - name: movement_ids
+              type: integer
+              is_list: true
+            - name: movement_types
+              type: string
+              is_list: true
+            - name: quantities
+              type: integer
+              is_list: true
+            - name: dates
+              type: string
+              is_list: true
+            - name: running_totals
+              type: integer
+              is_list: true
+
+      - name: get_stock_summary
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [Product, StockMovement, Location]
+        dto_out:
+          name: StockSummaryDto
+          fields:
+            - name: product_ids
+              type: integer
+              is_list: true
+            - name: product_names
+              type: string
+              is_list: true
+            - name: current_quantities
+              type: integer
+              is_list: true
+            - name: inbound_30d
+              type: integer
+              is_list: true
+            - name: outbound_30d
+              type: integer
+              is_list: true
+
+  # ── Budget & Finance ──────────────────────────────────────────────────────
+  - name: budget_finance
+    use_cases:
+      - name: record_budget_entry
+        undoable: true
+        read_only: false
+        long_operation: false
+        entities: [Root, BudgetEntry, Product, Deal, User]
+        dto_in:
+          name: RecordBudgetEntryDto
+          fields:
+            - name: entry_type
+              type: enum
+              enum_name: BudgetEntryTypeInput
+              enum_values:
+                - Purchase
+                - Sale
+                - Expense
+                - Forecast
+            - name: amount
+              type: float
+            - name: description
+              type: string
+            - name: entry_date
+              type: datetime
+            - name: product_id
+              type: integer
+            - name: deal_id
+              type: integer
+        dto_out:
+          name: RecordBudgetEntryResultDto
+          fields:
+            - name: entry_id
+              type: integer
+
+      - name: get_budget_summary
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [BudgetEntry, Product, Deal]
+        dto_in:
+          name: GetBudgetSummaryDto
+          fields:
+            - name: from_date
+              type: datetime
+            - name: to_date
+              type: datetime
+        dto_out:
+          name: BudgetSummaryDto
+          fields:
+            - name: total_purchases
+              type: float
+            - name: total_sales
+              type: float
+            - name: total_expenses
+              type: float
+            - name: net_balance
+              type: float
+            - name: monthly_labels
+              type: string
+              is_list: true
+            - name: monthly_purchases
+              type: float
+              is_list: true
+            - name: monthly_sales
+              type: float
+              is_list: true
+            - name: monthly_expenses
+              type: float
+              is_list: true
+
+      - name: get_budget_projection
+        undoable: false
+        read_only: true
+        long_operation: false
+        entities: [BudgetEntry, Deal, Product]
+        dto_in:
+          name: GetBudgetProjectionDto
+          fields:
+            - name: months_ahead
+              type: integer
+        dto_out:
+          name: BudgetProjectionDto
+          fields:
+            - name: month_labels
+              type: string
+              is_list: true
+            - name: projected_income
+              type: float
+              is_list: true
+            - name: projected_expenses
+              type: float
+              is_list: true
+            - name: projected_balance
+              type: float
+              is_list: true
+            - name: recurring_deal_costs
+              type: float
+              is_list: true
+
+  # ── Reporting ─────────────────────────────────────────────────────────────
+  - name: reporting
+    use_cases:
+      - name: generate_inventory_report
+        undoable: false
+        read_only: true
+        long_operation: true
+        entities: [Product, Category, Location, Person]
+        dto_in:
+          name: GenerateInventoryReportDto
+          fields:
+            - name: output_path
+              type: string
+            - name: format
+              type: enum
+              enum_name: ReportFormat
+              enum_values:
+                - Excel
+                - Pdf
+                - Csv
+            - name: include_zero_stock
+              type: boolean
+        dto_out:
+          name: GenerateReportReturnDto
+          fields:
+            - name: file_path
+              type: string
+            - name: row_count
+              type: integer
+
+      - name: generate_stock_movement_report
+        undoable: false
+        read_only: true
+        long_operation: true
+        entities: [StockMovement, Product, Location, User]
+        dto_in:
+          name: GenerateStockMovementReportDto
+          fields:
+            - name: output_path
+              type: string
+            - name: format
+              type: enum
+              enum_name: StockReportFormat
+              enum_values:
+                - Excel
+                - Pdf
+                - Csv
+            - name: from_date
+              type: datetime
+            - name: to_date
+              type: datetime
+        dto_out:
+          name: GenerateStockReportReturnDto
+          fields:
+            - name: file_path
+              type: string
+            - name: row_count
+              type: integer
+
+      - name: generate_budget_report
+        undoable: false
+        read_only: true
+        long_operation: true
+        entities: [BudgetEntry, Product, Deal, User]
+        dto_in:
+          name: GenerateBudgetReportDto
+          fields:
+            - name: output_path
+              type: string
+            - name: format
+              type: enum
+              enum_name: BudgetReportFormat
+              enum_values:
+                - Excel
+                - Pdf
+                - Csv
+            - name: from_date
+              type: datetime
+            - name: to_date
+              type: datetime
+            - name: include_projections
+              type: boolean
+        dto_out:
+          name: GenerateBudgetReportReturnDto
+          fields:
+            - name: file_path
+              type: string
+            - name: row_count
+              type: integer
+
+      - name: generate_purchasing_report
+        undoable: false
+        read_only: true
+        long_operation: true
+        entities: [Deal, Product, Person]
+        dto_in:
+          name: GeneratePurchasingReportDto
+          fields:
+            - name: output_path
+              type: string
+            - name: format
+              type: enum
+              enum_name: PurchasingReportFormat
+              enum_values:
+                - Excel
+                - Pdf
+                - Csv
+            - name: status_filter
+              type: enum
+              enum_name: DealStatusFilter
+              enum_values:
+                - All
+                - ActiveOnly
+                - CompletedOnly
+        dto_out:
+          name: GeneratePurchasingReportReturnDto
+          fields:
+            - name: file_path
+              type: string
+            - name: row_count
+              type: integer

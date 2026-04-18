@@ -1,0 +1,139 @@
+// StockTrackingPage — Stock movement history with chart visualization
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
+         ComboBox, SpinBox, LineEdit, Palette, StyleMetrics } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { LineChart } from "../components/line_chart.slint";
+import { StatCard } from "../components/stat_card.slint";
+import { AppState } from "../globals/app_state.slint";
+
+export global StockTrackingAdapter {
+    in property <[[StandardListViewItem]]> movement-rows: [];
+    // SVG path string computed in Rust from stock history data
+    in property <string> stock-trend-path: "";
+    in property <string> stock-trend-fill: "";
+    in property <[string]> trend-x-labels: [];
+}
+
+export component StockTrackingPage inherits Page {
+    property <bool> show-form: false;
+
+    title: "Stock Tracking";
+    description: "Track stock movements and visualize inventory trends over time.";
+
+    HorizontalBox {
+        vertical-stretch: 0;
+        spacing: 12px;
+
+        StatCard {
+            label: "Total Inbound (30d)";
+            value: AppState.stock-inbound-30d;
+            accent-color: #4CAF50;
+        }
+
+        StatCard {
+            label: "Total Outbound (30d)";
+            value: AppState.stock-outbound-30d;
+            accent-color: #FF9800;
+        }
+
+        StatCard {
+            label: "Net Change (30d)";
+            value: AppState.stock-net-30d;
+            accent-color: #2196F3;
+        }
+    }
+
+    LineChart {
+        vertical-stretch: 0;
+        min-height: 180px;
+        title: "Stock Level Trend";
+        svg-path: StockTrackingAdapter.stock-trend-path;
+        fill-path: StockTrackingAdapter.stock-trend-fill;
+        x-labels: StockTrackingAdapter.trend-x-labels;
+        line-color: #2196F3;
+    }
+
+    HorizontalBox {
+        vertical-stretch: 0;
+
+        Button {
+            text: "Record Movement";
+            primary: true;
+            clicked => { root.show-form = !root.show-form; }
+        }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: "New Stock Movement";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Type"; }
+                    type-input := ComboBox {
+                        model: ["Inbound", "Outbound", "Transfer", "Adjustment", "Return"];
+                    }
+                }
+
+                VerticalBox {
+                    Text { text: "Quantity"; }
+                    qty-input := SpinBox { value: 1; minimum: 1; maximum: 999999; }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Note"; }
+                    note-input := LineEdit { placeholder-text: "Movement note"; }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => { root.show-form = false; }
+                }
+
+                Button {
+                    text: "Record";
+                    primary: true;
+                    clicked => {
+                        AppState.record-stock-movement(
+                            type-input.current-value,
+                            qty-input.value,
+                            note-input.text
+                        );
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Movement History";
+        vertical-stretch: 1;
+
+        StandardTableView {
+            columns: [
+                { title: "Date" },
+                { title: "Type" },
+                { title: "Product" },
+                { title: "Qty" },
+                { title: "From" },
+                { title: "To" },
+                { title: "Note" },
+            ];
+            rows: StockTrackingAdapter.movement-rows;
+        }
+    }
+}

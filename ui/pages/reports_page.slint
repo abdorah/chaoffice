@@ -1,0 +1,141 @@
+// ReportsPage — Generate inventory, stock, budget, and purchasing reports
+
+import { GroupBox, VerticalBox, HorizontalBox, Button, ComboBox,
+         CheckBox, ProgressIndicator, Palette } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { AppState } from "../globals/app_state.slint";
+
+export component ReportsPage inherits Page {
+    property <bool> generating: false;
+
+    title: "Reports";
+    description: "Generate and export reports in Excel, PDF, or CSV format.";
+
+    GroupBox {
+        vertical-stretch: 0;
+        title: "Inventory Report";
+
+        HorizontalBox {
+            spacing: 8px;
+
+            VerticalBox {
+                Text { text: "Format"; }
+                inv-format := ComboBox {
+                    model: ["Excel", "PDF", "CSV"];
+                }
+            }
+
+            inv-zero := CheckBox {
+                text: "Include zero-stock items";
+            }
+
+            Button {
+                text: "Generate";
+                primary: true;
+                enabled: !root.generating;
+                clicked => {
+                    root.generating = true;
+                    AppState.generate-inventory-report(inv-format.current-value, inv-zero.checked);
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        vertical-stretch: 0;
+        title: "Stock Movement Report";
+
+        HorizontalBox {
+            spacing: 8px;
+
+            VerticalBox {
+                Text { text: "Format"; }
+                stock-format := ComboBox {
+                    model: ["Excel", "PDF", "CSV"];
+                }
+            }
+
+            Button {
+                text: "Generate";
+                primary: true;
+                enabled: !root.generating;
+                clicked => {
+                    root.generating = true;
+                    AppState.generate-stock-report(stock-format.current-value);
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        vertical-stretch: 0;
+        title: "Budget Report";
+
+        HorizontalBox {
+            spacing: 8px;
+
+            VerticalBox {
+                Text { text: "Format"; }
+                budget-format := ComboBox {
+                    model: ["Excel", "PDF", "CSV"];
+                }
+            }
+
+            budget-proj := CheckBox {
+                text: "Include projections";
+            }
+
+            Button {
+                text: "Generate";
+                primary: true;
+                enabled: !root.generating;
+                clicked => {
+                    root.generating = true;
+                    AppState.generate-budget-report(budget-format.current-value, budget-proj.checked);
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        vertical-stretch: 0;
+        title: "Purchasing Deals Report";
+
+        HorizontalBox {
+            spacing: 8px;
+
+            VerticalBox {
+                Text { text: "Format"; }
+                deal-format := ComboBox {
+                    model: ["Excel", "PDF", "CSV"];
+                }
+            }
+
+            VerticalBox {
+                Text { text: "Status"; }
+                deal-status := ComboBox {
+                    model: ["All", "Active Only", "Completed Only"];
+                }
+            }
+
+            Button {
+                text: "Generate";
+                primary: true;
+                enabled: !root.generating;
+                clicked => {
+                    root.generating = true;
+                    AppState.generate-purchasing-report(deal-format.current-value, deal-status.current-value);
+                }
+            }
+        }
+    }
+
+    if root.generating : ProgressIndicator {
+        vertical-stretch: 0;
+        indeterminate: true;
+    }
+
+    Rectangle {
+        vertical-stretch: 1;
+    }
+}

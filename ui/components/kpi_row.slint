@@ -1,0 +1,22 @@
+// KpiRow — Horizontal row of KPI stat cards for dashboards
+
+import { HorizontalBox } from "std-widgets.slint";
+import { StatCard } from "stat_card.slint";
+
+export struct KpiData {
+    label: string,
+    value: string,
+    accent: color,
+}
+
+export component KpiRow inherits HorizontalBox {
+    in property <[KpiData]> items: [];
+
+    spacing: 12px;
+
+    for item in root.items : StatCard {
+        label: item.label;
+        value: item.value;
+        accent-color: item.accent;
+    }
+}

@@ -1,5 +1,4 @@
 // Global application state — bridges Rust backend to Slint UI
-// These properties are set from Rust via the Slint API
 
 export struct ProductItem {
     id: int,
@@ -66,6 +65,18 @@ export struct SyncStatus {
 }
 
 export global AppState {
+    // ── Authentication ─────────────────────────────────────────
+    in property <bool> is-authenticated: false;
+    in property <string> current-user: "";
+    in property <string> current-role: "";
+    in property <string> login-error: "";
+    callback login(string, string);
+    callback logout();
+
+    // ── User Management ────────────────────────────────────────
+    callback create-user(string, string, string, string);
+    callback deactivate-user(int);
+
     // ── Products ───────────────────────────────────────────────
     in property <[ProductItem]> products: [];
     in property <int> product-count: 0;
@@ -97,11 +108,24 @@ export global AppState {
     callback delete-location(int);
     callback refresh-locations();
 
-    // ── Dashboard ──────────────────────────────────────────────
+    // ── Dashboard KPIs ─────────────────────────────────────────
     in property <[StockAlert]> stock-alerts: [];
     in property <int> total-products: 0;
     in property <int> active-deals: 0;
     in property <int> low-stock-count: 0;
+
+    // ── Stock Tracking ─────────────────────────────────────────
+    in property <string> stock-inbound-30d: "0";
+    in property <string> stock-outbound-30d: "0";
+    in property <string> stock-net-30d: "0";
+    callback record-stock-movement(string, int, string);
+
+    // ── Budget & Finance ───────────────────────────────────────
+    in property <string> total-purchases: "0.00";
+    in property <string> total-sales: "0.00";
+    in property <string> total-expenses: "0.00";
+    in property <string> net-balance: "0.00";
+    callback record-budget-entry(string, string, string);
 
     // ── Sync ───────────────────────────────────────────────────
     in property <SyncStatus> sync-status: {
@@ -111,4 +135,11 @@ export global AppState {
     };
     callback sync-to-remote();
     callback sync-from-remote();
+    callback configure-sync(string, string, bool, int);
+
+    // ── Reports ────────────────────────────────────────────────
+    callback generate-inventory-report(string, bool);
+    callback generate-stock-report(string);
+    callback generate-budget-report(string, bool);
+    callback generate-purchasing-report(string, string);
 }

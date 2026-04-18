@@ -1,0 +1,71 @@
+// LoginPage — Authentication screen shown before main app
+
+import { VerticalBox, HorizontalBox, LineEdit, Button, Palette } from "std-widgets.slint";
+import { AppState } from "../globals/app_state.slint";
+
+export component LoginPage inherits Rectangle {
+    background: Palette.background;
+
+    callback login(string, string);
+
+    Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: 360px;
+        height: form.preferred-height + 64px;
+        border-radius: 12px;
+        background: Palette.background.darker(0.05);
+
+        form := VerticalBox {
+            padding: 24px;
+            spacing: 16px;
+
+            Text {
+                text: "Inventory Manager";
+                font-size: 22px;
+                horizontal-alignment: center;
+            }
+
+            Text {
+                text: "Sign in to continue";
+                font-size: 12px;
+                horizontal-alignment: center;
+                color: Palette.foreground.transparentize(0.4);
+            }
+
+            VerticalBox {
+                spacing: 8px;
+
+                Text { text: "Username"; }
+                username-input := LineEdit {
+                    placeholder-text: "Enter username";
+                }
+            }
+
+            VerticalBox {
+                spacing: 8px;
+
+                Text { text: "Password"; }
+                password-input := LineEdit {
+                    placeholder-text: "Enter password";
+                    input-type: InputType.password;
+                }
+            }
+
+            if AppState.login-error != "" : Text {
+                text: AppState.login-error;
+                color: #F44336;
+                font-size: 12px;
+                horizontal-alignment: center;
+            }
+
+            Button {
+                text: "Sign In";
+                primary: true;
+                clicked => {
+                    root.login(username-input.text, password-input.text);
+                }
+            }
+        }
+    }
+}

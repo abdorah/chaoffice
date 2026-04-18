@@ -1,0 +1,73 @@
+// BarChart — Vertical bar chart using rectangles
+// Values and labels provided as parallel arrays from Rust.
+
+import { VerticalBox, HorizontalBox, Palette } from "std-widgets.slint";
+
+export struct BarData {
+    label: string,
+    value: float,
+    color: color,
+}
+
+export component BarChart inherits Rectangle {
+    in property <string> title: "";
+    in property <[BarData]> bars: [];
+    in property <float> max-value: 100;
+    in property <length> chart-height: 160px;
+
+    min-height: root.chart-height + 80px;
+    border-radius: 8px;
+    background: Palette.background.darker(0.03);
+
+    VerticalBox {
+        padding: 12px;
+        spacing: 4px;
+
+        if root.title != "" : Text {
+            text: root.title;
+            font-size: 14px;
+            horizontal-alignment: center;
+        }
+
+        // Fixed-height chart area to avoid binding loops
+        Rectangle {
+            height: root.chart-height;
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: space-around;
+
+                for bar in root.bars : VerticalLayout {
+                    alignment: end;
+                    spacing: 4px;
+
+                    // Value label
+                    Text {
+                        text: Math.round(bar.value);
+                        font-size: 10px;
+                        horizontal-alignment: center;
+                        color: Palette.foreground.transparentize(0.4);
+                    }
+
+                    // Bar rectangle with fixed parent height
+                    Rectangle {
+                        height: root.max-value > 0
+                            ? Math.max(root.chart-height * (bar.value / root.max-value) * 0.9, 4px)
+                            : 4px;
+                        min-width: 24px;
+                        border-radius: 4px;
+                        background: bar.color;
+                    }
+
+                    // Label
+                    Text {
+                        text: bar.label;
+                        font-size: 10px;
+                        horizontal-alignment: center;
+                        color: Palette.foreground.transparentize(0.5);
+                    }
+                }
+            }
+        }
+    }
+}

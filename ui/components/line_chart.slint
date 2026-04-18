@@ -1,0 +1,70 @@
+// LineChart — Custom chart using Slint Path element
+// Data points are provided as parallel arrays from Rust.
+// The Rust backend computes the SVG path string from data points.
+
+import { VerticalBox, HorizontalBox, Palette } from "std-widgets.slint";
+
+export component LineChart inherits Rectangle {
+    in property <string> title: "";
+    in property <string> svg-path: "";           // SVG path commands computed in Rust
+    in property <string> fill-path: "";          // Closed area fill path (optional)
+    in property <color> line-color: Palette.accent-background;
+    in property <color> fill-color: Palette.accent-background.transparentize(0.8);
+    in property <[string]> x-labels: [];
+    in property <[string]> y-labels: [];
+
+    min-height: 200px;
+    border-radius: 8px;
+    background: Palette.background.darker(0.03);
+
+    VerticalBox {
+        padding: 12px;
+        spacing: 4px;
+
+        if root.title != "" : Text {
+            text: root.title;
+            font-size: 14px;
+            horizontal-alignment: center;
+        }
+
+        Rectangle {
+            vertical-stretch: 1;
+
+            // Area fill
+            if root.fill-path != "" : Path {
+                width: 100%;
+                height: 100%;
+                fill: root.fill-color;
+                commands: root.fill-path;
+                viewbox-x: 0;
+                viewbox-y: 0;
+                viewbox-width: 100;
+                viewbox-height: 100;
+            }
+
+            // Line stroke
+            if root.svg-path != "" : Path {
+                width: 100%;
+                height: 100%;
+                stroke: root.line-color;
+                stroke-width: 2px;
+                fill: transparent;
+                commands: root.svg-path;
+                viewbox-x: 0;
+                viewbox-y: 0;
+                viewbox-width: 100;
+                viewbox-height: 100;
+            }
+        }
+
+        // X-axis labels
+        if root.x-labels.length > 0 : HorizontalBox {
+            alignment: space-between;
+            for label in root.x-labels : Text {
+                text: label;
+                font-size: 10px;
+                color: Palette.foreground.transparentize(0.5);
+            }
+        }
+    }
+}

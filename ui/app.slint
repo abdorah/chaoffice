@@ -1,14 +1,18 @@
 // Inventory Manager — Main Application Shell
-// Inspired by Slint Gallery example structure
 
 import { Palette } from "std-widgets.slint";
 import { SideBar } from "components/side_bar.slint";
+import { LoginPage } from "pages/login_page.slint";
 import { DashboardPage } from "pages/dashboard_page.slint";
 import { ProductsPage } from "pages/products_page.slint";
 import { CategoriesPage } from "pages/categories_page.slint";
 import { PersonsPage } from "pages/persons_page.slint";
 import { DealsPage } from "pages/deals_page.slint";
 import { LocationsPage } from "pages/locations_page.slint";
+import { StockTrackingPage } from "pages/stock_tracking_page.slint";
+import { BudgetPage } from "pages/budget_page.slint";
+import { ReportsPage } from "pages/reports_page.slint";
+import { UsersPage } from "pages/users_page.slint";
 import { SyncPage } from "pages/sync_page.slint";
 import { AppSettings } from "globals/app_settings.slint";
 import { AppState } from "globals/app_state.slint";
@@ -20,7 +24,13 @@ export component App inherits Window {
     preferred-height: 700px;
     title: "Inventory Manager";
 
-    HorizontalLayout {
+    // Show login screen when not authenticated
+    if !AppState.is-authenticated : LoginPage {
+        login(user, pass) => { AppState.login(user, pass); }
+    }
+
+    // Main app shell when authenticated
+    if AppState.is-authenticated : HorizontalLayout {
         side-bar := SideBar {
             title: "Inventory";
             model: [
@@ -28,8 +38,12 @@ export component App inherits Window {
                 "Products",
                 "Categories",
                 "People",
-                "Deals",
+                "Purchasing",
                 "Locations",
+                "Stock Tracking",
+                "Budget",
+                "Reports",
+                "Users",
                 "Sync",
             ];
         }
@@ -40,6 +54,10 @@ export component App inherits Window {
         if (side-bar.current-item == 3) : PersonsPage {}
         if (side-bar.current-item == 4) : DealsPage {}
         if (side-bar.current-item == 5) : LocationsPage {}
-        if (side-bar.current-item == 6) : SyncPage {}
+        if (side-bar.current-item == 6) : StockTrackingPage {}
+        if (side-bar.current-item == 7) : BudgetPage {}
+        if (side-bar.current-item == 8) : ReportsPage {}
+        if (side-bar.current-item == 9) : UsersPage {}
+        if (side-bar.current-item == 10) : SyncPage {}
     }
 }
