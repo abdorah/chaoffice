@@ -62,6 +62,7 @@ impl QueryUnitOfWork for GetActiveDealsUnitOfWork {
 #[macros::uow_action(entity = "Person", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Deal", action = "GetRO")]
 #[macros::uow_action(entity = "Deal", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Deal", action = "GetAllRO")]
 impl GetActiveDealsUnitOfWorkTrait for GetActiveDealsUnitOfWork {}
 
 pub struct GetActiveDealsUnitOfWorkFactory {

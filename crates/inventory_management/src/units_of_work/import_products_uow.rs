@@ -112,24 +112,17 @@ impl CommandUnitOfWork for ImportProductsUnitOfWork {
 //
 #[macros::uow_action(entity = "Root", action = "Get", thread_safe = true)]
 #[macros::uow_action(entity = "Root", action = "GetMulti", thread_safe = true)]
-#[macros::uow_action(entity = "Root", action = "Snapshot", thread_safe = true)]
-#[macros::uow_action(entity = "Root", action = "Restore", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "Get", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "GetMulti", thread_safe = true)]
+#[macros::uow_action(entity = "Product", action = "Create", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "Snapshot", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "Restore", thread_safe = true)]
 #[macros::uow_action(entity = "Category", action = "Get", thread_safe = true)]
 #[macros::uow_action(entity = "Category", action = "GetMulti", thread_safe = true)]
-#[macros::uow_action(entity = "Category", action = "Snapshot", thread_safe = true)]
-#[macros::uow_action(entity = "Category", action = "Restore", thread_safe = true)]
 #[macros::uow_action(entity = "Person", action = "Get", thread_safe = true)]
 #[macros::uow_action(entity = "Person", action = "GetMulti", thread_safe = true)]
-#[macros::uow_action(entity = "Person", action = "Snapshot", thread_safe = true)]
-#[macros::uow_action(entity = "Person", action = "Restore", thread_safe = true)]
 #[macros::uow_action(entity = "Location", action = "Get", thread_safe = true)]
 #[macros::uow_action(entity = "Location", action = "GetMulti", thread_safe = true)]
-#[macros::uow_action(entity = "Location", action = "Snapshot", thread_safe = true)]
-#[macros::uow_action(entity = "Location", action = "Restore", thread_safe = true)]
 impl ImportProductsUnitOfWorkTrait for ImportProductsUnitOfWork {}
 
 pub struct ImportProductsUnitOfWorkFactory {

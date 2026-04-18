@@ -56,12 +56,8 @@ impl QueryUnitOfWork for GetStockHistoryUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/get_stock_history_uc.rs
 //
-#[macros::uow_action(entity = "StockMovement", action = "GetRO")]
-#[macros::uow_action(entity = "StockMovement", action = "GetMultiRO")]
+#[macros::uow_action(entity = "StockMovement", action = "GetAllRO")]
 #[macros::uow_action(entity = "Product", action = "GetRO")]
-#[macros::uow_action(entity = "Product", action = "GetMultiRO")]
-#[macros::uow_action(entity = "Location", action = "GetRO")]
-#[macros::uow_action(entity = "Location", action = "GetMultiRO")]
 impl GetStockHistoryUnitOfWorkTrait for GetStockHistoryUnitOfWork {}
 
 pub struct GetStockHistoryUnitOfWorkFactory {

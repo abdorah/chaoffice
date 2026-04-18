@@ -3,28 +3,19 @@ use crate::CheckStockLevelsDto;
 use crate::StockAlertDto;
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
-use common::entities::{Location, Product};
+use common::entities::{Location, Product, Root};
 use common::types::EntityId;
 
 pub trait CheckStockLevelsUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn CheckStockLevelsUnitOfWorkTrait>;
 }
 
-//TODO: adapt entities and actions to real use :
-// GetRO, GetMultiRO, GetRelationship, GetRelationshipRO,
-// GetRelationshipsFromRightIdsRO
-//
-// You have here a read-only unit of work trait.
-//
-// RO means Read Only, so *RO actions should be used here.
-// Do not mix read-only and write actions in the same unit of work.
-//
 // Exactly the same macros must be set in the use case uow trait file in ../units_of_work/check_stock_levels_uow.rs
-//
 #[macros::uow_action(entity = "Product", action = "GetRO")]
 #[macros::uow_action(entity = "Product", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Location", action = "GetRO")]
 #[macros::uow_action(entity = "Location", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Root", action = "GetRO")]
 pub trait CheckStockLevelsUnitOfWorkTrait: QueryUnitOfWork {}
 
 pub struct CheckStockLevelsUseCase {
@@ -37,16 +28,47 @@ impl CheckStockLevelsUseCase {
     }
 
     pub fn execute(&mut self, dto: &CheckStockLevelsDto) -> Result<StockAlertDto> {
-        let mut uow = self.uow_factory.create();
+        // If threshold <= 0, return empty arrays (no product has negative quantity)
+        if dto.threshold <= 0 {
+            return Ok(StockAlertDto {
+                product_id: vec![],
+                product_names: vec![],
+                quantities: vec![],
+            });
+        }
+
+        let uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        //TODO: CheckStockLevelsUseCase to be implemented
-        unimplemented!("CheckStockLevelsUseCase unimplemented");
+        // Get Root to find all product IDs
+        let root = uow.get_root(&1)?
+            .ok_or_else(|| anyhow!("Root entity not found"))?;
+
+        // Load all products
+        let products: Vec<Product> = uow.get_product_multi(&root.products)?
+            .into_iter()
+            .flatten()
+            .collect();
+
         uow.end_transaction()?;
-        //Ok(StockAlertDto {
-        //
-        //})
-        // placeholder to allow compilation
-        Err(anyhow!("Not implemented"))
+
+        // Filter products below threshold and build parallel arrays
+        let mut product_ids = Vec::new();
+        let mut product_names = Vec::new();
+        let mut quantities = Vec::new();
+
+        for product in &products {
+            if product.quantity < dto.threshold {
+                product_ids.push(product.id as i64);
+                product_names.push(product.name.clone());
+                quantities.push(product.quantity);
+            }
+        }
+
+        Ok(StockAlertDto {
+            product_id: product_ids,
+            product_names,
+            quantities,
+        })
     }
 }

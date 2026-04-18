@@ -6,23 +6,23 @@ Implement the three use cases in the `stock_tracking` crate: `record_stock_movem
 
 ## Tasks
 
-- [ ] 1. Set up crate structure and shared types
-  - [ ] 1.1 Create the `crates/stock_tracking/` crate with `Cargo.toml` (dependencies: `chrono`, `thiserror`, `serde`; dev-dependencies: `proptest`)
+- [x] 1. Set up crate structure and shared types
+  - [x] 1.1 Create the `crates/stock_tracking/` crate with `Cargo.toml` (dependencies: `chrono`, `thiserror`, `serde`; dev-dependencies: `proptest`)
     - Define the crate module structure: `lib.rs`, `error.rs`, `validation.rs`, `quantity.rs`, `running_total.rs`, `summary.rs`, and handler modules
     - _Requirements: 1.1–1.15, 2.1–2.6, 3.1–3.6_
-  - [ ] 1.2 Implement error types in `error.rs`
+  - [x] 1.2 Implement error types in `error.rs`
     - `StockTrackingError` enum with all variants: ProductNotFound, LocationNotFound, InsufficientStock, ZeroQuantity, NegativeQuantity, MissingToLocation, MissingFromLocation, MissingTransferLocations, SameLocation, AdjustmentUnderflow, Auth, Internal
     - _Requirements: 1.10, 1.11, 1.12, 1.13_
-  - [ ] 1.3 Implement `quantity.rs` with `compute_delta` and `apply_delta` functions
+  - [x] 1.3 Implement `quantity.rs` with `compute_delta` and `apply_delta` functions
     - `compute_delta`: returns signed delta based on MovementType (+qty for Inbound/Return, -qty for Outbound, +/-qty for Adjustment)
     - `apply_delta`: adds delta to current quantity
     - _Requirements: 1.1, 1.2, 1.4, 1.5_
-  - [ ] 1.4 Implement `validation.rs` with `validate_movement` function
+  - [x] 1.4 Implement `validation.rs` with `validate_movement` function
     - Check zero quantity, movement-type-specific location requirements, sufficient stock for Outbound/Transfer, non-negative result for Adjustment
     - _Requirements: 1.7, 1.8, 1.9, 1.10, 1.13_
 
-- [ ] 2. Implement RecordStockMovementHandler
-  - [ ] 2.1 Implement the handler in `handlers/record_stock_movement.rs`
+- [x] 2. Implement RecordStockMovementHandler
+  - [x] 2.1 Implement the handler in `handlers/record_stock_movement.rs`
     - Gate with `#[require_permission("stock:*")]`
     - Load Product, validate locations exist, call `validate_movement`, compute delta, update Product quantity, create StockMovement entity with performed_by from SecurityContext
     - Return `RecordStockMovementResultDto { movement_id, new_product_quantity }`
@@ -46,11 +46,11 @@ Implement the three use cases in the `stock_tracking` crate: `record_stock_movem
 - [ ] 3. Checkpoint - Ensure record movement tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Implement GetStockHistoryHandler
-  - [ ] 4.1 Implement `running_total.rs` with `compute_running_totals` function
+- [x] 4. Implement GetStockHistoryHandler
+  - [x] 4.1 Implement `running_total.rs` with `compute_running_totals` function
     - Takes initial_quantity and chronologically ordered movements, returns Vec of running totals
     - _Requirements: 2.3_
-  - [ ] 4.2 Implement the handler in `handlers/get_stock_history.rs`
+  - [x] 4.2 Implement the handler in `handlers/get_stock_history.rs`
     - Gate with `#[require_permission("stock:*", "*:read")]`
     - Validate product exists, query StockMovement entities within date range ordered by created_at ASC
     - Compute initial quantity by reconstructing from movements before from_date
@@ -66,12 +66,12 @@ Implement the three use cases in the `stock_tracking` crate: `record_stock_movem
     - Test non-existent product, empty date range, no movements in range
     - _Requirements: 2.4, 2.5_
 
-- [ ] 5. Implement GetStockSummaryHandler
-  - [ ] 5.1 Implement `summary.rs` with `aggregate_30d` function
+- [x] 5. Implement GetStockSummaryHandler
+  - [x] 5.1 Implement `summary.rs` with `aggregate_30d` function
     - Classify movements: Inbound/Return/Transfer-in → inbound_30d, Outbound/Transfer-out → outbound_30d
     - Sum quantities for movements within cutoff date
     - _Requirements: 3.2, 3.3, 3.5_
-  - [ ] 5.2 Implement the handler in `handlers/get_stock_summary.rs`
+  - [x] 5.2 Implement the handler in `handlers/get_stock_summary.rs`
     - Gate with `#[require_permission("stock:*", "*:read")]`
     - Load all Products, compute cutoff = now - 30 days, aggregate movements per product
     - Build parallel arrays, return `StockSummaryDto`
@@ -87,7 +87,7 @@ Implement the three use cases in the `stock_tracking` crate: `record_stock_movem
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 7. Wire handlers to Qleany controller and RBAC
-  - [ ] 7.1 Register all three handlers with the `StockTrackingController`
+  - [-] 7.1 Register all three handlers with the `StockTrackingController`
     - Wire `record_stock_movement`, `get_stock_history`, `get_stock_summary` to the controller dispatch
     - Ensure `record_stock_movement` is registered as non-undoable
     - _Requirements: 1.15, 2.6, 3.6, 4.1_

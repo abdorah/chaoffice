@@ -6,23 +6,23 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
 
 ## Tasks
 
-- [ ] 1. Set up crate structure and shared types
-  - [ ] 1.1 Create the `crates/purchasing/` crate with `Cargo.toml` (dependencies: `chrono`, `thiserror`, `inventory_security`, `inventory_security_macros`; dev-dependencies: `proptest`)
+- [x] 1. Set up crate structure and shared types
+  - [x] 1.1 Create the `crates/purchasing/` crate with `Cargo.toml` (dependencies: `chrono`, `thiserror`, `inventory_security`, `inventory_security_macros`; dev-dependencies: `proptest`)
     - Define the crate module structure: `lib.rs`, `error.rs`, `validate.rs`, `lifecycle.rs`, and handler modules
     - _Requirements: 1.1, 4.2_
-  - [ ] 1.2 Implement `PurchasingError` enum in `error.rs`
+  - [x] 1.2 Implement `PurchasingError` enum in `error.rs`
     - All variants: `ProductNotFound`, `SupplierNotFound`, `ManagerNotFound`, `NotASupplier`, `NotAManager`, `EmptyTitle`, `NegativeUnitCost`, `NegativeTotalValue`, `InvalidDateRange`, `InvalidStatusTransition`, `Auth`, `Internal`
     - Derive `thiserror::Error` with display messages
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10, 4.3, 4.4, 4.5_
 
-- [ ] 2. Implement validation and lifecycle modules
-  - [ ] 2.1 Implement `validate_deal_input`, `validate_supplier`, `validate_manager`, `validate_product` in `validate.rs`
+- [x] 2. Implement validation and lifecycle modules
+  - [x] 2.1 Implement `validate_deal_input`, `validate_supplier`, `validate_manager`, `validate_product` in `validate.rs`
     - `validate_deal_input`: check title non-empty, unit_cost >= 0, total_value >= 0, end_date >= start_date
     - `validate_supplier`: fetch Person by ID, check exists and role == Supplier
     - `validate_manager`: fetch Person by ID, check exists and role == Manager
     - `validate_product`: fetch Product by ID, check exists
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 1.10_
-  - [ ] 2.2 Implement `can_transition` and `transition_status` in `lifecycle.rs`
+  - [x] 2.2 Implement `can_transition` and `transition_status` in `lifecycle.rs`
     - Encode the transition matrix: Draft→{Active,Cancelled}, Active→{Completed,Cancelled}, Completed→{}, Cancelled→{}
     - Return `InvalidStatusTransition` error for disallowed transitions
     - _Requirements: 4.3, 4.4, 4.5_
@@ -30,8 +30,8 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
     - **Property 8: Status transition correctness**
     - **Validates: Requirements 4.3, 4.4, 4.5**
 
-- [ ] 3. Implement CreatePurchaseDealHandler
-  - [ ] 3.1 Implement the create handler in `handlers/create_purchase_deal.rs`
+- [x] 3. Implement CreatePurchaseDealHandler
+  - [x] 3.1 Implement the create handler in `handlers/create_purchase_deal.rs`
     - Gate with `#[require_permission("deal:*")]`
     - Call all validation functions, snapshot state for undo, create Deal entity with status Draft
     - Return `CreatePurchaseDealReturnDto { deal_id }`
@@ -58,14 +58,14 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
 - [ ] 4. Checkpoint - Ensure create deal tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement query handlers
-  - [ ] 5.1 Implement `GetDealsBySupplierHandler` in `handlers/get_deals_by_supplier.rs`
+- [x] 5. Implement query handlers
+  - [x] 5.1 Implement `GetDealsBySupplierHandler` in `handlers/get_deals_by_supplier.rs`
     - Gate with `#[require_permission("deal:read")]`
     - Validate supplier_id exists, query deals by supplier relationship
     - Build parallel arrays: deal_ids, titles
     - Return `DealListDto`
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
-  - [ ] 5.2 Implement `GetActiveDealsHandler` in `handlers/get_active_deals.rs`
+  - [x] 5.2 Implement `GetActiveDealsHandler` in `handlers/get_active_deals.rs`
     - Gate with `#[require_permission("deal:read")]`
     - Query all deals with status Active
     - Build parallel arrays: deal_ids, titles, statuses
@@ -84,8 +84,8 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
 - [ ] 6. Checkpoint - Ensure all handler tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Wire handlers to Qleany controller and RBAC
-  - [ ] 7.1 Register all three handlers with the `PurchasingController`
+- [x] 7. Wire handlers to Qleany controller and RBAC
+  - [x] 7.1 Register all three handlers with the `PurchasingController`
     - Wire `create_purchase_deal`, `get_deals_by_supplier`, `get_active_deals` to the controller dispatch
     - Ensure `create_purchase_deal` is registered as `undoable`
     - _Requirements: 1.13, 2.4, 3.3_

@@ -22,6 +22,7 @@ flume = { workspace = true }
 common = { workspace = true }
 direct_access = { workspace = true }
 inventory_management = { workspace = true }
+inventory_security = { workspace = true }
 purchasing = { workspace = true }
 location_management = { workspace = true }
 authentication = { workspace = true }

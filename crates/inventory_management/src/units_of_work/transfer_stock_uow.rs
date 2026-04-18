@@ -7,7 +7,7 @@ use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Location, Product};
+use common::entities::{Location, Product, Root, StockMovement};
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
 use common::types;
@@ -108,14 +108,17 @@ impl CommandUnitOfWork for TransferStockUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/transfer_stock_uc.rs
 //
+#[macros::uow_action(entity = "Root", action = "Get")]
 #[macros::uow_action(entity = "Product", action = "Get")]
 #[macros::uow_action(entity = "Product", action = "GetMulti")]
+#[macros::uow_action(entity = "Product", action = "Update")]
 #[macros::uow_action(entity = "Product", action = "Snapshot")]
 #[macros::uow_action(entity = "Product", action = "Restore")]
 #[macros::uow_action(entity = "Location", action = "Get")]
 #[macros::uow_action(entity = "Location", action = "GetMulti")]
 #[macros::uow_action(entity = "Location", action = "Snapshot")]
 #[macros::uow_action(entity = "Location", action = "Restore")]
+#[macros::uow_action(entity = "StockMovement", action = "Create")]
 impl TransferStockUnitOfWorkTrait for TransferStockUnitOfWork {}
 
 pub struct TransferStockUnitOfWorkFactory {

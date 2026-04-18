@@ -122,6 +122,8 @@ impl CommandUnitOfWork for CreatePurchaseDealUnitOfWork {
 #[macros::uow_action(entity = "Person", action = "Restore")]
 #[macros::uow_action(entity = "Deal", action = "Get")]
 #[macros::uow_action(entity = "Deal", action = "GetMulti")]
+#[macros::uow_action(entity = "Deal", action = "Create")]
+#[macros::uow_action(entity = "Deal", action = "Remove")]
 #[macros::uow_action(entity = "Deal", action = "Snapshot")]
 #[macros::uow_action(entity = "Deal", action = "Restore")]
 impl CreatePurchaseDealUnitOfWorkTrait for CreatePurchaseDealUnitOfWork {}

@@ -19,17 +19,21 @@ use common::event::StockTrackingEvent::GetStockSummary;
 use common::event::StockTrackingEvent::RecordStockMovement;
 
 use common::{database::db_context::DbContext, event::EventHub};
+use inventory_security_macros::SecurityContext;
 use std::sync::Arc;
 
+/// Record a stock movement (non-undoable — immutable audit trail).
+/// Requires `stock:*` permission (Admin, Manager, Operator).
 pub fn record_stock_movement(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    security_context: &SecurityContext,
     dto: &RecordStockMovementDto,
 ) -> Result<RecordStockMovementResultDto> {
     let uow_context = RecordStockMovementUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = RecordStockMovementUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    // Notify that the handling manifest has been loaded
+    let return_dto = uc.execute(dto, security_context)?;
+    // Notify that the stock movement has been recorded
     event_hub.send_event(Event {
         origin: Origin::StockTracking(RecordStockMovement),
         ids: vec![],
@@ -38,15 +42,17 @@ pub fn record_stock_movement(
     Ok(return_dto)
 }
 
+/// Query stock movement history for a product within a date range.
+/// Requires `stock:*` or `*:read` permission (all roles).
 pub fn get_stock_history(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    security_context: &SecurityContext,
     dto: &GetStockHistoryDto,
 ) -> Result<StockHistoryDto> {
     let uow_context = GetStockHistoryUnitOfWorkFactory::new(db_context);
     let mut uc = GetStockHistoryUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    // Notify that the handling manifest has been loaded
+    let return_dto = uc.execute(dto, security_context)?;
     event_hub.send_event(Event {
         origin: Origin::StockTracking(GetStockHistory),
         ids: vec![],
@@ -55,14 +61,16 @@ pub fn get_stock_history(
     Ok(return_dto)
 }
 
+/// Get 30-day stock summary for all products.
+/// Requires `stock:*` or `*:read` permission (all roles).
 pub fn get_stock_summary(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    security_context: &SecurityContext,
 ) -> Result<StockSummaryDto> {
     let uow_context = GetStockSummaryUnitOfWorkFactory::new(db_context);
     let mut uc = GetStockSummaryUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute()?;
-    // Notify that the handling manifest has been loaded
+    let return_dto = uc.execute(security_context)?;
     event_hub.send_event(Event {
         origin: Origin::StockTracking(GetStockSummary),
         ids: vec![],

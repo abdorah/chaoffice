@@ -62,6 +62,7 @@ impl QueryUnitOfWork for GetDealsBySupplierUnitOfWork {
 #[macros::uow_action(entity = "Person", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Deal", action = "GetRO")]
 #[macros::uow_action(entity = "Deal", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Deal", action = "GetAllRO")]
 impl GetDealsBySupplierUnitOfWorkTrait for GetDealsBySupplierUnitOfWork {}
 
 pub struct GetDealsBySupplierUnitOfWorkFactory {

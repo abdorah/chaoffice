@@ -20,6 +20,7 @@ use common::event::PurchasingEvent::GetDealsBySupplier;
 
 use common::undo_redo::UndoRedoManager;
 use common::{database::db_context::DbContext, event::EventHub};
+use inventory_security_macros::{SecurityContext, check_permission};
 use std::sync::Arc;
 
 pub fn create_purchase_deal(
@@ -27,8 +28,12 @@ pub fn create_purchase_deal(
     event_hub: &Arc<EventHub>,
     undo_redo_manager: &mut UndoRedoManager,
     stack_id: Option<u64>,
+    security_context: &SecurityContext,
     dto: &CreatePurchaseDealDto,
 ) -> Result<CreatePurchaseDealReturnDto> {
+    // RBAC: requires deal:* permission (Admin, Manager)
+    check_permission(security_context, "deal:*")?;
+
     let uow_context = CreatePurchaseDealUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = CreatePurchaseDealUseCase::new(Box::new(uow_context));
     let return_dto = uc.execute(dto)?;
@@ -45,8 +50,12 @@ pub fn create_purchase_deal(
 pub fn get_deals_by_supplier(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    security_context: &SecurityContext,
     dto: &GetDealsBySupplierDto,
 ) -> Result<DealListDto> {
+    // RBAC: requires deal:read permission (Admin, Manager, Viewer)
+    check_permission(security_context, "deal:read")?;
+
     let uow_context = GetDealsBySupplierUnitOfWorkFactory::new(db_context);
     let mut uc = GetDealsBySupplierUseCase::new(Box::new(uow_context));
     let return_dto = uc.execute(dto)?;
@@ -62,7 +71,11 @@ pub fn get_deals_by_supplier(
 pub fn get_active_deals(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    security_context: &SecurityContext,
 ) -> Result<ActiveDealsDto> {
+    // RBAC: requires deal:read permission (Admin, Manager, Viewer)
+    check_permission(security_context, "deal:read")?;
+
     let uow_context = GetActiveDealsUnitOfWorkFactory::new(db_context);
     let mut uc = GetActiveDealsUseCase::new(Box::new(uow_context));
     let return_dto = uc.execute()?;

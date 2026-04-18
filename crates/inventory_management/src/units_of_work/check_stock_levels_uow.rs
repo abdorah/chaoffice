@@ -7,7 +7,7 @@ use anyhow::{Ok, Result};
 use common::database::QueryUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Location, Product};
+use common::entities::{Location, Product, Root};
 #[allow(unused_imports)]
 use common::types;
 #[allow(unused_imports)]
@@ -60,6 +60,7 @@ impl QueryUnitOfWork for CheckStockLevelsUnitOfWork {
 #[macros::uow_action(entity = "Product", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Location", action = "GetRO")]
 #[macros::uow_action(entity = "Location", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Root", action = "GetRO")]
 impl CheckStockLevelsUnitOfWorkTrait for CheckStockLevelsUnitOfWork {}
 
 pub struct CheckStockLevelsUnitOfWorkFactory {

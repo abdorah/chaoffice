@@ -109,25 +109,13 @@ impl CommandUnitOfWork for RecordStockMovementUnitOfWork {
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/record_stock_movement_uc.rs
 //
 #[macros::uow_action(entity = "Root", action = "Get")]
-#[macros::uow_action(entity = "Root", action = "GetMulti")]
-#[macros::uow_action(entity = "Root", action = "Snapshot")]
-#[macros::uow_action(entity = "Root", action = "Restore")]
-#[macros::uow_action(entity = "User", action = "Get")]
-#[macros::uow_action(entity = "User", action = "GetMulti")]
-#[macros::uow_action(entity = "User", action = "Snapshot")]
-#[macros::uow_action(entity = "User", action = "Restore")]
-#[macros::uow_action(entity = "StockMovement", action = "Get")]
-#[macros::uow_action(entity = "StockMovement", action = "GetMulti")]
-#[macros::uow_action(entity = "StockMovement", action = "Snapshot")]
-#[macros::uow_action(entity = "StockMovement", action = "Restore")]
 #[macros::uow_action(entity = "Product", action = "Get")]
-#[macros::uow_action(entity = "Product", action = "GetMulti")]
+#[macros::uow_action(entity = "Product", action = "Update")]
 #[macros::uow_action(entity = "Product", action = "Snapshot")]
 #[macros::uow_action(entity = "Product", action = "Restore")]
 #[macros::uow_action(entity = "Location", action = "Get")]
-#[macros::uow_action(entity = "Location", action = "GetMulti")]
-#[macros::uow_action(entity = "Location", action = "Snapshot")]
-#[macros::uow_action(entity = "Location", action = "Restore")]
+#[macros::uow_action(entity = "StockMovement", action = "Create")]
+#[macros::uow_action(entity = "User", action = "Get")]
 impl RecordStockMovementUnitOfWorkTrait for RecordStockMovementUnitOfWork {}
 
 pub struct RecordStockMovementUnitOfWorkFactory {
