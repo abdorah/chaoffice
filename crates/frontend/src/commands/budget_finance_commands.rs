@@ -8,10 +8,12 @@ use budget_finance::{
     BudgetProjectionDto, BudgetSummaryDto, GetBudgetProjectionDto, GetBudgetSummaryDto,
     RecordBudgetEntryDto, RecordBudgetEntryResultDto, budget_finance_controller,
 };
+use inventory_security::SecurityContext;
 
 pub fn record_budget_entry(
     ctx: &AppContext,
     stack_id: Option<u64>,
+    security_context: &SecurityContext,
     dto: &RecordBudgetEntryDto,
 ) -> Result<RecordBudgetEntryResultDto> {
     let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
@@ -20,20 +22,36 @@ pub fn record_budget_entry(
         &ctx.event_hub,
         &mut undo_redo_manager,
         stack_id,
+        security_context,
         dto,
     )
     .context("record_budget_entry")
 }
 
-pub fn get_budget_summary(ctx: &AppContext, dto: &GetBudgetSummaryDto) -> Result<BudgetSummaryDto> {
-    budget_finance_controller::get_budget_summary(&ctx.db_context, &ctx.event_hub, dto)
-        .context("get_budget_summary")
+pub fn get_budget_summary(
+    ctx: &AppContext,
+    security_context: &SecurityContext,
+    dto: &GetBudgetSummaryDto,
+) -> Result<BudgetSummaryDto> {
+    budget_finance_controller::get_budget_summary(
+        &ctx.db_context,
+        &ctx.event_hub,
+        security_context,
+        dto,
+    )
+    .context("get_budget_summary")
 }
 
 pub fn get_budget_projection(
     ctx: &AppContext,
+    security_context: &SecurityContext,
     dto: &GetBudgetProjectionDto,
 ) -> Result<BudgetProjectionDto> {
-    budget_finance_controller::get_budget_projection(&ctx.db_context, &ctx.event_hub, dto)
-        .context("get_budget_projection")
+    budget_finance_controller::get_budget_projection(
+        &ctx.db_context,
+        &ctx.event_hub,
+        security_context,
+        dto,
+    )
+    .context("get_budget_projection")
 }

@@ -11,8 +11,8 @@
 - [x] 2.2 Inventory Management → `.kiro/specs/inventory-management/tasks.md`
 - [x] 2.3 Purchasing → `.kiro/specs/purchasing/tasks.md`
 - [x] 2.4 Stock Tracking → `.kiro/specs/stock-tracking/tasks.md`
-- [ ] 2.5 Budget & Finance → `.kiro/specs/budget-finance/tasks.md`
-- [ ] 2.6 Reporting → `.kiro/specs/reporting/tasks.md`
+- [x] 2.5 Budget & Finance → `.kiro/specs/budget-finance/tasks.md`
+- [-] 2.6 Reporting → `.kiro/specs/reporting/tasks.md`
 - [ ] 2.7 Data Sync → `.kiro/specs/data-sync/tasks.md`
 
 ## Step 3: Integration

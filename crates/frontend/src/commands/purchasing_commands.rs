@@ -13,7 +13,7 @@ use purchasing::{
 pub fn create_purchase_deal(
     ctx: &AppContext,
     stack_id: Option<u64>,
-    security_context: &SecurityContext,
+    _security_context: &SecurityContext,
     dto: &CreatePurchaseDealDto,
 ) -> Result<CreatePurchaseDealReturnDto> {
     let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
@@ -22,7 +22,6 @@ pub fn create_purchase_deal(
         &ctx.event_hub,
         &mut undo_redo_manager,
         stack_id,
-        security_context,
         dto,
     )
     .context("create_purchase_deal")
@@ -30,13 +29,12 @@ pub fn create_purchase_deal(
 
 pub fn get_deals_by_supplier(
     ctx: &AppContext,
-    security_context: &SecurityContext,
+    _security_context: &SecurityContext,
     dto: &GetDealsBySupplierDto,
 ) -> Result<DealListDto> {
     purchasing_controller::get_deals_by_supplier(
         &ctx.db_context,
         &ctx.event_hub,
-        security_context,
         dto,
     )
     .context("get_deals_by_supplier")
@@ -44,12 +42,11 @@ pub fn get_deals_by_supplier(
 
 pub fn get_active_deals(
     ctx: &AppContext,
-    security_context: &SecurityContext,
+    _security_context: &SecurityContext,
 ) -> Result<ActiveDealsDto> {
     purchasing_controller::get_active_deals(
         &ctx.db_context,
         &ctx.event_hub,
-        security_context,
     )
     .context("get_active_deals")
 }

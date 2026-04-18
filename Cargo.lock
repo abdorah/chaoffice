@@ -2686,8 +2686,11 @@ dependencies = [
  "chrono",
  "inventory-manager-common",
  "inventory-manager-macros",
+ "inventory-manager-security",
+ "inventory-manager-security-macros",
  "serde",
  "serde_json",
+ "thiserror 2.0.18",
  "uuid",
 ]
 

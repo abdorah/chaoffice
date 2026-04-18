@@ -21,6 +21,7 @@ use common::event::BudgetFinanceEvent::RecordBudgetEntry;
 
 use common::undo_redo::UndoRedoManager;
 use common::{database::db_context::DbContext, event::EventHub};
+use inventory_security::SecurityContext;
 use std::sync::Arc;
 
 pub fn record_budget_entry(
@@ -28,13 +29,13 @@ pub fn record_budget_entry(
     event_hub: &Arc<EventHub>,
     undo_redo_manager: &mut UndoRedoManager,
     stack_id: Option<u64>,
+    security_context: &SecurityContext,
     dto: &RecordBudgetEntryDto,
 ) -> Result<RecordBudgetEntryResultDto> {
     let uow_context = RecordBudgetEntryUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = RecordBudgetEntryUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
+    let return_dto = uc.execute(dto, security_context)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
-    // Notify that the handling manifest has been loaded
     event_hub.send_event(Event {
         origin: Origin::BudgetFinance(RecordBudgetEntry),
         ids: vec![],
@@ -46,12 +47,12 @@ pub fn record_budget_entry(
 pub fn get_budget_summary(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    security_context: &SecurityContext,
     dto: &GetBudgetSummaryDto,
 ) -> Result<BudgetSummaryDto> {
     let uow_context = GetBudgetSummaryUnitOfWorkFactory::new(db_context);
     let mut uc = GetBudgetSummaryUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    // Notify that the handling manifest has been loaded
+    let return_dto = uc.execute(dto, security_context)?;
     event_hub.send_event(Event {
         origin: Origin::BudgetFinance(GetBudgetSummary),
         ids: vec![],
@@ -63,12 +64,12 @@ pub fn get_budget_summary(
 pub fn get_budget_projection(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
+    security_context: &SecurityContext,
     dto: &GetBudgetProjectionDto,
 ) -> Result<BudgetProjectionDto> {
     let uow_context = GetBudgetProjectionUnitOfWorkFactory::new(db_context);
     let mut uc = GetBudgetProjectionUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute(dto)?;
-    // Notify that the handling manifest has been loaded
+    let return_dto = uc.execute(dto, security_context)?;
     event_hub.send_event(Event {
         origin: Origin::BudgetFinance(GetBudgetProjection),
         ids: vec![],

@@ -7,14 +7,12 @@ use anyhow::{Ok, Result};
 use common::database::QueryUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{BudgetEntry, Deal, Product};
+use common::entities::{BudgetEntry, Deal};
 #[allow(unused_imports)]
 use common::types;
 #[allow(unused_imports)]
 use common::types::EntityId;
 use std::cell::RefCell;
-
-// Unit of work for GetBudgetProjection
 
 pub struct GetBudgetProjectionUnitOfWork {
     context: DbContext,
@@ -46,22 +44,9 @@ impl QueryUnitOfWork for GetBudgetProjectionUnitOfWork {
     }
 }
 
-//TODO: adapt entities and actions to real use :
-// GetRO, GetMultiRO, GetRelationshipRO, GetRelationshipsFromRightIdsRO
-//
-// You have here a read-only unit of work.
-//
-// RO means Read Only, so *RO actions should be used here.
-// Do not mix read-only and write actions in the same unit of work.
-//
-// Exactly the same macros must be set in the use case uow trait file in ../use_cases/get_budget_projection_uc.rs
-//
-#[macros::uow_action(entity = "BudgetEntry", action = "GetRO")]
-#[macros::uow_action(entity = "BudgetEntry", action = "GetMultiRO")]
-#[macros::uow_action(entity = "Product", action = "GetRO")]
-#[macros::uow_action(entity = "Product", action = "GetMultiRO")]
-#[macros::uow_action(entity = "Deal", action = "GetRO")]
-#[macros::uow_action(entity = "Deal", action = "GetMultiRO")]
+// Exactly the same macros as in ../use_cases/get_budget_projection_uc.rs
+#[macros::uow_action(entity = "BudgetEntry", action = "GetAllRO")]
+#[macros::uow_action(entity = "Deal", action = "GetAllRO")]
 impl GetBudgetProjectionUnitOfWorkTrait for GetBudgetProjectionUnitOfWork {}
 
 pub struct GetBudgetProjectionUnitOfWorkFactory {

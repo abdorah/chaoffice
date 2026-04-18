@@ -9,15 +9,15 @@ import { CategoriesPage } from "pages/categories_page.slint";
 import { PersonsPage } from "pages/persons_page.slint";
 import { DealsPage } from "pages/deals_page.slint";
 import { LocationsPage } from "pages/locations_page.slint";
-import { StockTrackingPage } from "pages/stock_tracking_page.slint";
-import { BudgetPage } from "pages/budget_page.slint";
+import { StockTrackingPage, StockTrackingAdapter } from "pages/stock_tracking_page.slint";
+import { BudgetPage, BudgetPageAdapter } from "pages/budget_page.slint";
 import { ReportsPage } from "pages/reports_page.slint";
 import { UsersPage } from "pages/users_page.slint";
 import { SyncPage } from "pages/sync_page.slint";
 import { AppSettings } from "globals/app_settings.slint";
 import { AppState } from "globals/app_state.slint";
 
-export { AppState, AppSettings }
+export { AppState, AppSettings, StockTrackingAdapter, BudgetPageAdapter }
 
 export component App inherits Window {
     preferred-width: 1024px;

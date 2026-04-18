@@ -6,27 +6,27 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
 
 ## Tasks
 
-- [ ] 1. Set up budget_finance crate structure and core types
-  - [ ] 1.1 Create `crates/budget_finance/` crate with `Cargo.toml` and `src/lib.rs`
+- [x] 1. Set up budget_finance crate structure and core types
+  - [x] 1.1 Create `crates/budget_finance/` crate with `Cargo.toml` and `src/lib.rs`
     - Add dependencies: `chrono`, `thiserror`, references to `inventory_security`, `inventory_security_macros`, and Qleany-generated entity crates
     - Define module declarations: `validate`, `aggregator`, `projector`, `chart`, `error`, `handlers`
     - _Requirements: 1.1, 2.1, 3.1_
-  - [ ] 1.2 Implement `BudgetError` enum in `src/error.rs`
+  - [x] 1.2 Implement `BudgetError` enum in `src/error.rs`
     - Define variants: `ProductNotFound`, `DealNotFound`, `NegativeAmount`, `EmptyDescription`, `InvalidDateRange`, `InvalidMonthsAhead`, `Auth`, `Internal`
     - Implement `From<AuthError>` for `BudgetError`
     - _Requirements: 1.2, 1.3, 1.4, 1.5, 2.10, 3.7_
-  - [ ] 1.3 Define DTOs in `src/dto.rs` (or use Qleany-generated DTOs)
+  - [x] 1.3 Define DTOs in `src/dto.rs` (or use Qleany-generated DTOs)
     - `RecordBudgetEntryDto`, `GetBudgetSummaryDto`, `GetBudgetProjectionDto`
     - `RecordBudgetEntryResultDto`, `BudgetSummaryDto`, `BudgetProjectionDto`
     - `BudgetEntryTypeInput` enum
     - _Requirements: 1.1, 2.1, 3.1_
 
-- [ ] 2. Implement validation module
-  - [ ] 2.1 Implement `validate_entry_input` in `src/validate.rs`
+- [x] 2. Implement validation module
+  - [x] 2.1 Implement `validate_entry_input` in `src/validate.rs`
     - Reject negative amount (`BudgetError::NegativeAmount`)
     - Reject empty or whitespace-only description (`BudgetError::EmptyDescription`)
     - _Requirements: 1.4, 1.5_
-  - [ ] 2.2 Implement `validate_product` and `validate_deal` in `src/validate.rs`
+  - [x] 2.2 Implement `validate_product` and `validate_deal` in `src/validate.rs`
     - If id == 0, return `Ok(None)` (absent relationship)
     - If id != 0, look up entity; return `ProductNotFound` / `DealNotFound` if missing
     - _Requirements: 1.2, 1.3, 1.9, 1.10_
@@ -34,8 +34,8 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - **Property 2: Invalid entry input rejection**
     - **Validates: Requirements 1.4, 1.5**
 
-- [ ] 3. Implement RecordBudgetEntryHandler
-  - [ ] 3.1 Implement handler in `src/handlers/record_budget_entry.rs`
+- [x] 3. Implement RecordBudgetEntryHandler
+  - [x] 3.1 Implement handler in `src/handlers/record_budget_entry.rs`
     - Gate with `#[require_permission("budget:*")]`
     - Call `validate_entry_input`, `validate_product`, `validate_deal`
     - Snapshot state for undo support
@@ -59,11 +59,11 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - Test RBAC rejects Operator role (Req 1.8)
     - _Requirements: 1.2, 1.3, 1.8, 1.9, 1.10_
 
-- [ ] 4. Checkpoint - Ensure record entry tests pass
+- [x] 4. Checkpoint - Ensure record entry tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement aggregator module
-  - [ ] 5.1 Implement `aggregate_entries` in `src/aggregator.rs`
+- [x] 5. Implement aggregator module
+  - [x] 5.1 Implement `aggregate_entries` in `src/aggregator.rs`
     - Filter entries by date range [from_date, to_date]
     - Group by calendar month (year-month)
     - Compute per-month totals for Purchase, Sale, Expense entry types
@@ -81,8 +81,8 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - **Property 7: Aggregation date filtering and monthly grouping**
     - **Validates: Requirements 2.3, 2.4, 2.6**
 
-- [ ] 6. Implement GetBudgetSummaryHandler
-  - [ ] 6.1 Implement handler in `src/handlers/get_budget_summary.rs`
+- [x] 6. Implement GetBudgetSummaryHandler
+  - [x] 6.1 Implement handler in `src/handlers/get_budget_summary.rs`
     - Gate with `#[require_permission("budget:read")]`
     - Validate from_date <= to_date
     - Query BudgetEntry entities in date range
@@ -95,11 +95,11 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - Test RBAC allows Viewer, rejects Operator (Req 2.11)
     - _Requirements: 2.5, 2.10, 2.11_
 
-- [ ] 7. Implement projector module
-  - [ ] 7.1 Implement `frequency_to_monthly_factor` in `src/projector.rs`
+- [x] 7. Implement projector module
+  - [x] 7.1 Implement `frequency_to_monthly_factor` in `src/projector.rs`
     - OneTime: 0.0, Weekly: 52.0/12.0, Monthly: 1.0, Quarterly: 1.0/3.0, Yearly: 1.0/12.0
     - _Requirements: 3.2_
-  - [ ] 7.2 Implement `compute_recurring_costs`, `compute_historical_averages`, and `project_budget` in `src/projector.rs`
+  - [x] 7.2 Implement `compute_recurring_costs`, `compute_historical_averages`, and `project_budget` in `src/projector.rs`
     - `compute_recurring_costs`: sum of (unit_cost × monthly_factor) for active deals
     - `compute_historical_averages`: average monthly income (Sale) and expense (Expense) from all entries
     - `project_budget`: build Projection with month_labels starting from next month, projected arrays using recurring costs + historical averages
@@ -114,8 +114,8 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - **Property 10: Projection formula correctness**
     - **Validates: Requirements 3.3, 3.4, 3.5**
 
-- [ ] 8. Implement GetBudgetProjectionHandler
-  - [ ] 8.1 Implement handler in `src/handlers/get_budget_projection.rs`
+- [x] 8. Implement GetBudgetProjectionHandler
+  - [x] 8.1 Implement handler in `src/handlers/get_budget_projection.rs`
     - Gate with `#[require_permission("budget:read")]`
     - Validate months_ahead > 0
     - Query active deals and all budget entries
@@ -129,15 +129,15 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - Test RBAC allows Viewer, rejects Operator (Req 3.10)
     - _Requirements: 3.7, 3.8, 3.9, 3.10_
 
-- [ ] 9. Checkpoint - Ensure all handler and module tests pass
+- [x] 9. Checkpoint - Ensure all handler and module tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Implement chart module
-  - [ ] 10.1 Implement `BarData` struct and `build_bar_data` in `src/chart.rs`
+- [x] 10. Implement chart module
+  - [x] 10.1 Implement `BarData` struct and `build_bar_data` in `src/chart.rs`
     - Map AggregatedSummary monthly arrays to BarData with equal-length arrays
     - Handle empty summary (produce empty arrays)
     - _Requirements: 6.1, 6.2, 6.3_
-  - [ ] 10.2 Implement `build_line_chart_paths` in `src/chart.rs`
+  - [x] 10.2 Implement `build_line_chart_paths` in `src/chart.rs`
     - Generate SVG "M x0,y0 L x1,y1 ..." path strings from Projection arrays
     - Scale y-coordinates using max value across all three series
     - Handle all-zero case (flat baseline lines)
@@ -154,8 +154,8 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - Test SVG paths with all-zero projection produce flat baseline (Req 7.3)
     - _Requirements: 6.3, 7.3_
 
-- [ ] 11. Implement BudgetPage Slint UI
-  - [ ] 11.1 Create `ui/pages/budget_page.slint` with layout structure
+- [x] 11. Implement BudgetPage Slint UI
+  - [x] 11.1 Create `ui/pages/budget_page.slint` with layout structure
     - KPI stat cards row: total_purchases, total_sales, total_expenses, net_balance
     - Bar chart component bound to BarData model
     - Line chart component bound to SVG path strings
@@ -164,14 +164,14 @@ Implement the `budget_finance` feature crate with three use case handlers (recor
     - Projection months-ahead slider (3-12)
     - Add entry form (visible for Admin/Manager only)
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.6, 5.7, 5.8_
-  - [ ] 11.2 Wire BudgetPage to Rust backend via BudgetFinanceController
+  - [x] 11.2 Wire BudgetPage to Rust backend via BudgetFinanceController
     - Bind date range changes to re-fetch summary → update KPIs, bar chart, entry table
     - Bind months-ahead slider to re-fetch projection → update line chart
     - Bind add-entry form submit to RecordBudgetEntryHandler → refresh table and KPIs
     - Gate add-entry form visibility on user role (Admin/Manager)
     - _Requirements: 5.5, 5.7, 5.8_
 
-- [ ] 12. Final checkpoint - Ensure all tests pass
+- [x] 12. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

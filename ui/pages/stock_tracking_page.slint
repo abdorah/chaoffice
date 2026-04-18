@@ -13,6 +13,17 @@ export global StockTrackingAdapter {
     in property <string> stock-trend-path: "";
     in property <string> stock-trend-fill: "";
     in property <[string]> trend-x-labels: [];
+    // Product and location lists for form selectors
+    in property <[string]> product-names: [];
+    in property <[string]> location-names: [];
+    // Error message from last record attempt
+    in property <string> error-message: "";
+
+    // Callbacks bridged to Rust controller
+    callback record-movement(/* product */ string, /* type */ string, /* qty */ int,
+                              /* from_loc */ string, /* to_loc */ string, /* note */ string);
+    callback load-history(/* product */ string, /* from_date */ string, /* to_date */ string);
+    callback load-summary();
 }
 
 export component StockTrackingPage inherits Page {
@@ -64,6 +75,24 @@ export component StockTrackingPage inherits Page {
         }
     }
 
+    // Error message display
+    if StockTrackingAdapter.error-message != "" : Rectangle {
+        vertical-stretch: 0;
+        background: #FFEBEE;
+        border-radius: 4px;
+        min-height: 32px;
+
+        HorizontalBox {
+            padding: 8px;
+            Text {
+                text: StockTrackingAdapter.error-message;
+                color: #C62828;
+                font-size: 13px;
+                wrap: word-wrap;
+            }
+        }
+    }
+
     if root.show-form : GroupBox {
         vertical-stretch: 0;
         title: "New Stock Movement";
@@ -71,6 +100,13 @@ export component StockTrackingPage inherits Page {
         VerticalBox {
             HorizontalBox {
                 spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "Product"; }
+                    product-input := ComboBox {
+                        model: StockTrackingAdapter.product-names;
+                    }
+                }
 
                 VerticalBox {
                     Text { text: "Type"; }
@@ -82,6 +118,24 @@ export component StockTrackingPage inherits Page {
                 VerticalBox {
                     Text { text: "Quantity"; }
                     qty-input := SpinBox { value: 1; minimum: 1; maximum: 999999; }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    Text { text: "From Location"; }
+                    from-loc-input := ComboBox {
+                        model: StockTrackingAdapter.location-names;
+                    }
+                }
+
+                VerticalBox {
+                    Text { text: "To Location"; }
+                    to-loc-input := ComboBox {
+                        model: StockTrackingAdapter.location-names;
+                    }
                 }
             }
 
@@ -107,12 +161,15 @@ export component StockTrackingPage inherits Page {
                     text: "Record";
                     primary: true;
                     clicked => {
-                        AppState.record-stock-movement(
+                        StockTrackingAdapter.record-movement(
+                            product-input.current-value,
                             type-input.current-value,
                             qty-input.value,
+                            from-loc-input.current-value,
+                            to-loc-input.current-value,
                             note-input.text
                         );
-                        root.show-form = false;
+                        // Don't close form — keep it open so errors are visible (Req 5.4)
                     }
                 }
             }
@@ -131,6 +188,7 @@ export component StockTrackingPage inherits Page {
                 { title: "Qty" },
                 { title: "From" },
                 { title: "To" },
+                { title: "User" },
                 { title: "Note" },
             ];
             rows: StockTrackingAdapter.movement-rows;

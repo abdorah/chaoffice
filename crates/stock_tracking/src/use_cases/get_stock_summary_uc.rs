@@ -4,8 +4,7 @@ use crate::summary::aggregate_30d;
 use anyhow::Result;
 use chrono::{Duration, Utc};
 use common::database::QueryUnitOfWork;
-use common::entities::{MovementType, Product, StockMovement};
-use common::types::EntityId;
+use common::entities::{Product, StockMovement};
 use inventory_security::SecurityContext;
 use inventory_security_macros::check_permission;
 
@@ -53,7 +52,7 @@ impl GetStockSummaryUseCase {
         let mut outbound_30d = Vec::with_capacity(products.len());
 
         for product in &products {
-            let (mut inbound, outbound) = aggregate_30d(&all_movements, cutoff, product.id);
+            let (inbound, outbound) = aggregate_30d(&all_movements, cutoff, product.id);
 
             // Add Transfer-in: scan Transfer movements where to_location is set
             // and the destination product matches. In our model, Transfer movements

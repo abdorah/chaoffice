@@ -43,7 +43,7 @@ Implement the three use cases in the `stock_tracking` crate: `record_stock_movem
     - Test zero quantity, missing locations per type, same location for Transfer, non-existent product, non-existent location, Adjustment underflow
     - _Requirements: 1.7, 1.8, 1.9, 1.11, 1.12, 1.13_
 
-- [ ] 3. Checkpoint - Ensure record movement tests pass
+- [x] 3. Checkpoint - Ensure record movement tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 4. Implement GetStockHistoryHandler
@@ -83,11 +83,11 @@ Implement the three use cases in the `stock_tracking` crate: `record_stock_movem
     - Test products with no movements, Transfer counted in both directions
     - _Requirements: 3.4, 3.5_
 
-- [ ] 6. Checkpoint - Ensure all handler tests pass
+- [x] 6. Checkpoint - Ensure all handler tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Wire handlers to Qleany controller and RBAC
-  - [-] 7.1 Register all three handlers with the `StockTrackingController`
+- [x] 7. Wire handlers to Qleany controller and RBAC
+  - [x] 7.1 Register all three handlers with the `StockTrackingController`
     - Wire `record_stock_movement`, `get_stock_history`, `get_stock_summary` to the controller dispatch
     - Ensure `record_stock_movement` is registered as non-undoable
     - _Requirements: 1.15, 2.6, 3.6, 4.1_
@@ -96,20 +96,20 @@ Implement the three use cases in the `stock_tracking` crate: `record_stock_movem
     - Verify all roles can query history and summary
     - _Requirements: 1.15, 2.6, 3.6_
 
-- [ ] 8. Implement Slint UI StockTrackingPage
-  - [ ] 8.1 Create `ui/pages/stock_tracking_page.slint` with layout
+- [x] 8. Implement Slint UI StockTrackingPage
+  - [x] 8.1 Create `ui/pages/stock_tracking_page.slint` with layout
     - Movement history table (type, quantity, date, from_location, to_location, user, note columns)
     - Record movement form (product selector, movement type dropdown, quantity input, from/to location selectors, note field, submit button)
     - 30-day KPI cards (total inbound, total outbound)
     - Stock trend line chart placeholder for selected product
     - _Requirements: 5.1, 5.2, 5.5_
-  - [ ] 8.2 Implement `StockTrackingAdapter` bridging Slint callbacks to controller
+  - [x] 8.2 Implement `StockTrackingAdapter` bridging Slint callbacks to controller
     - `record-movement` callback → calls `record_stock_movement`, refreshes history on success, shows error on failure
     - `load-history` callback → calls `get_stock_history`, populates table and chart data
     - `load-summary` callback → calls `get_stock_summary`, populates KPI cards
     - _Requirements: 5.3, 5.4, 5.5_
 
-- [ ] 9. Final checkpoint - Ensure all tests pass
+- [x] 9. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
