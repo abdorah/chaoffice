@@ -1,0 +1,24 @@
+[package]
+name = "inventory-manager-auth"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+name = "inventory_auth"
+
+[dependencies]
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+argon2 = { version = "0.5", features = ["std"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+common = { workspace = true }
+inventory_security = { workspace = true }
+
+[lints]
+workspace = true

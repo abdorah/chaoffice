@@ -6,18 +6,18 @@ Incremental implementation of the security and authentication layer across three
 
 ## Tasks
 
-- [ ] 1. Set up crate structure and core types
-  - [ ] 1.1 Create `crates/inventory_security/` crate with `Cargo.toml`
+- [x] 1. Set up crate structure and core types
+  - [x] 1.1 Create `crates/inventory_security/` crate with `Cargo.toml`
     - Add dependencies: `thiserror`
     - Create `src/lib.rs`, `src/error.rs`, `src/permission.rs`, `src/context.rs`
     - _Requirements: 7.1, 5.4_
 
-  - [ ] 1.2 Implement `AuthError` enum in `error.rs`
+  - [x] 1.2 Implement `AuthError` enum in `error.rs`
     - Define all variants: `InvalidCredentials`, `AccountDeactivated`, `SessionExpired`, `InvalidSession`, `AccessDeniedRole`, `AccessDeniedPermission`, `DuplicateUsername`, `PasswordTooShort`, `PasswordUnchanged`, `PasswordChangeRequired`, `Internal`
     - Derive `thiserror::Error` with display messages
     - _Requirements: 7.6_
 
-  - [ ] 1.3 Implement `Permission` type and `permissions_for_role` in `permission.rs`
+  - [x] 1.3 Implement `Permission` type and `permissions_for_role` in `permission.rs`
     - Define `Permission(pub String)` newtype
     - Implement `permissions_for_role(role: &UserRole) -> Vec<Permission>` with the full permission matrix
     - Implement `permission_matches(held: &Permission, required: &str) -> bool` with wildcard support (`*:*`, `resource:*`, exact match)
@@ -29,7 +29,7 @@ Incremental implementation of the security and authentication layer across three
     - **Property 17: Permission-based access control with wildcards**
     - **Validates: Requirements 7.4, 7.5**
 
-  - [ ] 1.5 Implement `SecurityContext` struct in `context.rs`
+  - [x] 1.5 Implement `SecurityContext` struct in `context.rs`
     - Define struct with `user_id`, `role`, `permissions`, `token` fields
     - Implement `has_role`, `has_any_role`, `has_permission`, `is_admin` methods
     - Stub `from_token` (full implementation after session module)
@@ -39,16 +39,16 @@ Incremental implementation of the security and authentication layer across three
     - **Property 16: Role-based access control**
     - **Validates: Requirements 7.2, 7.3**
 
-- [ ] 2. Checkpoint - Ensure all tests pass
+- [x] 2. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Implement password hashing module
-  - [ ] 3.1 Create `crates/inventory_auth/` crate with `Cargo.toml`
+- [x] 3. Implement password hashing module
+  - [x] 3.1 Create `crates/inventory_auth/` crate with `Cargo.toml`
     - Add dependencies: `argon2`, `uuid`, `chrono`, `inventory_security`
     - Create `src/lib.rs`, `src/password.rs`, `src/session.rs`, `src/session_store.rs`, `src/bootstrap.rs`
     - _Requirements: 9.1_
 
-  - [ ] 3.2 Implement `hash_password` and `verify_password` in `password.rs`
+  - [x] 3.2 Implement `hash_password` and `verify_password` in `password.rs`
     - Use `argon2::Argon2::default()` with `SaltString::generate(&mut OsRng)`
     - `hash_password` returns the PHC-formatted hash string
     - `verify_password` parses the hash and verifies against plaintext
@@ -60,14 +60,14 @@ Incremental implementation of the security and authentication layer across three
     - **Property 2: Password hash uniqueness**
     - **Validates: Requirements 9.3**
 
-- [ ] 4. Implement session management
-  - [ ] 4.1 Implement `create_session`, `validate_session`, `delete_session` in `session.rs`
+- [x] 4. Implement session management
+  - [x] 4.1 Implement `create_session`, `validate_session`, `delete_session` in `session.rs`
     - `create_session`: generate UUID v4 token, set `expires_at` to `now + 24h`, persist Session entity, delete any existing session for the user first
     - `validate_session`: look up Session by token, check `expires_at > now`, load associated User
     - `delete_session`: find and delete Session by token, no-op if not found
     - _Requirements: 1.5, 1.6, 2.1, 5.1, 5.2, 5.3_
 
-  - [ ] 4.2 Complete `SecurityContext::from_token` implementation in `inventory_security`
+  - [x] 4.2 Complete `SecurityContext::from_token` implementation in `inventory_security`
     - Call `validate_session`, build context with `user_id`, `role`, `permissions_for_role(role)`, `token`
     - _Requirements: 5.1, 5.4_
 
@@ -77,8 +77,8 @@ Incremental implementation of the security and authentication layer across three
     - **Property 13: SecurityContext resolves correct permissions**
     - **Validates: Requirements 5.4**
 
-- [ ] 5. Implement session store abstraction
-  - [ ] 5.1 Implement `SessionStore` trait, `InMemorySessionStore`, and `FileSessionStore` in `session_store.rs`
+- [x] 5. Implement session store abstraction
+  - [x] 5.1 Implement `SessionStore` trait, `InMemorySessionStore`, and `FileSessionStore` in `session_store.rs`
     - Trait: `save_token`, `load_token`, `clear_token`
     - `InMemorySessionStore`: `Mutex<Option<String>>`
     - `FileSessionStore`: read/write `~/.inventory_manager/session` file, create directory if needed
@@ -89,11 +89,11 @@ Incremental implementation of the security and authentication layer across three
     - **Validates: Requirements 6.2, 6.3**
     - Unit test: `load_token` on fresh store returns None (Requirement 6.4)
 
-- [ ] 6. Checkpoint - Ensure all tests pass
+- [x] 6. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement authentication operations (login, logout, change_password)
-  - [ ] 7.1 Implement `login` function in `inventory_auth/src/lib.rs`
+- [x] 7. Implement authentication operations (login, logout, change_password)
+  - [x] 7.1 Implement `login` function in `inventory_auth/src/lib.rs`
     - Fetch User by username (return `InvalidCredentials` if not found)
     - Check `is_active` (return `AccountDeactivated` if false)
     - Verify password with `verify_password` (return `InvalidCredentials` if wrong)
@@ -102,11 +102,11 @@ Incremental implementation of the security and authentication layer across three
     - Return `LoginResultDto`
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 4.3_
 
-  - [ ] 7.2 Implement `logout` function
+  - [x] 7.2 Implement `logout` function
     - Call `delete_session` with the token (idempotent)
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 7.3 Implement `change_password` function
+  - [x] 7.3 Implement `change_password` function
     - Validate new password length >= 8 (return `PasswordTooShort`)
     - Verify old password (return `InvalidCredentials` if wrong)
     - Check new != old via `verify_password` (return `PasswordUnchanged`)
@@ -136,8 +136,8 @@ Incremental implementation of the security and authentication layer across three
     - **Validates: Requirements 3.2**
     - Unit tests for short password (3.3) and same password (3.4) edge cases
 
-- [ ] 8. Implement user management operations
-  - [ ] 8.1 Implement `create_user`, `deactivate_user`, `list_users` in `inventory_auth/src/lib.rs`
+- [x] 8. Implement user management operations
+  - [x] 8.1 Implement `create_user`, `deactivate_user`, `list_users` in `inventory_auth/src/lib.rs`
     - `create_user`: check username uniqueness, hash password, create User entity with `is_active=true`
     - `deactivate_user`: set `is_active=false`, delete any active session for the user
     - `list_users`: fetch all Users, map to `UserSummary` structs
@@ -153,8 +153,8 @@ Incremental implementation of the security and authentication layer across three
     - **Property 21: List users completeness**
     - **Validates: Requirements 8.4**
 
-- [ ] 9. Implement bootstrap module
-  - [ ] 9.1 Implement `ensure_admin_exists` in `bootstrap.rs`
+- [x] 9. Implement bootstrap module
+  - [x] 9.1 Implement `ensure_admin_exists` in `bootstrap.rs`
     - Check if any User entities exist
     - If none: create User with username "admin", hash_password("admin"), role Admin, is_active true
     - If any exist: return false (no-op)
@@ -166,26 +166,26 @@ Incremental implementation of the security and authentication layer across three
     - Unit test: bootstrap on empty DB creates admin with correct fields (Requirement 4.1)
     - Unit test: default admin login sets `password_change_required` (Requirement 4.3)
 
-- [ ] 10. Checkpoint - Ensure all tests pass
+- [x] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Implement proc macros
-  - [ ] 11.1 Create `crates/inventory_security_macros/` crate with `Cargo.toml`
+- [x] 11. Implement proc macros
+  - [x] 11.1 Create `crates/inventory_security_macros/` crate with `Cargo.toml`
     - Set `proc-macro = true` in `[lib]`
     - Add dependencies: `syn`, `quote`, `proc-macro2`
     - _Requirements: 7.2, 7.3, 7.4_
 
-  - [ ] 11.2 Implement `#[require_role]` macro
+  - [x] 11.2 Implement `#[require_role]` macro
     - Parse attribute for a single `UserRole::X` variant
     - Inject guard code: extract `SecurityContext`, check `is_admin() || has_role(X)`, return `AccessDeniedRole` on failure
     - _Requirements: 7.2_
 
-  - [ ] 11.3 Implement `#[require_any_role]` macro
+  - [x] 11.3 Implement `#[require_any_role]` macro
     - Parse attribute for multiple `UserRole::X, UserRole::Y` variants
     - Inject guard code: extract `SecurityContext`, check `is_admin() || has_any_role(&[X, Y])`, return `AccessDeniedRole` on failure
     - _Requirements: 7.3_
 
-  - [ ] 11.4 Implement `#[require_permission]` macro
+  - [x] 11.4 Implement `#[require_permission]` macro
     - Parse attribute for a permission string literal `"resource:action"`
     - Inject guard code: extract `SecurityContext`, check `has_permission("resource:action")`, return `AccessDeniedPermission` on failure
     - _Requirements: 7.4_
@@ -198,37 +198,37 @@ Incremental implementation of the security and authentication layer across three
     - Test that `#[require_permission("deal:write")]` rejects Operator
     - _Requirements: 7.2, 7.3, 7.4, 7.6_
 
-- [ ] 12. Wire Slint UI login flow
-  - [ ] 12.1 Wire `AppState.login` callback to `inventory_auth::login`
+- [x] 12. Wire Slint UI login flow
+  - [x] 12.1 Wire `AppState.login` callback to `inventory_auth::login`
     - In the Rust Slint bridge code, handle the `login` callback
     - On success: store token via `InMemorySessionStore`, set `AppState.is-authenticated = true`, set `current-user` and `current-role`
     - On failure: set `AppState.login-error` to the error message
     - On `password_change_required`: navigate to password change dialog
     - _Requirements: 10.1, 10.2, 10.3_
 
-  - [ ] 12.2 Wire `AppState.logout` callback to `inventory_auth::logout`
+  - [x] 12.2 Wire `AppState.logout` callback to `inventory_auth::logout`
     - Call `logout` with the stored token, clear `InMemorySessionStore`
     - Set `AppState.is-authenticated = false`, clear `current-user` and `current-role`
     - _Requirements: 2.3, 10.4_
 
-  - [ ] 12.3 Wire `AppState.create-user` and `AppState.deactivate-user` callbacks
+  - [x] 12.3 Wire `AppState.create-user` and `AppState.deactivate-user` callbacks
     - `create-user`: call `inventory_auth::create_user`, refresh user list
     - `deactivate-user`: call `inventory_auth::deactivate_user`, refresh user list
     - _Requirements: 11.2, 11.3_
 
-  - [ ] 12.4 Wire Users_Page data binding
+  - [x] 12.4 Wire Users_Page data binding
     - On navigation to Users_Page, call `list_users` and populate `UsersPageAdapter.row-data`
     - Fix role ComboBox values from `["Admin", "Manager", "Supplier", "Viewer"]` to `["Admin", "Manager", "Operator", "Viewer"]`
     - Add role-based visibility: hide Users sidebar item for non-Admin users
     - _Requirements: 11.1, 11.4_
 
-- [ ] 13. Integrate bootstrap on application startup
-  - [ ] 13.1 Call `ensure_admin_exists` during app initialization
+- [x] 13. Integrate bootstrap on application startup
+  - [x] 13.1 Call `ensure_admin_exists` during app initialization
     - In the Slint app main.rs (or CLI main.rs), call bootstrap before showing the UI
     - Log whether bootstrap was performed
     - _Requirements: 4.1, 4.2_
 
-- [ ] 14. Final checkpoint - Ensure all tests pass
+- [x] 14. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

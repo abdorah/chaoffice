@@ -1,0 +1,18 @@
+[package]
+name = "inventory-manager-security-macros"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+name = "inventory_security_macros"
+
+[dependencies]
+common = { workspace = true }
+inventory_security = { workspace = true }
+
+[lints]
+workspace = true

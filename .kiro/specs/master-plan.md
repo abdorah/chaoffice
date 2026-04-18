@@ -1,13 +1,13 @@
 # Master Implementation Plan — Inventory Manager
 
 ## Step 1: Qleany Scaffolding
-- [ ] 1.1 Run `uv run qleany generate` to produce the base Rust project
-- [ ] 1.2 Verify the generated code compiles with `cargo build`
-- [ ] 1.3 Run generated test suite with `cargo test`
+- [x] 1.1 Run `uv run qleany generate` to produce the base Rust project
+- [x] 1.2 Verify the generated code compiles with `cargo build`
+- [x] 1.3 Run generated test suite with `cargo test`
 - [ ] 1.4 Commit generated code to git
 
 ## Step 2: Feature Implementation (dependency order)
-- [ ] 2.1 Security & Authentication → `.kiro/specs/security-authentication/tasks.md`
+- [x] 2.1 Security & Authentication → `.kiro/specs/security-authentication/tasks.md`
 - [ ] 2.2 Inventory Management → `.kiro/specs/inventory-management/tasks.md`
 - [ ] 2.3 Purchasing → `.kiro/specs/purchasing/tasks.md`
 - [ ] 2.4 Stock Tracking → `.kiro/specs/stock-tracking/tasks.md`

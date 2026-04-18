@@ -1,0 +1,18 @@
+[package]
+name = "inventory-manager-security"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+name = "inventory_security"
+
+[dependencies]
+thiserror = { workspace = true }
+common = { workspace = true }
+
+[lints]
+workspace = true
