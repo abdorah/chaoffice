@@ -108,12 +108,15 @@ impl CommandUnitOfWork for CreateUserUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/create_user_uc.rs
 //
+// Exactly the same macros must be set in the use case uow trait file in ../use_cases/create_user_uc.rs
 #[macros::uow_action(entity = "Root", action = "Get")]
 #[macros::uow_action(entity = "Root", action = "GetMulti")]
 #[macros::uow_action(entity = "Root", action = "Snapshot")]
 #[macros::uow_action(entity = "Root", action = "Restore")]
 #[macros::uow_action(entity = "User", action = "Get")]
 #[macros::uow_action(entity = "User", action = "GetMulti")]
+#[macros::uow_action(entity = "User", action = "GetAll")]
+#[macros::uow_action(entity = "User", action = "Create")]
 #[macros::uow_action(entity = "User", action = "Snapshot")]
 #[macros::uow_action(entity = "User", action = "Restore")]
 impl CreateUserUnitOfWorkTrait for CreateUserUnitOfWork {}

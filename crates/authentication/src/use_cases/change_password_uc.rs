@@ -10,21 +10,10 @@ pub trait ChangePasswordUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn ChangePasswordUnitOfWorkTrait>;
 }
 
-//TODO: adapt entities and actions to real use :
-// Create, CreateMulti, Get, GetMulti, Update (scalar-only), UpdateMulti (scalar-only),
-// UpdateWithRelationships, UpdateWithRelationshipsMulti,
-// Remove, RemoveMulti, GetRelationship, GetRelationshipsFromRightIds,
-// SetRelationship, SetRelationshipMulti
-//
-// You have here a read-write unit of work trait.
-//
-// RO means Read Only.
-// Do not mix read-only and write actions in the same unit of work.
-//
 // Exactly the same macros must be set in the use case uow trait file in ../units_of_work/change_password_uow.rs
-//
 #[macros::uow_action(entity = "User", action = "Get")]
 #[macros::uow_action(entity = "User", action = "GetMulti")]
+#[macros::uow_action(entity = "User", action = "Update")]
 #[macros::uow_action(entity = "User", action = "Snapshot")]
 #[macros::uow_action(entity = "User", action = "Restore")]
 pub trait ChangePasswordUnitOfWorkTrait: CommandUnitOfWork {}
@@ -42,13 +31,37 @@ impl ChangePasswordUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        //TODO: ChangePasswordUseCase to be implemented
-        unimplemented!("ChangePasswordUseCase unimplemented");
+        // 1. Get user by ID
+        let user = uow
+            .get_user(&(dto.user_id as EntityId))?
+            .ok_or_else(|| anyhow!("User not found"))?;
+
+        // 2. Validate and get new hash
+        let new_hash = match inventory_auth::validate_password_change(
+            &user.password_hash,
+            &dto.old_password,
+            &dto.new_password,
+        ) {
+            Ok(h) => h,
+            Err(e) => {
+                uow.rollback()?;
+                return Ok(ChangePasswordResultDto {
+                    success: false,
+                    error_message: format!("{}", e),
+                });
+            }
+        };
+
+        // 3. Update user with new password hash
+        let mut updated_user = user;
+        updated_user.password_hash = new_hash;
+        uow.update_user(&updated_user)?;
+
         uow.commit()?;
-        //Ok(ChangePasswordResultDto {
-        //
-        //})
-        // placeholder to allow compilation
-        Err(anyhow!("Not implemented"))
+
+        Ok(ChangePasswordResultDto {
+            success: true,
+            error_message: String::new(),
+        })
     }
 }

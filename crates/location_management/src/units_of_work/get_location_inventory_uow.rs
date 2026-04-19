@@ -56,8 +56,10 @@ impl QueryUnitOfWork for GetLocationInventoryUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/get_location_inventory_uc.rs
 //
+// Exactly the same macros must be set in the use case uow trait file in ../use_cases/get_location_inventory_uc.rs
 #[macros::uow_action(entity = "Product", action = "GetRO")]
 #[macros::uow_action(entity = "Product", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Product", action = "GetAllRO")]
 #[macros::uow_action(entity = "Location", action = "GetRO")]
 #[macros::uow_action(entity = "Location", action = "GetMultiRO")]
 impl GetLocationInventoryUnitOfWorkTrait for GetLocationInventoryUnitOfWork {}

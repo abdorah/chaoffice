@@ -106,12 +106,16 @@ impl CommandUnitOfWork for LoginUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/login_uc.rs
 //
+// Exactly the same macros must be set in the use case uow trait file in ../use_cases/login_uc.rs
 #[macros::uow_action(entity = "User", action = "Get")]
 #[macros::uow_action(entity = "User", action = "GetMulti")]
+#[macros::uow_action(entity = "User", action = "GetAll")]
+#[macros::uow_action(entity = "User", action = "UpdateWithRelationships")]
 #[macros::uow_action(entity = "User", action = "Snapshot")]
 #[macros::uow_action(entity = "User", action = "Restore")]
 #[macros::uow_action(entity = "Session", action = "Get")]
 #[macros::uow_action(entity = "Session", action = "GetMulti")]
+#[macros::uow_action(entity = "Session", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Session", action = "Snapshot")]
 #[macros::uow_action(entity = "Session", action = "Restore")]
 impl LoginUnitOfWorkTrait for LoginUnitOfWork {}

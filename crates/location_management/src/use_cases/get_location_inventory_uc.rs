@@ -10,19 +10,10 @@ pub trait GetLocationInventoryUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn GetLocationInventoryUnitOfWorkTrait>;
 }
 
-//TODO: adapt entities and actions to real use :
-// GetRO, GetMultiRO, GetRelationship, GetRelationshipRO,
-// GetRelationshipsFromRightIdsRO
-//
-// You have here a read-only unit of work trait.
-//
-// RO means Read Only, so *RO actions should be used here.
-// Do not mix read-only and write actions in the same unit of work.
-//
 // Exactly the same macros must be set in the use case uow trait file in ../units_of_work/get_location_inventory_uow.rs
-//
 #[macros::uow_action(entity = "Product", action = "GetRO")]
 #[macros::uow_action(entity = "Product", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Product", action = "GetAllRO")]
 #[macros::uow_action(entity = "Location", action = "GetRO")]
 #[macros::uow_action(entity = "Location", action = "GetMultiRO")]
 pub trait GetLocationInventoryUnitOfWorkTrait: QueryUnitOfWork {}
@@ -37,16 +28,42 @@ impl GetLocationInventoryUseCase {
     }
 
     pub fn execute(&mut self, dto: &GetLocationInventoryDto) -> Result<LocationInventoryDto> {
-        let mut uow = self.uow_factory.create();
+        let uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        //TODO: GetLocationInventoryUseCase to be implemented
-        unimplemented!("GetLocationInventoryUseCase unimplemented");
+        // 1. Get the location
+        let location = uow
+            .get_location(&(dto.location_id as EntityId))?
+            .ok_or_else(|| anyhow!("Location not found"))?;
+
+        // 2. Get all products and filter by location
+        let all_products = uow.get_all_product()?;
+        let location_products: Vec<&Product> = all_products
+            .iter()
+            .filter(|p| p.location == Some(location.id))
+            .collect();
+
+        // 3. Build result arrays
+        let mut product_ids = Vec::with_capacity(location_products.len());
+        let mut product_names = Vec::with_capacity(location_products.len());
+        let mut quantities = Vec::with_capacity(location_products.len());
+        let mut used_capacity: i64 = 0;
+
+        for product in &location_products {
+            product_ids.push(product.id as i64);
+            product_names.push(product.name.clone());
+            quantities.push(product.quantity);
+            used_capacity += product.quantity;
+        }
+
         uow.end_transaction()?;
-        //Ok(LocationInventoryDto {
-        //
-        //})
-        // placeholder to allow compilation
-        Err(anyhow!("Not implemented"))
+
+        Ok(LocationInventoryDto {
+            product_ids,
+            product_names,
+            quantities,
+            total_capacity: location.capacity,
+            used_capacity,
+        })
     }
 }

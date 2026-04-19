@@ -56,7 +56,7 @@ pub fn validate_login(user: &User, password: &str) -> Result<LoginResult, AuthEr
 
     // 4. Check if this is the default admin with default password
     let password_change_required =
-        user.username == "admin" && verify_password("admin", &user.password_hash).unwrap_or(false);
+        user.username == "admin" && verify_password("Password1", &user.password_hash).unwrap_or(false);
 
     let role_str = format!("{:?}", user.role);
 
@@ -215,8 +215,8 @@ mod tests {
 
     #[test]
     fn login_default_admin_flags_password_change() {
-        let user = make_user("admin", "admin", UserRole::Admin, true);
-        let result = validate_login(&user, "admin").unwrap();
+        let user = make_user("admin", "Password1", UserRole::Admin, true);
+        let result = validate_login(&user, "Password1").unwrap();
 
         assert!(result.success);
         assert!(result.password_change_required);

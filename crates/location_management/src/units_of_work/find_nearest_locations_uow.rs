@@ -56,8 +56,10 @@ impl QueryUnitOfWork for FindNearestLocationsUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/find_nearest_locations_uc.rs
 //
+// Exactly the same macros must be set in the use case uow trait file in ../use_cases/find_nearest_locations_uc.rs
 #[macros::uow_action(entity = "Location", action = "GetRO")]
 #[macros::uow_action(entity = "Location", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Location", action = "GetAllRO")]
 impl FindNearestLocationsUnitOfWorkTrait for FindNearestLocationsUnitOfWork {}
 
 pub struct FindNearestLocationsUnitOfWorkFactory {

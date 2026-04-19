@@ -13,7 +13,7 @@ pub fn prepare_bootstrap(user_count: usize) -> Option<(String, String, String, U
         return None;
     }
 
-    let hash = hash_password("admin").expect("failed to hash default password");
+    let hash = hash_password("Password1").expect("failed to hash default password");
     Some((
         "admin".to_string(),
         hash,
@@ -37,8 +37,8 @@ mod tests {
         assert_eq!(username, "admin");
         assert_eq!(display_name, "Administrator");
         assert_eq!(role, UserRole::Admin);
-        // The hash should verify against "admin"
-        assert!(verify_password("admin", &hash).unwrap());
+        // The hash should verify against "Password1"
+        assert!(verify_password("Password1", &hash).unwrap());
     }
 
     #[test]

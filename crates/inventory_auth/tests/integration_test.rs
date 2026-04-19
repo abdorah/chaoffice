@@ -49,14 +49,14 @@ fn full_auth_lifecycle() {
         session: None,
     };
 
-    // ── 2. Login with admin/admin succeeds, password_change_required ─
-    let login1 = validate_login(&admin, "admin").expect("admin login should succeed");
+    // ── 2. Login with admin/Password1 succeeds, password_change_required ─
+    let login1 = validate_login(&admin, "Password1").expect("admin login should succeed");
     assert!(login1.success);
     assert!(login1.password_change_required, "default admin should require password change");
     assert!(!login1.token.is_empty());
 
-    // ── 3. Change password from "admin" to "newpassword123" ──────────
-    let new_hash = validate_password_change(&admin.password_hash, "admin", "newpassword123")
+    // ── 3. Change password from "Password1" to "newpassword123" ──────────
+    let new_hash = validate_password_change(&admin.password_hash, "Password1", "newpassword123")
         .expect("password change should succeed");
 
     // Simulate updating the admin in the DB

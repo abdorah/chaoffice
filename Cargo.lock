@@ -2816,8 +2816,10 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
+ "inventory-manager-auth",
  "inventory-manager-common",
  "inventory-manager-macros",
+ "log",
  "serde",
  "serde_json",
  "uuid",
@@ -3034,6 +3036,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
+ "inventory-manager-auth",
  "inventory-manager-common",
  "inventory-manager-macros",
  "serde",

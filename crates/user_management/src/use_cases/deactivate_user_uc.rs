@@ -9,25 +9,16 @@ pub trait DeactivateUserUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn DeactivateUserUnitOfWorkTrait>;
 }
 
-//TODO: adapt entities and actions to real use :
-// Create, CreateMulti, Get, GetMulti, Update (scalar-only), UpdateMulti (scalar-only),
-// UpdateWithRelationships, UpdateWithRelationshipsMulti,
-// Remove, RemoveMulti, GetRelationship, GetRelationshipsFromRightIds,
-// SetRelationship, SetRelationshipMulti
-//
-// You have here a read-write unit of work trait.
-//
-// RO means Read Only.
-// Do not mix read-only and write actions in the same unit of work.
-//
 // Exactly the same macros must be set in the use case uow trait file in ../units_of_work/deactivate_user_uow.rs
-//
 #[macros::uow_action(entity = "User", action = "Get")]
 #[macros::uow_action(entity = "User", action = "GetMulti")]
+#[macros::uow_action(entity = "User", action = "Update")]
+#[macros::uow_action(entity = "User", action = "UpdateWithRelationships")]
 #[macros::uow_action(entity = "User", action = "Snapshot")]
 #[macros::uow_action(entity = "User", action = "Restore")]
 #[macros::uow_action(entity = "Session", action = "Get")]
 #[macros::uow_action(entity = "Session", action = "GetMulti")]
+#[macros::uow_action(entity = "Session", action = "Remove")]
 #[macros::uow_action(entity = "Session", action = "Snapshot")]
 #[macros::uow_action(entity = "Session", action = "Restore")]
 pub trait DeactivateUserUnitOfWorkTrait: CommandUnitOfWork {}
@@ -45,8 +36,28 @@ impl DeactivateUserUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        //TODO: DeactivateUserUseCase to be implemented
-        unimplemented!("DeactivateUserUseCase unimplemented");
+        // 1. Get user by ID
+        let user = uow
+            .get_user(&(dto.user_id as EntityId))?
+            .ok_or_else(|| anyhow!("User not found"))?;
+
+        // 2. If user has an active session, remove it
+        if let Some(session_id) = user.session {
+            // Unlink session from user first
+            let mut unlinked_user = user.clone();
+            unlinked_user.session = None;
+            uow.update_with_relationships_user(&unlinked_user)?;
+
+            // Remove the session
+            uow.remove_session(&session_id)?;
+        }
+
+        // 3. Set is_active = false
+        let mut deactivated_user = user;
+        deactivated_user.is_active = false;
+        deactivated_user.session = None;
+        uow.update_user(&deactivated_user)?;
+
         uow.commit()?;
         Ok(())
     }

@@ -9,25 +9,17 @@ pub trait LogoutUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn LogoutUnitOfWorkTrait>;
 }
 
-//TODO: adapt entities and actions to real use :
-// Create, CreateMulti, Get, GetMulti, Update (scalar-only), UpdateMulti (scalar-only),
-// UpdateWithRelationships, UpdateWithRelationshipsMulti,
-// Remove, RemoveMulti, GetRelationship, GetRelationshipsFromRightIds,
-// SetRelationship, SetRelationshipMulti
-//
-// You have here a read-write unit of work trait.
-//
-// RO means Read Only.
-// Do not mix read-only and write actions in the same unit of work.
-//
 // Exactly the same macros must be set in the use case uow trait file in ../units_of_work/logout_uow.rs
-//
 #[macros::uow_action(entity = "User", action = "Get")]
 #[macros::uow_action(entity = "User", action = "GetMulti")]
+#[macros::uow_action(entity = "User", action = "GetAll")]
+#[macros::uow_action(entity = "User", action = "UpdateWithRelationships")]
 #[macros::uow_action(entity = "User", action = "Snapshot")]
 #[macros::uow_action(entity = "User", action = "Restore")]
 #[macros::uow_action(entity = "Session", action = "Get")]
 #[macros::uow_action(entity = "Session", action = "GetMulti")]
+#[macros::uow_action(entity = "Session", action = "GetAll")]
+#[macros::uow_action(entity = "Session", action = "Remove")]
 #[macros::uow_action(entity = "Session", action = "Snapshot")]
 #[macros::uow_action(entity = "Session", action = "Restore")]
 pub trait LogoutUnitOfWorkTrait: CommandUnitOfWork {}
@@ -42,11 +34,34 @@ impl LogoutUseCase {
     }
 
     pub fn execute(&mut self, dto: &LogoutDto) -> Result<()> {
+        // Validate token format
+        inventory_auth::validate_logout(&dto.token)?;
+
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        //TODO: LogoutUseCase to be implemented
-        unimplemented!("LogoutUseCase unimplemented");
+        // Find the session by token
+        let sessions = uow.get_all_session()?;
+        let session = sessions.iter().find(|s| s.token == dto.token);
+        let session = match session {
+            Some(s) => s.clone(),
+            None => {
+                uow.rollback()?;
+                return Err(anyhow!("Session not found"));
+            }
+        };
+
+        // Unlink session from user
+        let users = uow.get_all_user()?;
+        if let Some(user) = users.iter().find(|u| u.session == Some(session.id)) {
+            let mut updated_user = user.clone();
+            updated_user.session = None;
+            uow.update_with_relationships_user(&updated_user)?;
+        }
+
+        // Delete the session
+        uow.remove_session(&session.id)?;
+
         uow.commit()?;
         Ok(())
     }

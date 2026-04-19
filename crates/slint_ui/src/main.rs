@@ -30,11 +30,41 @@ fn main() {
 }
 
 /// Check if any users exist; if not, create the default admin account.
-fn run_bootstrap(_app_context: &Arc<AppContext>) {
-    // TODO: Replace with actual Qleany user count query once controller is wired.
-    let user_count: usize = 0; // Placeholder — assumes first run
+fn run_bootstrap(app_context: &Arc<AppContext>) {
+    // Ensure Root entity exists (Qleany requires id=1 Root as ownership trunk)
+    let root_exists = match frontend::commands::root_commands::get_root(app_context, &1) {
+        Ok(Some(_)) => true,
+        _ => false,
+    };
 
-    if let Some((username, password_hash, display_name, role)) =
+    if !root_exists {
+        log::info!("Bootstrap: creating Root entity");
+        let root_dto = frontend::direct_access::CreateRootDto::default();
+        match frontend::commands::root_commands::create_orphan_root(app_context, &root_dto) {
+            Ok(root) => log::info!("Bootstrap: Root entity created with id {}", root.id),
+            Err(e) => {
+                log::error!("Bootstrap: failed to create Root entity: {:?}", e);
+                return;
+            }
+        }
+    } else {
+        log::info!("Bootstrap: Root entity already exists");
+    }
+
+    // Check if users already exist
+    let user_list = frontend::commands::user_management_commands::list_users(app_context);
+    let user_count = match &user_list {
+        Ok(list) => {
+            log::info!("Bootstrap: found {} existing users", list.user_ids.len());
+            list.user_ids.len()
+        }
+        Err(e) => {
+            log::warn!("Bootstrap: list_users failed ({}), assuming 0 users", e);
+            0
+        }
+    };
+
+    if let Some((username, _password_hash, display_name, role)) =
         inventory_auth::bootstrap::prepare_bootstrap(user_count)
     {
         log::info!(
@@ -42,8 +72,19 @@ fn run_bootstrap(_app_context: &Arc<AppContext>) {
             username,
             role
         );
-        // TODO: Persist the admin user via Qleany controller
-        let _ = (username, password_hash, display_name, role);
+        // Use the create_user controller — but it hashes the password internally,
+        // so we use the raw "admin" password and let the use case hash it.
+        let dto = frontend::user_management::CreateUserDto {
+            username,
+            password: "Password1".to_string(), // Must be >= 8 chars to pass validation
+            display_name,
+            role: frontend::user_management::dtos::CreateUserRole::Admin,
+            person_id: 0,
+        };
+        match frontend::commands::user_management_commands::create_user(app_context, &dto) {
+            Ok(result) => log::info!("Bootstrap: admin user created with id {}", result.user_id),
+            Err(e) => log::error!("Bootstrap: failed to create admin user: {:?}", e),
+        }
     } else {
         log::info!("Bootstrap: users already exist, skipping");
     }
@@ -68,7 +109,40 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
     setup_sync_callbacks(&app, &sync_engine);
 
     // ── Auth callback wiring ──────────────────────────────────────────
-    // TODO: Wire AppState auth callbacks (login, logout, create-user, etc.)
+    {
+        let ctx = Arc::clone(app_context);
+        let app_weak = app.as_weak();
+        app.global::<AppState>().on_login(move |username, password| {
+            let Some(app) = app_weak.upgrade() else { return };
+            let dto = frontend::authentication::LoginDto {
+                username: username.to_string(),
+                password: password.to_string(),
+            };
+            match frontend::commands::authentication_commands::login(&ctx, &dto) {
+                Ok(result) if result.success => {
+                    app.global::<AppState>().set_is_authenticated(true);
+                    app.global::<AppState>()
+                        .set_current_user(slint::SharedString::from(&result.display_name));
+                    app.global::<AppState>()
+                        .set_current_role(slint::SharedString::from(&result.role));
+                    app.global::<AppState>()
+                        .set_login_error(slint::SharedString::from(""));
+                    log::info!("Login successful for user '{}'", username);
+                }
+                Ok(result) => {
+                    app.global::<AppState>()
+                        .set_login_error(slint::SharedString::from(&result.error_message));
+                    log::warn!("Login failed for '{}': {}", username, result.error_message);
+                }
+                Err(e) => {
+                    let msg = format!("{}", e);
+                    app.global::<AppState>()
+                        .set_login_error(slint::SharedString::from(&msg));
+                    log::error!("Login error for '{}': {}", username, e);
+                }
+            }
+        });
+    }
 
     app.window().on_close_requested({
         let ctx = Arc::clone(app_context);

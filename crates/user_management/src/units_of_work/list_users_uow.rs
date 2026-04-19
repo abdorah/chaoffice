@@ -54,8 +54,10 @@ impl QueryUnitOfWork for ListUsersUnitOfWork {
 //
 // Exactly the same macros must be set in the use case uow trait file in ../use_cases/list_users_uc.rs
 //
+// Exactly the same macros must be set in the use case uow trait file in ../use_cases/list_users_uc.rs
 #[macros::uow_action(entity = "User", action = "GetRO")]
 #[macros::uow_action(entity = "User", action = "GetMultiRO")]
+#[macros::uow_action(entity = "User", action = "GetAllRO")]
 impl ListUsersUnitOfWorkTrait for ListUsersUnitOfWork {}
 
 pub struct ListUsersUnitOfWorkFactory {
