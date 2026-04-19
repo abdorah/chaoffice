@@ -14,5 +14,8 @@ name = "inventory_security"
 thiserror = { workspace = true }
 common = { workspace = true }
 
+[dev-dependencies]
+inventory_security_macros = { workspace = true }
+
 [lints]
 workspace = true

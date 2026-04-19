@@ -61,6 +61,7 @@ impl QueryUnitOfWork for GeneratePurchasingReportUnitOfWork {
 #[macros::uow_action(entity = "Person", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Deal", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Deal", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Deal", action = "GetAllRO", thread_safe = true)]
 impl GeneratePurchasingReportUnitOfWorkTrait for GeneratePurchasingReportUnitOfWork {}
 
 pub struct GeneratePurchasingReportUnitOfWorkFactory {

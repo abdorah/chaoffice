@@ -57,6 +57,7 @@ impl QueryUnitOfWork for GenerateInventoryReportUnitOfWork {
 //
 #[macros::uow_action(entity = "Product", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Product", action = "GetAllRO", thread_safe = true)]
 #[macros::uow_action(entity = "Category", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Category", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Person", action = "GetRO", thread_safe = true)]

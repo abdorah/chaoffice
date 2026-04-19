@@ -59,10 +59,12 @@ impl QueryUnitOfWork for GenerateBudgetReportUnitOfWork {
 #[macros::uow_action(entity = "User", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "BudgetEntry", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "BudgetEntry", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "BudgetEntry", action = "GetAllRO", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Deal", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Deal", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Deal", action = "GetAllRO", thread_safe = true)]
 impl GenerateBudgetReportUnitOfWorkTrait for GenerateBudgetReportUnitOfWork {}
 
 pub struct GenerateBudgetReportUnitOfWorkFactory {

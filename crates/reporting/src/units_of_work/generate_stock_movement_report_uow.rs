@@ -59,6 +59,7 @@ impl QueryUnitOfWork for GenerateStockMovementReportUnitOfWork {
 #[macros::uow_action(entity = "User", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "StockMovement", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "StockMovement", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "StockMovement", action = "GetAllRO", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Product", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Location", action = "GetRO", thread_safe = true)]

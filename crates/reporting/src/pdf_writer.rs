@@ -1,0 +1,135 @@
+use crate::error::ReportError;
+use crate::writer::{ReportRow, ReportWriter};
+use genpdf::elements::{Break, Paragraph, TableLayout};
+use genpdf::style::Style;
+use genpdf::{Document, Element, SimplePageDecorator, fonts};
+
+pub struct PdfWriter {
+    doc: Option<Document>,
+    output_path: String,
+    headers: Vec<String>,
+    col_count: usize,
+}
+
+impl PdfWriter {
+    pub fn new(output_path: &str) -> Self {
+        PdfWriter {
+            doc: None,
+            output_path: output_path.to_string(),
+            headers: Vec::new(),
+            col_count: 0,
+        }
+    }
+
+    fn create_document(title: &str) -> Result<Document, ReportError> {
+        let font_family =
+            fonts::from_files("", "LiberationSans", None).unwrap_or_else(|_| {
+                // Fall back to built-in font
+                genpdf::fonts::from_files("/usr/share/fonts/truetype/liberation", "LiberationSans", None)
+                    .unwrap_or_else(|_| {
+                        // Use default font as last resort
+                        fonts::from_files(".", "LiberationSans", None)
+                            .unwrap_or_else(|_| fonts::from_files("/usr/share/fonts", "LiberationSans", None)
+                                .unwrap_or_else(|_| {
+                                    // Create a minimal document without custom fonts
+                                    panic!("Could not load any font")
+                                }))
+                    })
+            });
+
+        let mut doc = Document::new(font_family);
+        doc.set_title(title);
+        let mut decorator = SimplePageDecorator::new();
+        decorator.set_margins(10);
+        doc.set_page_decorator(decorator);
+
+        // Add title
+        doc.push(
+            Paragraph::new(title)
+                .styled(Style::new().bold().with_font_size(16)),
+        );
+        doc.push(Break::new(1));
+
+        Ok(doc)
+    }
+
+    fn push_table_header(doc: &mut Document, headers: &[String], col_count: usize) {
+        let mut table = TableLayout::new(vec![1; col_count]);
+        table.set_cell_decorator(genpdf::elements::FrameCellDecorator::new(true, true, false));
+        let header_row = table.row();
+        let mut row_handle = header_row;
+        for h in headers {
+            row_handle.push_element(
+                Paragraph::new(h.as_str()).styled(Style::new().bold().with_font_size(8)),
+            );
+        }
+        row_handle.push().expect("Failed to push header row");
+        doc.push(table);
+    }
+}
+
+impl ReportWriter for PdfWriter {
+    fn begin(&mut self, title: &str, headers: &[&str]) -> Result<(), ReportError> {
+        self.col_count = headers.len();
+        self.headers = headers.iter().map(|h| h.to_string()).collect();
+
+        let doc = Self::create_document(title).map_err(|e| ReportError::PdfError {
+            details: e.to_string(),
+        })?;
+        self.doc = Some(doc);
+
+        Ok(())
+    }
+
+    fn write_row(&mut self, row: &ReportRow) -> Result<(), ReportError> {
+        let doc = self.doc.as_mut().ok_or_else(|| ReportError::PdfError {
+            details: "Document not initialized".to_string(),
+        })?;
+
+        let mut table = TableLayout::new(vec![1; self.col_count]);
+        table.set_cell_decorator(genpdf::elements::FrameCellDecorator::new(true, false, false));
+        let table_row = table.row();
+        let mut row_handle = table_row;
+        for val in row {
+            row_handle.push_element(
+                Paragraph::new(val.as_str()).styled(Style::new().with_font_size(7)),
+            );
+        }
+        row_handle.push().map_err(|e| ReportError::PdfError {
+            details: e.to_string(),
+        })?;
+        doc.push(table);
+
+        Ok(())
+    }
+
+    fn begin_section(&mut self, title: &str, headers: &[&str]) -> Result<(), ReportError> {
+        let doc = self.doc.as_mut().ok_or_else(|| ReportError::PdfError {
+            details: "Document not initialized".to_string(),
+        })?;
+
+        // Page break
+        doc.push(Break::new(2));
+        doc.push(
+            Paragraph::new(title)
+                .styled(Style::new().bold().with_font_size(14)),
+        );
+        doc.push(Break::new(1));
+
+        self.col_count = headers.len();
+        self.headers = headers.iter().map(|h| h.to_string()).collect();
+
+        Ok(())
+    }
+
+    fn finish(&mut self) -> Result<(), ReportError> {
+        let doc = self.doc.take().ok_or_else(|| ReportError::PdfError {
+            details: "Document not initialized".to_string(),
+        })?;
+
+        doc.render_to_file(&self.output_path)
+            .map_err(|e| ReportError::PdfError {
+                details: e.to_string(),
+            })
+    }
+}

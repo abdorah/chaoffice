@@ -20,6 +20,7 @@ members = [
     "crates/inventory_security",
     "crates/inventory_auth",
     "crates/inventory_security_macros",
+    "crates/inventory_sync",
     ]
 default-members = [
     "crates/slint_ui",
@@ -58,6 +59,7 @@ reporting = { package = "inventory-manager-reporting", version = "0.0.1", path =
 inventory_security = { package = "inventory-manager-security", version = "0.0.1", path = "crates/inventory_security" }
 inventory_auth = { package = "inventory-manager-auth", version = "0.0.1", path = "crates/inventory_auth" }
 inventory_security_macros = { package = "inventory-manager-security-macros", version = "0.0.1", path = "crates/inventory_security_macros" }
+inventory_sync = { package = "inventory-manager-sync", version = "0.0.1", path = "crates/inventory_sync" }
 
 [profile.release]
 lto = "fat"

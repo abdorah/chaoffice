@@ -1,0 +1,29 @@
+[package]
+name = "inventory-manager-sync"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tokio = { version = "1", features = ["rt", "time", "sync"] }
+uuid = { workspace = true }
+common = { workspace = true }
+inventory_security = { workspace = true }
+inventory_security_macros = { workspace = true }
+
+[dev-dependencies]
+proptest = "1"
+tokio-test = "0.4"
+tempfile = "3"
+
+[lints]
+workspace = true

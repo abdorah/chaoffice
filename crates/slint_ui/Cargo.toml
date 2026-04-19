@@ -21,6 +21,8 @@ anyhow = { workspace = true }
 chrono = { workspace = true }
 inventory_auth = { workspace = true }
 inventory_security = { workspace = true }
+inventory_sync = { workspace = true }
+tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [build-dependencies]
 slint-build = "1.14"

@@ -6,8 +6,8 @@ Implement the reporting feature as a `reporting` crate with four use case handle
 
 ## Tasks
 
-- [ ] 1. Set up reporting crate structure and shared types
-  - [ ] 1.1 Create `crates/reporting/` with `Cargo.toml` and `src/lib.rs`
+- [x] 1. Set up reporting crate structure and shared types
+  - [x] 1.1 Create `crates/reporting/` with `Cargo.toml` and `src/lib.rs`
     - Add dependencies: `rust_xlsxwriter`, `genpdf`, `csv`, `chrono`, `thiserror`, `serde`
     - Add dev-dependencies: `proptest`, `tempfile`
     - Define `ReportError` enum in `src/error.rs`
@@ -15,81 +15,81 @@ Implement the reporting feature as a `reporting` crate with four use case handle
     - Define `ReportRow` type alias and `ReportWriter` trait in `src/writer.rs`
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 2. Implement format writers
-  - [ ] 2.1 Implement `CsvReportWriter` in `src/csv_writer.rs`
+- [x] 2. Implement format writers
+  - [x] 2.1 Implement `CsvReportWriter` in `src/csv_writer.rs`
     - Implement `ReportWriter` trait: `begin` writes header row, `write_row` writes data, `begin_section` writes separator + section headers, `finish` flushes
     - _Requirements: 5.3_
-  - [ ] 2.2 Implement `ExcelWriter` in `src/excel_writer.rs`
+  - [x] 2.2 Implement `ExcelWriter` in `src/excel_writer.rs`
     - Implement `ReportWriter` trait using `rust_xlsxwriter`: bold header format, auto-column-width, `begin_section` creates new worksheet, `finish` saves workbook
     - _Requirements: 5.1_
-  - [ ] 2.3 Implement `PdfWriter` in `src/pdf_writer.rs`
+  - [x] 2.3 Implement `PdfWriter` in `src/pdf_writer.rs`
     - Implement `ReportWriter` trait using `genpdf`: document with title, table-based layout, `begin_section` adds page break, `finish` renders to file
     - _Requirements: 5.2_
-  - [ ] 2.4 Implement `create_writer` factory function in `src/writer.rs`
+  - [x] 2.4 Implement `create_writer` factory function in `src/writer.rs`
     - Dispatch to the correct writer based on `ReportFormat`
     - Validate output path is writable before creating writer
     - _Requirements: 5.4_
 
-- [ ] 3. Implement report generation orchestrator
-  - [ ] 3.1 Implement `generate_report` function in `src/generate.rs`
+- [x] 3. Implement report generation orchestrator
+  - [x] 3.1 Implement `generate_report` function in `src/generate.rs`
     - Accept title, headers, rows, format, output_path, progress reporter
     - Create writer, call begin, iterate rows with progress percentage, call finish
     - Return (file_path, row_count)
     - _Requirements: 5.5, 6.1, 6.2, 7.1_
-  - [ ] 3.2 Implement `generate_report_with_appendix` function in `src/generate.rs`
+  - [x] 3.2 Implement `generate_report_with_appendix` function in `src/generate.rs`
     - Extend `generate_report` to call `begin_section` and write appendix rows after main data
     - Row count only counts main data rows (not appendix)
     - _Requirements: 3.3, 3.4, 7.1_
 
-- [ ] 4. Checkpoint - Ensure writer infrastructure compiles
+- [x] 4. Checkpoint - Ensure writer infrastructure compiles
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement data collectors
-  - [ ] 5.1 Implement `collect_inventory_rows` in `src/collectors.rs`
+- [x] 5. Implement data collectors
+  - [x] 5.1 Implement `collect_inventory_rows` in `src/collectors.rs`
     - Query all Products with Category, Location, Person joins
     - Filter by include_zero_stock flag
     - Build ReportRow vectors with 9 columns (empty strings for absent relationships)
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
-  - [ ] 5.2 Implement `collect_stock_movement_rows` in `src/collectors.rs`
+  - [x] 5.2 Implement `collect_stock_movement_rows` in `src/collectors.rs`
     - Query StockMovements within [from_date, to_date], join Product, Location, User
     - Order by created_at ascending
     - Build ReportRow vectors with 9 columns
     - _Requirements: 2.1, 2.2, 2.3_
-  - [ ] 5.3 Implement `collect_budget_rows` and `collect_budget_projection_rows` in `src/collectors.rs`
+  - [x] 5.3 Implement `collect_budget_rows` and `collect_budget_projection_rows` in `src/collectors.rs`
     - Query BudgetEntries within [from_date, to_date], join Product, Deal, User
     - Build ReportRow vectors with 7 columns
     - Projection: compute 6-month projection rows with 5 columns using active deals and historical averages
     - _Requirements: 3.1, 3.2, 3.3_
-  - [ ] 5.4 Implement `collect_purchasing_rows` in `src/collectors.rs`
+  - [x] 5.4 Implement `collect_purchasing_rows` in `src/collectors.rs`
     - Query Deals filtered by DealStatusFilter, join Product, Person (supplier)
     - Build ReportRow vectors with 10 columns (empty strings for absent relationships)
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 6. Implement use case handlers
-  - [ ] 6.1 Implement `GenerateInventoryReportHandler` in `src/handlers/inventory_report.rs`
+- [x] 6. Implement use case handlers
+  - [x] 6.1 Implement `GenerateInventoryReportHandler` in `src/handlers/inventory_report.rs`
     - Add `#[require_permission("report:generate")]` RBAC gate
     - Call `collect_inventory_rows`, then `generate_report`
     - Return `GenerateReportReturnDto`
     - _Requirements: 1.1, 1.6_
-  - [ ] 6.2 Implement `GenerateStockMovementReportHandler` in `src/handlers/stock_movement_report.rs`
+  - [x] 6.2 Implement `GenerateStockMovementReportHandler` in `src/handlers/stock_movement_report.rs`
     - Add `#[require_permission("report:generate")]` RBAC gate
     - Validate from_date <= to_date
     - Call `collect_stock_movement_rows`, then `generate_report`
     - Return `GenerateStockReportReturnDto`
     - _Requirements: 2.1, 2.4, 2.6_
-  - [ ] 6.3 Implement `GenerateBudgetReportHandler` in `src/handlers/budget_report.rs`
+  - [x] 6.3 Implement `GenerateBudgetReportHandler` in `src/handlers/budget_report.rs`
     - Add `#[require_permission("report:generate")]` RBAC gate
     - Validate from_date <= to_date
     - Call `collect_budget_rows`; if include_projections, also call `collect_budget_projection_rows` and use `generate_report_with_appendix`; else use `generate_report`
     - Return `GenerateBudgetReportReturnDto`
     - _Requirements: 3.1, 3.3, 3.4, 3.5, 3.7_
-  - [ ] 6.4 Implement `GeneratePurchasingReportHandler` in `src/handlers/purchasing_report.rs`
+  - [x] 6.4 Implement `GeneratePurchasingReportHandler` in `src/handlers/purchasing_report.rs`
     - Add `#[require_permission("report:generate")]` RBAC gate
     - Call `collect_purchasing_rows`, then `generate_report`
     - Return `GeneratePurchasingReportReturnDto`
     - _Requirements: 4.1, 4.7_
 
-- [ ] 7. Checkpoint - Ensure all handlers compile and wire together
+- [x] 7. Checkpoint - Ensure all handlers compile and wire together
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 8. Implement property tests for inventory report
@@ -143,8 +143,8 @@ Implement the reporting feature as a `reporting` crate with four use case handle
     - Viewer allowed for all four report types (Requirements 1.6, 2.6, 3.7, 4.7)
     - Manager allowed for all four report types (Requirements 1.6, 2.6, 3.7, 4.7)
 
-- [ ] 13. Implement ReportsPage Slint UI
-  - [ ] 13.1 Create `ui/pages/reports_page.slint`
+- [-] 13. Implement ReportsPage Slint UI
+  - [-] 13.1 Create `ui/pages/reports_page.slint`
     - Four report sections: Inventory, Stock Movement, Budget, Purchasing
     - Each section: format ComboBox (Excel/PDF/CSV), report-specific filter controls, output path input, generate button, progress bar, status label
     - Inventory section: include_zero_stock checkbox

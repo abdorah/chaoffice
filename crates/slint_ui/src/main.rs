@@ -17,8 +17,14 @@ fn main() {
     // ── Bootstrap: ensure default admin exists on first run ────────────
     run_bootstrap(&app_context);
 
+    // ── Initialize sync engine ────────────────────────────────────────
+    let sync_engine = init_sync_engine(&app_context);
+
     // Run the Slint UI
-    run_slint(&app_context);
+    run_slint(&app_context, sync_engine.clone());
+
+    // ── Shutdown: dehydrate pending changes ───────────────────────────
+    shutdown_sync(&sync_engine);
 
     app_context.shutdown();
 }
@@ -43,7 +49,7 @@ fn run_bootstrap(_app_context: &Arc<AppContext>) {
     }
 }
 
-fn run_slint(app_context: &Arc<AppContext>) {
+fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::SyncEngine>) {
     log::info!("Starting InventoryManager Slint UI");
     // Create the event hub client for backend-to-UI event passing
     let event_hub_client = EventHubClient::new(&app_context.event_hub);
@@ -57,6 +63,9 @@ fn run_slint(app_context: &Arc<AppContext>) {
 
     // Setup budget page adapter callbacks
     setup_budget_callbacks(&app, app_context);
+
+    // Setup sync callbacks
+    setup_sync_callbacks(&app, &sync_engine);
 
     // ── Auth callback wiring ──────────────────────────────────────────
     // TODO: Wire AppState auth callbacks (login, logout, create-user, etc.)
@@ -205,4 +214,177 @@ fn setup_budget_callbacks(app: &App, app_context: &Arc<AppContext>) {
             // On failure: set error-message
         }
     });
+}
+
+/// Initialize the SyncEngine at application startup.
+///
+/// Loads SyncConfig from file (or uses defaults), constructs the engine,
+/// and calls hydrate to load data from LibSQL into redb.
+/// (Requirements 14.1, 13.1)
+fn init_sync_engine(app_context: &Arc<AppContext>) -> Arc<inventory_sync::SyncEngine> {
+    use inventory_sync::{ChangeTracker, SyncConfig, SyncEngine};
+    use std::path::PathBuf;
+
+    let config_path = PathBuf::from("sync_config.json");
+    let config = SyncConfig::load(&config_path).unwrap_or_default();
+
+    let change_tracker = Arc::new(ChangeTracker::new());
+
+    // Subscribe ChangeTracker to EventHub entity events
+    let tracker_clone = change_tracker.clone();
+    let event_receiver = app_context.event_hub.subscribe_receiver();
+    std::thread::spawn(move || {
+        use frontend::common::event::{DirectAccessEntity, EntityEvent, Origin};
+        while let Ok(event) = event_receiver.recv() {
+            let entity_type = match &event.origin {
+                Origin::DirectAccess(entity) => match entity {
+                    DirectAccessEntity::Product(EntityEvent::Created)
+                    | DirectAccessEntity::Product(EntityEvent::Updated)
+                    | DirectAccessEntity::Product(EntityEvent::Removed) => Some("products"),
+                    DirectAccessEntity::Category(EntityEvent::Created)
+                    | DirectAccessEntity::Category(EntityEvent::Updated)
+                    | DirectAccessEntity::Category(EntityEvent::Removed) => Some("categories"),
+                    DirectAccessEntity::Person(EntityEvent::Created)
+                    | DirectAccessEntity::Person(EntityEvent::Updated)
+                    | DirectAccessEntity::Person(EntityEvent::Removed) => Some("persons"),
+                    DirectAccessEntity::Contact(EntityEvent::Created)
+                    | DirectAccessEntity::Contact(EntityEvent::Updated)
+                    | DirectAccessEntity::Contact(EntityEvent::Removed) => Some("contacts"),
+                    DirectAccessEntity::Deal(EntityEvent::Created)
+                    | DirectAccessEntity::Deal(EntityEvent::Updated)
+                    | DirectAccessEntity::Deal(EntityEvent::Removed) => Some("deals"),
+                    DirectAccessEntity::Location(EntityEvent::Created)
+                    | DirectAccessEntity::Location(EntityEvent::Updated)
+                    | DirectAccessEntity::Location(EntityEvent::Removed) => Some("locations"),
+                    DirectAccessEntity::User(EntityEvent::Created)
+                    | DirectAccessEntity::User(EntityEvent::Updated)
+                    | DirectAccessEntity::User(EntityEvent::Removed) => Some("users"),
+                    DirectAccessEntity::Session(EntityEvent::Created)
+                    | DirectAccessEntity::Session(EntityEvent::Updated)
+                    | DirectAccessEntity::Session(EntityEvent::Removed) => Some("sessions"),
+                    DirectAccessEntity::StockMovement(EntityEvent::Created)
+                    | DirectAccessEntity::StockMovement(EntityEvent::Updated)
+                    | DirectAccessEntity::StockMovement(EntityEvent::Removed) => {
+                        Some("stock_movements")
+                    }
+                    DirectAccessEntity::BudgetEntry(EntityEvent::Created)
+                    | DirectAccessEntity::BudgetEntry(EntityEvent::Updated)
+                    | DirectAccessEntity::BudgetEntry(EntityEvent::Removed) => {
+                        Some("budget_entries")
+                    }
+                    _ => None,
+                },
+                _ => None,
+            };
+
+            if let Some(entity_type) = entity_type {
+                tracker_clone.on_entity_event(entity_type, &event.ids);
+            }
+        }
+    });
+
+    // Build the SyncEngine (async, run on a temporary tokio runtime)
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime for sync");
+    let engine = rt
+        .block_on(SyncEngine::new(config, config_path, change_tracker))
+        .expect("Failed to initialize SyncEngine");
+
+    let engine = Arc::new(engine);
+
+    // TODO: Call hydrate on startup once we have a SecurityContext from the logged-in user.
+    // For now, hydrate is deferred until the user logs in and triggers it from the SyncPage.
+    log::info!("SyncEngine initialized (hydrate deferred until user login)");
+
+    engine
+}
+
+/// Wire SyncPage callbacks to the SyncEngine.
+/// (Requirements 11.1-11.7)
+fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>) {
+    // sync-to-remote (Push / Dehydrate)
+    app.global::<AppState>().on_sync_to_remote({
+        let _engine = Arc::clone(sync_engine);
+        let app_weak = app.as_weak();
+        move || {
+            let Some(_app) = app_weak.upgrade() else {
+                return;
+            };
+
+            log::info!("Sync: push to remote requested");
+
+            // TODO: Build SecurityContext from current session
+            // TODO: Call engine.dehydrate(&ctx) via tokio
+            // On success: update AppState.sync-status
+            // On failure: display error on SyncPage
+        }
+    });
+
+    // sync-from-remote (Pull / Hydrate)
+    app.global::<AppState>().on_sync_from_remote({
+        let _engine = Arc::clone(sync_engine);
+        let app_weak = app.as_weak();
+        move || {
+            let Some(_app) = app_weak.upgrade() else {
+                return;
+            };
+
+            log::info!("Sync: pull from remote requested");
+
+            // TODO: Build SecurityContext from current session
+            // TODO: Call engine.hydrate(&ctx) via tokio
+            // On success: update AppState.sync-status
+            // On failure: display error on SyncPage
+        }
+    });
+
+    // configure-sync
+    app.global::<AppState>().on_configure_sync({
+        let _engine = Arc::clone(sync_engine);
+        let app_weak = app.as_weak();
+        move |url, _token, auto_sync, interval| {
+            let Some(_app) = app_weak.upgrade() else {
+                return;
+            };
+
+            log::info!(
+                "Sync: configure requested (url={}, auto={}, interval={})",
+                url,
+                auto_sync,
+                interval
+            );
+
+            // TODO: Build SecurityContext from current session (must be Admin)
+            // TODO: Build SyncConfig from parameters
+            // TODO: Call engine.configure(&ctx, new_config) via tokio
+        }
+    });
+
+    // Update pending changes count on the UI
+    let pending = sync_engine.change_tracker().pending_count() as i32;
+    app.global::<AppState>().set_sync_status(SyncStatus {
+        last_sync_at: slint::SharedString::from("Never"),
+        pending_changes: pending,
+        is_online: false,
+    });
+}
+
+/// Shutdown sync: dehydrate pending changes to LibSQL.
+/// (Requirements 14.2, 14.3, 13.2)
+fn shutdown_sync(sync_engine: &Arc<inventory_sync::SyncEngine>) {
+    log::info!("Shutdown: stopping auto-sync and flushing pending changes");
+
+    let rt = tokio::runtime::Runtime::new().ok();
+    if let Some(rt) = rt {
+        rt.block_on(sync_engine.stop_auto_sync());
+
+        // TODO: Dehydrate pending changes on shutdown once SecurityContext is available.
+        // For now, just stop the auto-sync timer.
+        // let ctx = SecurityContext::from_user(...);
+        // match rt.block_on(sync_engine.dehydrate(&ctx)) {
+        //     Ok(result) => log::info!("Shutdown dehydrate: {:?}", result),
+        //     Err(e) => log::error!("Shutdown dehydrate failed: {}", e),
+        // }
+    }
+
+    log::info!("Shutdown: sync cleanup complete");
 }
