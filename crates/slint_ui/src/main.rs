@@ -7,6 +7,49 @@ use std::sync::Arc;
 
 slint::include_modules!();
 
+const UI_SETTINGS_PATH: &str = "ui_settings.toml";
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct UiSettings {
+    window_width: f32,
+    window_height: f32,
+    dark_mode: bool,
+}
+
+impl Default for UiSettings {
+    fn default() -> Self {
+        Self {
+            window_width: 1024.0,
+            window_height: 700.0,
+            dark_mode: false,
+        }
+    }
+}
+
+impl UiSettings {
+    fn load() -> Self {
+        let settings: UiSettings = std::fs::read_to_string(UI_SETTINGS_PATH)
+            .ok()
+            .and_then(|s| toml::from_str(&s).ok())
+            .unwrap_or_default();
+        log::info!(
+            "UiSettings::load: {}x{}, dark_mode={}",
+            settings.window_width, settings.window_height, settings.dark_mode
+        );
+        settings
+    }
+
+    fn save(&self) {
+        log::info!(
+            "UiSettings::save: {}x{}, dark_mode={}",
+            self.window_width, self.window_height, self.dark_mode
+        );
+        if let Ok(s) = toml::to_string_pretty(self) {
+            let _ = std::fs::write(UI_SETTINGS_PATH, s);
+        }
+    }
+}
+
 fn main() {
     // Initialize logging
     env_logger::init();
@@ -99,6 +142,14 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
     // Create the Slint UI
     let app = App::new().unwrap();
 
+    // Load and apply UI settings
+    let ui_settings = UiSettings::load();
+    app.window()
+        .set_size(slint::LogicalSize::new(ui_settings.window_width, ui_settings.window_height));
+    if ui_settings.dark_mode {
+        app.global::<AppSettings>().set_dark_mode(true);
+    }
+
     // Setup stock tracking adapter callbacks
     setup_stock_tracking_callbacks(&app, app_context);
 
@@ -140,6 +191,9 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
                     refresh_persons_table(&ctx, &app);
                     refresh_deals_table(&ctx, &app);
                     refresh_locations_table(&ctx, &app);
+                    refresh_users_table(&ctx, &app);
+                    populate_product_comboboxes(&ctx, &app);
+                    populate_deal_comboboxes(&ctx, &app);
                     populate_stock_tracking_comboboxes(&ctx, &app);
                 }
                 Ok(result) => {
@@ -159,9 +213,23 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
 
     app.window().on_close_requested({
         let ctx = Arc::clone(app_context);
+        let app_weak = app.as_weak();
 
         move || {
             log::info!("Window close requested");
+
+            // Save UI settings
+            if let Some(app) = app_weak.upgrade() {
+                let size = app.window().size();
+                let scale = app.window().scale_factor();
+                let settings = UiSettings {
+                    window_width: size.width as f32 / scale,
+                    window_height: size.height as f32 / scale,
+                    dark_mode: app.global::<AppSettings>().get_dark_mode(),
+                };
+                settings.save();
+            }
+
             ctx.shutdown();
             return slint::CloseRequestResponse::HideWindow;
         }
@@ -295,6 +363,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                     log::info!("Created category '{}' with id {}", c.name, c.id);
                     if let Some(app) = app_weak.upgrade() {
                         refresh_categories_list(&ctx, &app);
+                        populate_product_comboboxes(&ctx, &app);
                     }
                 }
                 Err(e) => log::error!("Failed to create category: {}", e),
@@ -351,6 +420,8 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                     log::info!("Created person '{}' with id {}", p.name, p.id);
                     if let Some(app) = app_weak.upgrade() {
                         refresh_persons_table(&ctx, &app);
+                        populate_product_comboboxes(&ctx, &app);
+                        populate_deal_comboboxes(&ctx, &app);
                     }
                 }
                 Err(e) => log::error!("Failed to create person: {}", e),
@@ -501,6 +572,9 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                     log::info!("Created location '{}' with id {}", l.name, l.id);
                     if let Some(app) = app_weak.upgrade() {
                         refresh_locations_table(&ctx, &app);
+                        populate_product_comboboxes(&ctx, &app);
+                        populate_deal_comboboxes(&ctx, &app);
+                        populate_stock_tracking_comboboxes(&ctx, &app);
                     }
                 }
                 Err(e) => log::error!("Failed to create location: {}", e),
@@ -558,6 +632,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
     // ── User Management ───────────────────────────────────────────────
     app.global::<AppState>().on_create_user({
         let ctx = Arc::clone(app_context);
+        let app_weak = app.as_weak();
         move |username, password, display_name, role| {
             let user_role = match role.as_str() {
                 "Manager" => frontend::user_management::dtos::CreateUserRole::Manager,
@@ -573,7 +648,12 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 person_id: 0,
             };
             match frontend::commands::user_management_commands::create_user(&ctx, &dto) {
-                Ok(result) => log::info!("Created user with id {}", result.user_id),
+                Ok(result) => {
+                    log::info!("Created user with id {}", result.user_id);
+                    if let Some(app) = app_weak.upgrade() {
+                        refresh_users_table(&ctx, &app);
+                    }
+                }
                 Err(e) => log::error!("Failed to create user: {}", e),
             }
         }
@@ -592,37 +672,183 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         }
     });
 
-    // ── Reports (stub — log and inform user) ──────────────────────────
+    // ── Reports — generate and reset generating flag ────────────
     app.global::<AppState>().on_generate_inventory_report({
+        let ctx = Arc::clone(app_context);
+        let app_weak = app.as_weak();
         move |format, include_zero_stock| {
             log::info!(
                 "Report requested: inventory (format={}, include_zero_stock={})",
                 format, include_zero_stock
             );
+
+            let report_format = match format.as_str() {
+                "PDF" => reporting::ReportFormat::Pdf,
+                "CSV" => reporting::ReportFormat::Csv,
+                _ => reporting::ReportFormat::Excel,
+            };
+
+            // Ensure reports directory exists
+            let _ = std::fs::create_dir_all("./reports");
+            let ext = match &report_format {
+                reporting::ReportFormat::Pdf => "pdf",
+                reporting::ReportFormat::Csv => "csv",
+                reporting::ReportFormat::Excel => "xlsx",
+            };
+            let output_path = format!("./reports/inventory_report.{}", ext);
+
+            let dto = reporting::GenerateInventoryReportDto {
+                output_path: output_path.clone(),
+                format: report_format,
+                include_zero_stock,
+            };
+
+            let result_msg = match frontend::commands::reporting_commands::generate_inventory_report(&ctx, &dto) {
+                Ok(op_id) => format!("Report generated: {} (operation: {})", output_path, op_id),
+                Err(e) => format!("Failed to generate report: {}", e),
+            };
+
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_report_generating(false);
+                app.global::<AppState>().set_report_output(slint::SharedString::from(&result_msg));
+            }
+            log::info!("{}", result_msg);
         }
     });
 
     app.global::<AppState>().on_generate_stock_report({
+        let ctx = Arc::clone(app_context);
+        let app_weak = app.as_weak();
         move |format| {
             log::info!("Report requested: stock (format={})", format);
+
+            let report_format = match format.as_str() {
+                "PDF" => reporting::StockReportFormat::Pdf,
+                "CSV" => reporting::StockReportFormat::Csv,
+                _ => reporting::StockReportFormat::Excel,
+            };
+
+            let _ = std::fs::create_dir_all("./reports");
+            let ext = match &report_format {
+                reporting::StockReportFormat::Pdf => "pdf",
+                reporting::StockReportFormat::Csv => "csv",
+                reporting::StockReportFormat::Excel => "xlsx",
+            };
+            let output_path = format!("./reports/stock_movement_report.{}", ext);
+
+            let now = chrono::Utc::now();
+            let from = now - chrono::Duration::days(365);
+            let dto = reporting::GenerateStockMovementReportDto {
+                output_path: output_path.clone(),
+                format: report_format,
+                from_date: from,
+                to_date: now,
+            };
+
+            let result_msg = match frontend::commands::reporting_commands::generate_stock_movement_report(&ctx, &dto) {
+                Ok(op_id) => format!("Report generated: {} (operation: {})", output_path, op_id),
+                Err(e) => format!("Failed to generate report: {}", e),
+            };
+
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_report_generating(false);
+                app.global::<AppState>().set_report_output(slint::SharedString::from(&result_msg));
+            }
+            log::info!("{}", result_msg);
         }
     });
 
     app.global::<AppState>().on_generate_budget_report({
+        let ctx = Arc::clone(app_context);
+        let app_weak = app.as_weak();
         move |format, include_projections| {
             log::info!(
                 "Report requested: budget (format={}, include_projections={})",
                 format, include_projections
             );
+
+            let report_format = match format.as_str() {
+                "PDF" => reporting::BudgetReportFormat::Pdf,
+                "CSV" => reporting::BudgetReportFormat::Csv,
+                _ => reporting::BudgetReportFormat::Excel,
+            };
+
+            let _ = std::fs::create_dir_all("./reports");
+            let ext = match &report_format {
+                reporting::BudgetReportFormat::Pdf => "pdf",
+                reporting::BudgetReportFormat::Csv => "csv",
+                reporting::BudgetReportFormat::Excel => "xlsx",
+            };
+            let output_path = format!("./reports/budget_report.{}", ext);
+
+            let now = chrono::Utc::now();
+            let from = now - chrono::Duration::days(365);
+            let dto = reporting::GenerateBudgetReportDto {
+                output_path: output_path.clone(),
+                format: report_format,
+                from_date: from,
+                to_date: now,
+                include_projections,
+            };
+
+            let result_msg = match frontend::commands::reporting_commands::generate_budget_report(&ctx, &dto) {
+                Ok(op_id) => format!("Report generated: {} (operation: {})", output_path, op_id),
+                Err(e) => format!("Failed to generate report: {}", e),
+            };
+
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_report_generating(false);
+                app.global::<AppState>().set_report_output(slint::SharedString::from(&result_msg));
+            }
+            log::info!("{}", result_msg);
         }
     });
 
     app.global::<AppState>().on_generate_purchasing_report({
+        let ctx = Arc::clone(app_context);
+        let app_weak = app.as_weak();
         move |format, status_filter| {
             log::info!(
                 "Report requested: purchasing (format={}, status_filter={})",
                 format, status_filter
             );
+
+            let report_format = match format.as_str() {
+                "PDF" => reporting::PurchasingReportFormat::Pdf,
+                "CSV" => reporting::PurchasingReportFormat::Csv,
+                _ => reporting::PurchasingReportFormat::Excel,
+            };
+
+            let deal_status = match status_filter.as_str() {
+                "Active Only" => reporting::DealStatusFilter::ActiveOnly,
+                "Completed Only" => reporting::DealStatusFilter::CompletedOnly,
+                _ => reporting::DealStatusFilter::All,
+            };
+
+            let _ = std::fs::create_dir_all("./reports");
+            let ext = match &report_format {
+                reporting::PurchasingReportFormat::Pdf => "pdf",
+                reporting::PurchasingReportFormat::Csv => "csv",
+                reporting::PurchasingReportFormat::Excel => "xlsx",
+            };
+            let output_path = format!("./reports/purchasing_report.{}", ext);
+
+            let dto = reporting::GeneratePurchasingReportDto {
+                output_path: output_path.clone(),
+                format: report_format,
+                status_filter: deal_status,
+            };
+
+            let result_msg = match frontend::commands::reporting_commands::generate_purchasing_report(&ctx, &dto) {
+                Ok(op_id) => format!("Report generated: {} (operation: {})", output_path, op_id),
+                Err(e) => format!("Failed to generate report: {}", e),
+            };
+
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_report_generating(false);
+                app.global::<AppState>().set_report_output(slint::SharedString::from(&result_msg));
+            }
+            log::info!("{}", result_msg);
         }
     });
 }
@@ -632,17 +858,32 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
 fn refresh_products_table(ctx: &Arc<AppContext>, app: &App) {
     match frontend::commands::product_commands::get_all_product(ctx) {
         Ok(products) => {
+            // Load related entities for name lookups
+            let categories = frontend::commands::category_commands::get_all_category(ctx).unwrap_or_default();
+            let locations = frontend::commands::location_commands::get_all_location(ctx).unwrap_or_default();
+            let persons = frontend::commands::person_commands::get_all_person(ctx).unwrap_or_default();
+
             let rows: Vec<slint::ModelRc<slint::StandardListViewItem>> = products
                 .iter()
                 .map(|p| {
+                    let category_name = p.category.and_then(|id| {
+                        categories.iter().find(|c| c.id == id).map(|c| c.name.clone())
+                    }).unwrap_or_default();
+                    let location_name = p.location.and_then(|id| {
+                        locations.iter().find(|l| l.id == id).map(|l| l.name.clone())
+                    }).unwrap_or_default();
+                    let _supplier_name = p.supplier.and_then(|id| {
+                        persons.iter().find(|s| s.id == id).map(|s| s.name.clone())
+                    }).unwrap_or_default();
+
                     to_table_row(&[
                         &p.name,
                         &p.reference,
                         &p.quantity.to_string(),
                         &format!("{:.2}", p.price_unit),
                         &format!("{:?}", p.status),
-                        &p.category.map_or(String::new(), |id| id.to_string()),
-                        &p.location.map_or(String::new(), |id| id.to_string()),
+                        &category_name,
+                        &location_name,
                     ])
                 })
                 .collect();
@@ -772,6 +1013,29 @@ fn refresh_locations_table(ctx: &Arc<AppContext>, app: &App) {
         Err(e) => log::error!("Failed to refresh locations: {}", e),
     }
 }
+
+fn refresh_users_table(ctx: &Arc<AppContext>, app: &App) {
+    match frontend::commands::user_management_commands::list_users(ctx) {
+        Ok(list) => {
+            let rows: Vec<_> = (0..list.user_ids.len())
+                .map(|i| {
+                    to_table_row(&[
+                        &list.usernames[i],
+                        &list.display_names[i],
+                        &list.roles[i],
+                        if list.is_active[i] { "Yes" } else { "No" },
+                    ])
+                })
+                .collect();
+            let model = std::rc::Rc::new(slint::VecModel::from(rows));
+            app.global::<UsersPageAdapter>()
+                .set_row_data(slint::ModelRc::from(model));
+            log::info!("Refreshed users table: {} rows", list.user_ids.len());
+        }
+        Err(e) => log::error!("Failed to refresh users: {}", e),
+    }
+}
+
 
 fn populate_product_comboboxes(ctx: &Arc<AppContext>, app: &App) {
     // Category names
@@ -1447,9 +1711,9 @@ fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>
             // Update pending count on the UI
             let pending = engine.change_tracker().pending_count() as i32;
             app.global::<AppState>().set_sync_status(SyncStatus {
-                last_sync_at: slint::SharedString::from("Not available (LibSQL not connected)"),
+                last_sync_at: slint::SharedString::from("Local mode (no remote configured)"),
                 pending_changes: pending,
-                is_online: false,
+                is_online: true,
             });
 
             log::warn!("Sync push: LibSQL integration not yet wired — no data pushed");
@@ -1469,9 +1733,9 @@ fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>
 
             let pending = engine.change_tracker().pending_count() as i32;
             app.global::<AppState>().set_sync_status(SyncStatus {
-                last_sync_at: slint::SharedString::from("Not available (LibSQL not connected)"),
+                last_sync_at: slint::SharedString::from("Local mode (no remote configured)"),
                 pending_changes: pending,
-                is_online: false,
+                is_online: true,
             });
 
             log::warn!("Sync pull: LibSQL integration not yet wired — no data pulled");
@@ -1501,9 +1765,9 @@ fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>
     // Update pending changes count on the UI
     let pending = sync_engine.change_tracker().pending_count() as i32;
     app.global::<AppState>().set_sync_status(SyncStatus {
-        last_sync_at: slint::SharedString::from("Never"),
+        last_sync_at: slint::SharedString::from("Local mode"),
         pending_changes: pending,
-        is_online: false,
+        is_online: true,
     });
 }
 

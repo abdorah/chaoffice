@@ -1,6 +1,7 @@
 // SyncPage — TursoDB/LibSQL sync management (online/offline)
 
-import { GroupBox, VerticalBox, HorizontalBox, Button, ProgressIndicator, Palette } from "std-widgets.slint";
+import { GroupBox, VerticalBox, HorizontalBox, Button, ProgressIndicator, Palette,
+         LineEdit, Switch, SpinBox } from "std-widgets.slint";
 import { Page } from "../components/page.slint";
 import { StatCard } from "../components/stat_card.slint";
 import { AppState } from "../globals/app_state.slint";
@@ -23,8 +24,8 @@ export component SyncPage inherits Page {
 
         StatCard {
             label: "Connection";
-            value: AppState.sync-status.is-online ? "Online" : "Offline";
-            accent-color: AppState.sync-status.is-online ? #4CAF50 : #F44336;
+            value: AppState.sync-status.is-online ? "Online" : "Local";
+            accent-color: AppState.sync-status.is-online ? #4CAF50 : #2196F3;
         }
     }
 
@@ -66,6 +67,85 @@ export component SyncPage inherits Page {
                     clicked => {
                         root.syncing = true;
                         AppState.sync-from-remote();
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Database Settings";
+        vertical-stretch: 0;
+
+        VerticalBox {
+            spacing: 8px;
+
+            HorizontalBox {
+                spacing: 8px;
+                vertical-stretch: 0;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "TursoDB URL"; }
+                    turso-url := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "libsql://your-db.turso.io";
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+                vertical-stretch: 0;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Auth Token"; }
+                    turso-token := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Token";
+                        input-type: password;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 16px;
+                vertical-stretch: 0;
+
+                auto-sync-switch := Switch {
+                    text: "Auto-sync enabled";
+                    checked: false;
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 0;
+                    Text { text: "Interval (seconds)"; }
+                    sync-interval := SpinBox {
+                        horizontal-stretch: 0;
+                        value: 60;
+                        minimum: 10;
+                        maximum: 3600;
+                    }
+                }
+
+                Rectangle { horizontal-stretch: 1; }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Save Settings";
+                    primary: true;
+                    clicked => {
+                        AppState.configure-sync(
+                            turso-url.text,
+                            turso-token.text,
+                            auto-sync-switch.checked,
+                            sync-interval.value
+                        );
                     }
                 }
             }

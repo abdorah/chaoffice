@@ -22,20 +22,21 @@ impl PdfWriter {
     }
 
     fn create_document(title: &str) -> Result<Document, ReportError> {
-        let font_family =
-            fonts::from_files("", "LiberationSans", None).unwrap_or_else(|_| {
-                // Fall back to built-in font
-                genpdf::fonts::from_files("/usr/share/fonts/truetype/liberation", "LiberationSans", None)
-                    .unwrap_or_else(|_| {
-                        // Use default font as last resort
-                        fonts::from_files(".", "LiberationSans", None)
-                            .unwrap_or_else(|_| fonts::from_files("/usr/share/fonts", "LiberationSans", None)
-                                .unwrap_or_else(|_| {
-                                    // Create a minimal document without custom fonts
-                                    panic!("Could not load any font")
-                                }))
-                    })
-            });
+        // Try multiple font locations: Windows (Arial), Linux (LiberationSans),
+        // macOS (Helvetica), and current directory as fallback.
+        let font_family = fonts::from_files("C:\\Windows\\Fonts", "arial", None)
+            .or_else(|_| fonts::from_files("C:\\Windows\\Fonts", "Arial", None))
+            .or_else(|_| fonts::from_files("/usr/share/fonts/truetype/liberation", "LiberationSans", None))
+            .or_else(|_| fonts::from_files("/usr/share/fonts", "LiberationSans", None))
+            .or_else(|_| fonts::from_files("/System/Library/Fonts", "Helvetica", None))
+            .or_else(|_| fonts::from_files(".", "LiberationSans", None))
+            .map_err(|e| ReportError::PdfError {
+                details: format!(
+                    "Could not load any font for PDF generation: {}. \
+                     Install LiberationSans or ensure Arial is available.",
+                    e
+                ),
+            })?;
 
         let mut doc = Document::new(font_family);
         doc.set_title(title);

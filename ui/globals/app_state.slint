@@ -137,6 +137,8 @@ export global AppState {
     callback configure-sync(string, string, bool, int);
 
     // ── Reports ────────────────────────────────────────────────
+    in-out property <bool> report-generating: false;
+    in-out property <string> report-output: "";
     callback generate-inventory-report(string, bool);
     callback generate-stock-report(string);
     callback generate-budget-report(string, bool);

@@ -14,6 +14,8 @@ build = "build.rs"
 slint = "1.14"
 log = "0.4"
 env_logger = "0.11"
+toml = "0.8"
+serde = { version = "1", features = ["derive"] }
 
 # Backend
 frontend = { workspace = true }
@@ -22,6 +24,7 @@ chrono = { workspace = true }
 inventory_auth = { workspace = true }
 inventory_security = { workspace = true }
 inventory_sync = { workspace = true }
+reporting = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [build-dependencies]

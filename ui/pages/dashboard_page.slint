@@ -79,8 +79,8 @@ export component DashboardPage inherits Page {
                 HorizontalBox {
                     Text { text: "Status:"; }
                     Text {
-                        text: AppState.sync-status.is-online ? "Online" : "Offline";
-                        color: AppState.sync-status.is-online ? #4CAF50 : #F44336;
+                        text: AppState.sync-status.is-online ? "Online" : "Local";
+                        color: AppState.sync-status.is-online ? #4CAF50 : #2196F3;
                     }
                 }
 

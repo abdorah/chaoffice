@@ -1,6 +1,6 @@
 // Inventory Manager — Main Application Shell
 
-import { Palette } from "std-widgets.slint";
+import { Palette, Button, HorizontalBox } from "std-widgets.slint";
 import { SideBar } from "components/side_bar.slint";
 import { LoginPage } from "pages/login_page.slint";
 import { DashboardPage } from "pages/dashboard_page.slint";
@@ -36,34 +36,58 @@ export component App inherits Window {
     }
 
     // Main app shell when authenticated
-    if AppState.is-authenticated : HorizontalLayout {
-        side-bar := SideBar {
-            title: "Inventory";
-            model: [
-                "Dashboard",
-                "Products",
-                "Categories",
-                "People",
-                "Purchasing",
-                "Locations",
-                "Stock Tracking",
-                "Budget",
-                "Reports",
-                "Users",
-                "Sync",
-            ];
+    if AppState.is-authenticated : VerticalLayout {
+        // Top bar with user info and logout
+        HorizontalBox {
+            vertical-stretch: 0;
+            height: 40px;
+            padding: 8px;
+
+            Text {
+                text: "Logged in as: " + AppState.current-user;
+                vertical-alignment: center;
+                color: Palette.foreground.transparentize(0.3);
+            }
+
+            Rectangle { horizontal-stretch: 1; }
+
+            Button {
+                text: "Logout";
+                clicked => { AppState.logout(); }
+            }
         }
 
-        if (side-bar.current-item == 0) : DashboardPage {}
-        if (side-bar.current-item == 1) : ProductsPage {}
-        if (side-bar.current-item == 2) : CategoriesPage {}
-        if (side-bar.current-item == 3) : PersonsPage {}
-        if (side-bar.current-item == 4) : DealsPage {}
-        if (side-bar.current-item == 5) : LocationsPage {}
-        if (side-bar.current-item == 6) : StockTrackingPage {}
-        if (side-bar.current-item == 7) : BudgetPage {}
-        if (side-bar.current-item == 8) : ReportsPage {}
-        if (side-bar.current-item == 9) : UsersPage {}
-        if (side-bar.current-item == 10) : SyncPage {}
+        HorizontalLayout {
+            vertical-stretch: 1;
+
+            side-bar := SideBar {
+                title: "Inventory";
+                model: [
+                    "Dashboard",
+                    "Products",
+                    "Categories",
+                    "People",
+                    "Purchasing",
+                    "Locations",
+                    "Stock Tracking",
+                    "Budget",
+                    "Reports",
+                    "Users",
+                    "Sync",
+                ];
+            }
+
+            if (side-bar.current-item == 0) : DashboardPage {}
+            if (side-bar.current-item == 1) : ProductsPage {}
+            if (side-bar.current-item == 2) : CategoriesPage {}
+            if (side-bar.current-item == 3) : PersonsPage {}
+            if (side-bar.current-item == 4) : DealsPage {}
+            if (side-bar.current-item == 5) : LocationsPage {}
+            if (side-bar.current-item == 6) : StockTrackingPage {}
+            if (side-bar.current-item == 7) : BudgetPage {}
+            if (side-bar.current-item == 8) : ReportsPage {}
+            if (side-bar.current-item == 9) : UsersPage {}
+            if (side-bar.current-item == 10) : SyncPage {}
+        }
     }
 }
