@@ -136,18 +136,15 @@ impl SchemaManager {
     }
 
     /// Initialize the LibSQL schema by executing all CREATE TABLE statements.
-    ///
-    /// STUB: In the real implementation, this would execute each statement
-    /// against the LibSQL connection. For now, it validates the SQL strings
-    /// are defined and returns Ok.
-    pub async fn init_schema() -> Result<(), SyncError> {
+    pub async fn init_schema(conn: &libsql::Connection) -> Result<(), SyncError> {
         let statements = Self::create_table_statements();
-        // TODO: Execute each statement against the LibSQL connection:
-        // for sql in &statements {
-        //     conn.execute(sql, ()).await.map_err(|e| SyncError::SchemaInit(e.to_string()))?;
-        // }
+        for sql in &statements {
+            conn.execute(sql, ())
+                .await
+                .map_err(|e| SyncError::SchemaInit(e.to_string()))?;
+        }
         log::info!(
-            "SchemaManager: {} CREATE TABLE statements ready (stubbed)",
+            "SchemaManager: {} CREATE TABLE statements executed",
             statements.len()
         );
         Ok(())

@@ -44,17 +44,6 @@ impl QueryUnitOfWork for ListUsersUnitOfWork {
     }
 }
 
-//TODO: adapt entities and actions to real use :
-// GetRO, GetMultiRO, GetRelationshipRO, GetRelationshipsFromRightIdsRO
-//
-// You have here a read-only unit of work.
-//
-// RO means Read Only, so *RO actions should be used here.
-// Do not mix read-only and write actions in the same unit of work.
-//
-// Exactly the same macros must be set in the use case uow trait file in ../use_cases/list_users_uc.rs
-//
-// Exactly the same macros must be set in the use case uow trait file in ../use_cases/list_users_uc.rs
 #[macros::uow_action(entity = "User", action = "GetRO")]
 #[macros::uow_action(entity = "User", action = "GetMultiRO")]
 #[macros::uow_action(entity = "User", action = "GetAllRO")]

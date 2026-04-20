@@ -1,7 +1,7 @@
 #[derive(Debug, thiserror::Error)]
 pub enum SyncError {
     #[error("LibSQL error: {0}")]
-    LibSql(String),
+    LibSql(#[from] libsql::Error),
 
     #[error("Connection failed: {0}")]
     ConnectionFailed(String),

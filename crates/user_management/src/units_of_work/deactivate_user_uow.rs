@@ -94,21 +94,6 @@ impl CommandUnitOfWork for DeactivateUserUnitOfWork {
     }
 }
 
-//TODO: adapt entities and actions to real use :
-// Create, CreateMulti, Get, GetMulti, Update (scalar-only), UpdateMulti (scalar-only),
-// UpdateWithRelationships, UpdateWithRelationshipsMulti,
-// Remove, RemoveMulti, GetRelationship, GetRelationshipsFromRightIds,
-// SetRelationship, SetRelationshipMulti, Snapshot, Restore
-//
-// You have here a read-write unit of work.
-//
-// RO means Read Only, so *RO actions should not used be here.
-// Don't forget to set thread_safe = true for long operation's unit of work.
-// Do not mix read-only and write actions in the same unit of work.
-//
-// Exactly the same macros must be set in the use case uow trait file in ../use_cases/deactivate_user_uc.rs
-//
-// Exactly the same macros must be set in the use case uow trait file in ../use_cases/deactivate_user_uc.rs
 #[macros::uow_action(entity = "User", action = "Get")]
 #[macros::uow_action(entity = "User", action = "GetMulti")]
 #[macros::uow_action(entity = "User", action = "Update")]

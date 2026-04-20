@@ -46,16 +46,6 @@ impl QueryUnitOfWork for ExportProductsUnitOfWork {
     }
 }
 
-//TODO: adapt entities and actions to real use :
-// GetRO, GetMultiRO, GetRelationshipRO, GetRelationshipsFromRightIdsRO
-//
-// You have here a read-only unit of work.
-//
-// RO means Read Only, so *RO actions should be used here.
-// Do not mix read-only and write actions in the same unit of work.
-//
-// Exactly the same macros must be set in the use case uow trait file in ../use_cases/export_products_uc.rs
-//
 #[macros::uow_action(entity = "Root", action = "GetRO")]
 #[macros::uow_action(entity = "Root", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Product", action = "GetRO")]

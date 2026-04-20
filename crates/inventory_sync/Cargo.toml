@@ -14,7 +14,8 @@ serde_json = "1"
 chrono = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-tokio = { version = "1", features = ["rt", "time", "sync"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "sync"] }
+libsql = "0.9"
 uuid = { workspace = true }
 common = { workspace = true }
 inventory_security = { workspace = true }

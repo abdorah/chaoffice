@@ -12,12 +12,18 @@ import { LocationsPage } from "pages/locations_page.slint";
 import { StockTrackingPage, StockTrackingAdapter } from "pages/stock_tracking_page.slint";
 import { BudgetPage, BudgetPageAdapter } from "pages/budget_page.slint";
 import { ReportsPage } from "pages/reports_page.slint";
-import { UsersPage } from "pages/users_page.slint";
+import { UsersPage, UsersPageAdapter } from "pages/users_page.slint";
 import { SyncPage } from "pages/sync_page.slint";
 import { AppSettings } from "globals/app_settings.slint";
 import { AppState } from "globals/app_state.slint";
+import { ProductsPageAdapter } from "pages/products_page.slint";
+import { PersonsPageAdapter } from "pages/persons_page.slint";
+import { DealsPageAdapter } from "pages/deals_page.slint";
+import { LocationsPageAdapter } from "pages/locations_page.slint";
 
-export { AppState, AppSettings, StockTrackingAdapter, BudgetPageAdapter }
+export { AppState, AppSettings, StockTrackingAdapter, BudgetPageAdapter,
+         ProductsPageAdapter, PersonsPageAdapter, DealsPageAdapter,
+         LocationsPageAdapter, UsersPageAdapter }
 
 export component App inherits Window {
     preferred-width: 1024px;

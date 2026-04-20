@@ -44,17 +44,6 @@ impl QueryUnitOfWork for GenerateStockMovementReportUnitOfWork {
         Ok(())
     }
 }
-//TODO: adapt entities and actions to real use :
-// GetRO, GetMultiRO, GetRelationshipRO, GetRelationshipsFromRightIdsRO
-//
-// You have here a long operation read-only unit of work.
-//
-// RO means Read Only, so *RO actions should be used here.
-// Don't forget to set thread_safe = true for long operation's unit of work.
-// Do not mix read-only and write actions in the same unit of work.
-//
-// Exactly the same macros (without thread_safe) must be set in the use case file in ../use_cases/generate_stock_movement_report_uc.rs
-//
 #[macros::uow_action(entity = "User", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "User", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "StockMovement", action = "GetRO", thread_safe = true)]

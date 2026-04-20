@@ -15,19 +15,6 @@ use std::sync::Arc;
 pub trait ImportProductsUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn ImportProductsUnitOfWorkTrait>;
 }
-//TODO: adapt entities and actions to real use :
-// Create, CreateMulti, Get, GetMulti, Update (scalar-only), UpdateMulti (scalar-only),
-// UpdateWithRelationships, UpdateWithRelationshipsMulti,
-// Remove, RemoveMulti, GetRelationship, GetRelationshipsFromRightIds,
-// SetRelationship, SetRelationshipMulti
-//
-// You have here a read-write unit of work.
-//
-// RO means Read Only.
-// Do not mix read-only and write actions in the same unit of work.
-//
-// Exactly the same macros must be set in the use case uow trait file in ../units_of_work/import_products_uow.rs
-//
 #[macros::uow_action(entity = "Root", action = "Get")]
 #[macros::uow_action(entity = "Root", action = "GetMulti")]
 #[macros::uow_action(entity = "Product", action = "Get")]
