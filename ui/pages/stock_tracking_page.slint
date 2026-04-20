@@ -102,22 +102,27 @@ export component StockTrackingPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Product"; }
                     product-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: StockTrackingAdapter.product-names;
                     }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Type"; }
                     type-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: ["Inbound", "Outbound", "Transfer", "Adjustment", "Return"];
                     }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Quantity"; }
-                    qty-input := SpinBox { value: 1; minimum: 1; maximum: 999999; }
+                    qty-input := SpinBox { horizontal-stretch: 1; value: 1; minimum: 1; maximum: 999999; }
                 }
             }
 
@@ -125,15 +130,19 @@ export component StockTrackingPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "From Location"; }
                     from-loc-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: StockTrackingAdapter.location-names;
                     }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "To Location"; }
                     to-loc-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: StockTrackingAdapter.location-names;
                     }
                 }
@@ -143,8 +152,9 @@ export component StockTrackingPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Note"; }
-                    note-input := LineEdit { placeholder-text: "Movement note"; }
+                    note-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Movement note"; }
                 }
             }
 

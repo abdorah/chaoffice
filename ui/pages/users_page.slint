@@ -32,13 +32,15 @@ export component UsersPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Username"; }
-                    user-input := LineEdit { placeholder-text: "username"; }
+                    user-input := LineEdit { horizontal-stretch: 1; placeholder-text: "username"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Display Name"; }
-                    name-input := LineEdit { placeholder-text: "Full name"; }
+                    name-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Full name"; }
                 }
             }
 
@@ -46,16 +48,20 @@ export component UsersPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Password"; }
                     pass-input := LineEdit {
+                        horizontal-stretch: 1;
                         placeholder-text: "Password";
                         input-type: InputType.password;
                     }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Role"; }
                     role-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: ["Admin", "Manager", "Operator", "Viewer"];
                     }
                 }

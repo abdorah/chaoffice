@@ -8,8 +8,6 @@ import { AppState, PersonItem } from "../globals/app_state.slint";
 
 export global PersonsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
-    pure callback filter-sort-model([[StandardListViewItem]], string, int, bool) -> [[StandardListViewItem]];
-    filter-sort-model(data, filter, sort-index, sort-ascending) => { return data; }
 }
 
 export component PersonsPage inherits Page {
@@ -36,13 +34,16 @@ export component PersonsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Name"; }
-                    name-input := LineEdit { placeholder-text: "Full name"; }
+                    name-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Full name"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Role"; }
                     role-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: ["Manager", "Supplier"];
                     }
                 }
@@ -52,13 +53,15 @@ export component PersonsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Phone"; }
-                    phone-input := LineEdit { placeholder-text: "+1 234 567 890"; }
+                    phone-input := LineEdit { horizontal-stretch: 1; placeholder-text: "+1 234 567 890"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Email"; }
-                    email-input := LineEdit { placeholder-text: "email@example.com"; }
+                    email-input := LineEdit { horizontal-stretch: 1; placeholder-text: "email@example.com"; }
                 }
             }
 
@@ -109,12 +112,7 @@ export component PersonsPage inherits Page {
                 { title: "Email" },
             ];
 
-            rows: PersonsPageAdapter.filter-sort-model(
-                PersonsPageAdapter.row-data,
-                "",
-                root.sort-index,
-                root.sort-ascending
-            );
+            rows: PersonsPageAdapter.row-data;
         }
     }
 }

@@ -1,7 +1,8 @@
 // BudgetPage — Financial tracking with charts and projections
 
 import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
-         ComboBox, LineEdit, Slider, Palette, StyleMetrics, TabWidget } from "std-widgets.slint";
+         ComboBox, LineEdit, Slider, Palette, StyleMetrics, TabWidget, ScrollView,
+         DatePickerPopup } from "std-widgets.slint";
 import { Page } from "../components/page.slint";
 import { LineChart } from "../components/line_chart.slint";
 import { BarChart, BarData } from "../components/bar_chart.slint";
@@ -28,8 +29,8 @@ export global BudgetPageAdapter {
     in property <[[StandardListViewItem]]> entry-rows: [];
 
     // Date range filter
-    in property <string> from-date: "";
-    in property <string> to-date: "";
+    in-out property <string> from-date: "";
+    in-out property <string> to-date: "";
 
     // Projection months ahead
     in property <int> months-ahead: 6;
@@ -49,6 +50,9 @@ export global BudgetPageAdapter {
 
 export component BudgetPage inherits Page {
     property <bool> show-form: false;
+    property <string> from-date-text: "Select start date";
+    property <string> to-date-text: "Select end date";
+    property <string> entry-date-text: "Select date";
 
     title: "Budget & Finance";
     description: "Track purchases, sales, expenses, and project future budgets.";
@@ -56,27 +60,32 @@ export component BudgetPage inherits Page {
     // KPI stat cards
     HorizontalBox {
         vertical-stretch: 0;
+        horizontal-stretch: 1;
         spacing: 12px;
 
         StatCard {
+            horizontal-stretch: 1;
             label: "Total Purchases";
             value: AppState.total-purchases;
             accent-color: #F44336;
         }
 
         StatCard {
+            horizontal-stretch: 1;
             label: "Total Sales";
             value: AppState.total-sales;
             accent-color: #4CAF50;
         }
 
         StatCard {
+            horizontal-stretch: 1;
             label: "Total Expenses";
             value: AppState.total-expenses;
             accent-color: #FF9800;
         }
 
         StatCard {
+            horizontal-stretch: 1;
             label: "Net Balance";
             value: AppState.net-balance;
             accent-color: #2196F3;
@@ -87,24 +96,24 @@ export component BudgetPage inherits Page {
     HorizontalBox {
         vertical-stretch: 0;
         spacing: 8px;
-        alignment: start;
 
         Text { text: "From:"; vertical-alignment: center; }
-        from-input := LineEdit {
-            placeholder-text: "YYYY-MM-DD";
-            text: BudgetPageAdapter.from-date;
-            width: 120px;
+        Button {
+            horizontal-stretch: 1;
+            text: root.from-date-text;
+            clicked => { from-date-picker.show(); }
         }
         Text { text: "To:"; vertical-alignment: center; }
-        to-input := LineEdit {
-            placeholder-text: "YYYY-MM-DD";
-            text: BudgetPageAdapter.to-date;
-            width: 120px;
+        Button {
+            horizontal-stretch: 1;
+            text: root.to-date-text;
+            clicked => { to-date-picker.show(); }
         }
         Button {
             text: "Apply";
+            min-width: 80px;
             clicked => {
-                BudgetPageAdapter.load-summary(from-input.text, to-input.text);
+                BudgetPageAdapter.load-summary(BudgetPageAdapter.from-date, BudgetPageAdapter.to-date);
             }
         }
     }
@@ -116,8 +125,13 @@ export component BudgetPage inherits Page {
             title: "Overview";
 
             VerticalBox {
+                vertical-stretch: 1;
+                horizontal-stretch: 1;
+
                 BarChart {
                     vertical-stretch: 0;
+                    horizontal-stretch: 1;
+                    min-height: 180px;
                     title: "Monthly Breakdown";
                     bars: BudgetPageAdapter.monthly-bars;
                     max-value: BudgetPageAdapter.monthly-max;
@@ -126,6 +140,7 @@ export component BudgetPage inherits Page {
                 GroupBox {
                     title: "Budget Entries";
                     vertical-stretch: 1;
+                    horizontal-stretch: 1;
 
                     StandardTableView {
                         columns: [
@@ -147,13 +162,20 @@ export component BudgetPage inherits Page {
             title: "Projection";
 
             VerticalBox {
+                vertical-stretch: 1;
+                horizontal-stretch: 1;
+
                 HorizontalBox {
                     vertical-stretch: 0;
-                    spacing: 8px;
-                    alignment: start;
+                    horizontal-stretch: 1;
+                    spacing: 12px;
+                    padding-left: 8px;
+                    padding-right: 8px;
 
                     Text { text: "Months ahead:"; vertical-alignment: center; }
                     months-slider := Slider {
+                        horizontal-stretch: 1;
+                        min-width: 200px;
                         minimum: 3;
                         maximum: 12;
                         value: BudgetPageAdapter.months-ahead;
@@ -164,11 +186,13 @@ export component BudgetPage inherits Page {
                     Text {
                         text: Math.round(months-slider.value);
                         vertical-alignment: center;
+                        min-width: 30px;
                     }
                 }
 
                 LineChart {
                     vertical-stretch: 1;
+                    min-height: 120px;
                     title: "Projected Income";
                     svg-path: BudgetPageAdapter.income-path;
                     x-labels: BudgetPageAdapter.projection-x-labels;
@@ -177,6 +201,7 @@ export component BudgetPage inherits Page {
 
                 LineChart {
                     vertical-stretch: 1;
+                    min-height: 120px;
                     title: "Projected Expenses";
                     svg-path: BudgetPageAdapter.expense-path;
                     x-labels: BudgetPageAdapter.projection-x-labels;
@@ -185,6 +210,7 @@ export component BudgetPage inherits Page {
 
                 LineChart {
                     vertical-stretch: 1;
+                    min-height: 120px;
                     title: "Projected Balance";
                     svg-path: BudgetPageAdapter.balance-path;
                     x-labels: BudgetPageAdapter.projection-x-labels;
@@ -197,6 +223,9 @@ export component BudgetPage inherits Page {
             title: "Trends";
 
             VerticalBox {
+                vertical-stretch: 1;
+                horizontal-stretch: 1;
+
                 LineChart {
                     vertical-stretch: 1;
                     title: "Income Trend";
@@ -255,20 +284,28 @@ export component BudgetPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Type"; }
                     type-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: ["Purchase", "Sale", "Expense", "Forecast"];
                     }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Amount"; }
-                    amount-input := LineEdit { placeholder-text: "0.00"; }
+                    amount-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.00"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Date"; }
-                    date-input := LineEdit { placeholder-text: "YYYY-MM-DD"; }
+                    Button {
+                        horizontal-stretch: 1;
+                        text: root.entry-date-text;
+                        clicked => { entry-date-picker.show(); }
+                    }
                 }
             }
 
@@ -276,8 +313,9 @@ export component BudgetPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Description"; }
-                    desc-input := LineEdit { placeholder-text: "Description"; }
+                    desc-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Description"; }
                 }
             }
 
@@ -298,7 +336,7 @@ export component BudgetPage inherits Page {
                             type-input.current-value,
                             amount-input.text,
                             desc-input.text,
-                            date-input.text,
+                            root.entry-date-text,
                             "",
                             ""
                         );
@@ -306,6 +344,32 @@ export component BudgetPage inherits Page {
                     }
                 }
             }
+        }
+    }
+
+    from-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        accepted(date) => {
+            root.from-date-text = date.year + "-" + date.month + "-" + date.day;
+            BudgetPageAdapter.from-date = date.year + "-" + date.month + "-" + date.day;
+        }
+    }
+
+    to-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        accepted(date) => {
+            root.to-date-text = date.year + "-" + date.month + "-" + date.day;
+            BudgetPageAdapter.to-date = date.year + "-" + date.month + "-" + date.day;
+        }
+    }
+
+    entry-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        accepted(date) => {
+            root.entry-date-text = date.year + "-" + date.month + "-" + date.day;
         }
     }
 }

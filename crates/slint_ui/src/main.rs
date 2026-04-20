@@ -111,6 +111,9 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
     // Setup CRUD callbacks for all entities
     setup_crud_callbacks(&app, app_context);
 
+    // Populate StockTracking ComboBoxes on page load
+    populate_stock_tracking_comboboxes(app_context, &app);
+
     // ── Auth callback wiring ──────────────────────────────────────────
     {
         let ctx = Arc::clone(app_context);
@@ -131,6 +134,13 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
                     app.global::<AppState>()
                         .set_login_error(slint::SharedString::from(""));
                     log::info!("Login successful for user '{}'", username);
+                    // Auto-refresh all tables after login
+                    refresh_products_table(&ctx, &app);
+                    refresh_categories_list(&ctx, &app);
+                    refresh_persons_table(&ctx, &app);
+                    refresh_deals_table(&ctx, &app);
+                    refresh_locations_table(&ctx, &app);
+                    populate_stock_tracking_comboboxes(&ctx, &app);
                 }
                 Ok(result) => {
                     app.global::<AppState>()
@@ -184,6 +194,34 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let app_weak = app.as_weak();
         move |name, reference, description, quantity, price_unit| {
             let now = chrono::Utc::now();
+
+            // Read selected ComboBox values from the adapter
+            let (sel_category, sel_supplier, sel_location) = if let Some(app) = app_weak.upgrade() {
+                let c = app.global::<ProductsPageAdapter>().get_selected_category();
+                let s = app.global::<ProductsPageAdapter>().get_selected_supplier();
+                let l = app.global::<ProductsPageAdapter>().get_selected_location();
+                (c.to_string(), s.to_string(), l.to_string())
+            } else {
+                (String::new(), String::new(), String::new())
+            };
+
+            // Resolve names to IDs
+            let category_id = if sel_category.is_empty() {
+                None
+            } else {
+                resolve_category_id(&ctx, &sel_category)
+            };
+            let supplier_id = if sel_supplier.is_empty() {
+                None
+            } else {
+                resolve_person_id_by_role(&ctx, &sel_supplier, frontend::direct_access::PersonRole::Supplier)
+            };
+            let location_id = if sel_location.is_empty() {
+                None
+            } else {
+                resolve_location_id(&ctx, &sel_location).map(|id| id as u64)
+            };
+
             let dto = frontend::direct_access::CreateProductDto {
                 created_at: now,
                 updated_at: now,
@@ -193,13 +231,14 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 quantity: quantity as i64,
                 price_unit: price_unit as f64,
                 status: frontend::direct_access::ProductStatus::Available,
-                category: None,
-                supplier: None,
-                location: None,
+                category: category_id,
+                supplier: supplier_id,
+                location: location_id,
             };
             match frontend::commands::product_commands::create_product(&ctx, None, &dto, 1, -1) {
                 Ok(p) => {
-                    log::info!("Created product '{}' with id {}", p.name, p.id);
+                    log::info!("Created product '{}' with id {} (cat={:?}, sup={:?}, loc={:?})",
+                        p.name, p.id, category_id, supplier_id, location_id);
                     // Refresh products table
                     if let Some(app) = app_weak.upgrade() {
                         refresh_products_table(&ctx, &app);
@@ -350,8 +389,36 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
     app.global::<AppState>().on_create_deal({
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
-        move |title, description, product_id, supplier_id, manager_id, frequency| {
+        move |title, description, _product_id, _supplier_id, _manager_id, frequency| {
             let now = chrono::Utc::now();
+
+            // Read selected ComboBox values from the adapter
+            let (sel_product, sel_supplier, sel_manager) = if let Some(app) = app_weak.upgrade() {
+                let p = app.global::<DealsPageAdapter>().get_selected_product();
+                let s = app.global::<DealsPageAdapter>().get_selected_supplier();
+                let m = app.global::<DealsPageAdapter>().get_selected_manager();
+                (p.to_string(), s.to_string(), m.to_string())
+            } else {
+                (String::new(), String::new(), String::new())
+            };
+
+            // Resolve names to IDs
+            let prod = if sel_product.is_empty() {
+                None
+            } else {
+                resolve_product_id(&ctx, &sel_product).map(|id| id as u64)
+            };
+            let supp = if sel_supplier.is_empty() {
+                None
+            } else {
+                resolve_person_id_by_role(&ctx, &sel_supplier, frontend::direct_access::PersonRole::Supplier)
+            };
+            let mgr = if sel_manager.is_empty() {
+                None
+            } else {
+                resolve_person_id_by_role(&ctx, &sel_manager, frontend::direct_access::PersonRole::Manager)
+            };
+
             let freq = match frequency.as_str() {
                 "Weekly" => frontend::direct_access::DealFrequency::Weekly,
                 "Monthly" => frontend::direct_access::DealFrequency::Monthly,
@@ -359,9 +426,6 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 "Yearly" => frontend::direct_access::DealFrequency::Yearly,
                 _ => frontend::direct_access::DealFrequency::OneTime,
             };
-            let prod = if product_id > 0 { Some(product_id as u64) } else { None };
-            let supp = if supplier_id > 0 { Some(supplier_id as u64) } else { None };
-            let mgr = if manager_id > 0 { Some(manager_id as u64) } else { None };
             let dto = frontend::direct_access::CreateDealDto {
                 created_at: now,
                 updated_at: now,
@@ -379,7 +443,8 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
             };
             match frontend::commands::deal_commands::create_deal(&ctx, None, &dto, 1, -1) {
                 Ok(d) => {
-                    log::info!("Created deal '{}' with id {}", d.title, d.id);
+                    log::info!("Created deal '{}' with id {} (prod={:?}, sup={:?}, mgr={:?})",
+                        d.title, d.id, prod, supp, mgr);
                     if let Some(app) = app_weak.upgrade() {
                         refresh_deals_table(&ctx, &app);
                     }
@@ -589,6 +654,8 @@ fn refresh_products_table(ctx: &Arc<AppContext>, app: &App) {
             app.global::<AppState>()
                 .set_total_products(products.len() as i32);
             log::info!("Refreshed products table: {} rows", products.len());
+            // Also populate the ComboBox data for the create form
+            populate_product_comboboxes(&ctx, &app);
         }
         Err(e) => log::error!("Failed to refresh products: {}", e),
     }
@@ -597,6 +664,19 @@ fn refresh_products_table(ctx: &Arc<AppContext>, app: &App) {
 fn refresh_categories_list(ctx: &Arc<AppContext>, app: &App) {
     match frontend::commands::category_commands::get_all_category(ctx) {
         Ok(categories) => {
+            let rows: Vec<slint::ModelRc<slint::StandardListViewItem>> = categories
+                .iter()
+                .map(|c| {
+                    to_table_row(&[
+                        &c.name,
+                        &c.description,
+                    ])
+                })
+                .collect();
+            let model = std::rc::Rc::new(slint::VecModel::from(rows));
+            app.global::<CategoriesPageAdapter>()
+                .set_row_data(slint::ModelRc::from(model));
+            // Also keep AppState.categories for any other consumers
             let items: Vec<CategoryItem> = categories
                 .iter()
                 .map(|c| CategoryItem {
@@ -607,9 +687,9 @@ fn refresh_categories_list(ctx: &Arc<AppContext>, app: &App) {
                     subcategory_count: c.subcategories.len() as i32,
                 })
                 .collect();
-            let model = std::rc::Rc::new(slint::VecModel::from(items));
+            let items_model = std::rc::Rc::new(slint::VecModel::from(items));
             app.global::<AppState>()
-                .set_categories(slint::ModelRc::from(model));
+                .set_categories(slint::ModelRc::from(items_model));
             log::info!("Refreshed categories: {} items", categories.len());
         }
         Err(e) => log::error!("Failed to refresh categories: {}", e),
@@ -661,6 +741,8 @@ fn refresh_deals_table(ctx: &Arc<AppContext>, app: &App) {
             app.global::<AppState>()
                 .set_active_deals(deals.iter().filter(|d| d.status == frontend::direct_access::DealStatus::Active).count() as i32);
             log::info!("Refreshed deals table: {} rows", deals.len());
+            // Also populate the ComboBox data for the create form
+            populate_deal_comboboxes(&ctx, &app);
         }
         Err(e) => log::error!("Failed to refresh deals: {}", e),
     }
@@ -690,6 +772,103 @@ fn refresh_locations_table(ctx: &Arc<AppContext>, app: &App) {
         Err(e) => log::error!("Failed to refresh locations: {}", e),
     }
 }
+
+fn populate_product_comboboxes(ctx: &Arc<AppContext>, app: &App) {
+    // Category names
+    if let Ok(categories) = frontend::commands::category_commands::get_all_category(ctx) {
+        let names: Vec<slint::SharedString> = categories
+            .iter()
+            .map(|c| slint::SharedString::from(&c.name))
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(names));
+        app.global::<ProductsPageAdapter>()
+            .set_category_names(slint::ModelRc::from(model));
+    }
+
+    // Supplier names (persons with Supplier role)
+    if let Ok(persons) = frontend::commands::person_commands::get_all_person(ctx) {
+        let names: Vec<slint::SharedString> = persons
+            .iter()
+            .filter(|p| p.role == frontend::direct_access::PersonRole::Supplier)
+            .map(|p| slint::SharedString::from(&p.name))
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(names));
+        app.global::<ProductsPageAdapter>()
+            .set_supplier_names(slint::ModelRc::from(model));
+    }
+
+    // Location names
+    if let Ok(locations) = frontend::commands::location_commands::get_all_location(ctx) {
+        let names: Vec<slint::SharedString> = locations
+            .iter()
+            .map(|l| slint::SharedString::from(&l.name))
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(names));
+        app.global::<ProductsPageAdapter>()
+            .set_location_names(slint::ModelRc::from(model));
+    }
+}
+
+fn populate_deal_comboboxes(ctx: &Arc<AppContext>, app: &App) {
+    // Product names
+    if let Ok(products) = frontend::commands::product_commands::get_all_product(ctx) {
+        let names: Vec<slint::SharedString> = products
+            .iter()
+            .map(|p| slint::SharedString::from(&p.name))
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(names));
+        app.global::<DealsPageAdapter>()
+            .set_product_names(slint::ModelRc::from(model));
+    }
+
+    // Supplier names (persons with Supplier role)
+    if let Ok(persons) = frontend::commands::person_commands::get_all_person(ctx) {
+        let supplier_names: Vec<slint::SharedString> = persons
+            .iter()
+            .filter(|p| p.role == frontend::direct_access::PersonRole::Supplier)
+            .map(|p| slint::SharedString::from(&p.name))
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(supplier_names));
+        app.global::<DealsPageAdapter>()
+            .set_supplier_names(slint::ModelRc::from(model));
+
+        // Manager names (persons with Manager role)
+        let manager_names: Vec<slint::SharedString> = persons
+            .iter()
+            .filter(|p| p.role == frontend::direct_access::PersonRole::Manager)
+            .map(|p| slint::SharedString::from(&p.name))
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(manager_names));
+        app.global::<DealsPageAdapter>()
+            .set_manager_names(slint::ModelRc::from(model));
+    }
+}
+
+/// Populate the StockTracking page ComboBoxes (product-names, location-names).
+fn populate_stock_tracking_comboboxes(ctx: &Arc<AppContext>, app: &App) {
+    // Product names
+    if let Ok(products) = frontend::commands::product_commands::get_all_product(ctx) {
+        let names: Vec<slint::SharedString> = products
+            .iter()
+            .map(|p| slint::SharedString::from(&p.name))
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(names));
+        app.global::<StockTrackingAdapter>()
+            .set_product_names(slint::ModelRc::from(model));
+    }
+
+    // Location names
+    if let Ok(locations) = frontend::commands::location_commands::get_all_location(ctx) {
+        let loc_names: Vec<slint::SharedString> = locations
+            .iter()
+            .map(|l| slint::SharedString::from(l.name.as_str()))
+            .collect();
+        let loc_model = std::rc::Rc::new(slint::VecModel::from(loc_names));
+        app.global::<StockTrackingAdapter>()
+            .set_location_names(slint::ModelRc::from(loc_model));
+    }
+}
+
 
 /// Build a SecurityContext for the currently logged-in admin user.
 /// In a full implementation, this would resolve from the session token.
@@ -730,6 +909,29 @@ fn resolve_location_id(ctx: &Arc<AppContext>, name: &str) -> Option<i64> {
         .iter()
         .find(|l| l.name == name)
         .map(|l| l.id as i64)
+}
+
+/// Resolve a category name to its entity ID by scanning all categories.
+fn resolve_category_id(ctx: &Arc<AppContext>, name: &str) -> Option<u64> {
+    frontend::commands::category_commands::get_all_category(ctx)
+        .ok()?
+        .iter()
+        .find(|c| c.name == name)
+        .map(|c| c.id as u64)
+}
+
+
+/// Resolve a person name (with a given role) to its entity ID.
+fn resolve_person_id_by_role(
+    ctx: &Arc<AppContext>,
+    name: &str,
+    role: frontend::direct_access::PersonRole,
+) -> Option<u64> {
+    frontend::commands::person_commands::get_all_person(ctx)
+        .ok()?
+        .iter()
+        .find(|p| p.name == name && p.role == role)
+        .map(|p| p.id as u64)
 }
 
 /// Wire StockTrackingAdapter callbacks to the stock_tracking controller.

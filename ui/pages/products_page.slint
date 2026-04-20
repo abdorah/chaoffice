@@ -9,8 +9,12 @@ import { AppState, ProductItem } from "../globals/app_state.slint";
 
 export global ProductsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
-    pure callback filter-sort-model([[StandardListViewItem]], string, int, bool) -> [[StandardListViewItem]];
-    filter-sort-model(data, filter, sort-index, sort-ascending) => { return data; }
+    in property <[string]> category-names: [];
+    in property <[string]> supplier-names: [];
+    in property <[string]> location-names: [];
+    in-out property <string> selected-category: "";
+    in-out property <string> selected-supplier: "";
+    in-out property <string> selected-location: "";
 }
 
 export component ProductsPage inherits Page {
@@ -37,13 +41,15 @@ export component ProductsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Name"; }
-                    name-input := LineEdit { placeholder-text: "Product name"; }
+                    name-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Product name"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Reference"; }
-                    ref-input := LineEdit { placeholder-text: "SKU / Reference"; }
+                    ref-input := LineEdit { horizontal-stretch: 1; placeholder-text: "SKU / Reference"; }
                 }
             }
 
@@ -51,8 +57,9 @@ export component ProductsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Description"; }
-                    desc-input := LineEdit { placeholder-text: "Description"; }
+                    desc-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Description"; }
                 }
             }
 
@@ -60,13 +67,49 @@ export component ProductsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Quantity"; }
-                    qty-input := SpinBox { value: 0; minimum: 0; maximum: 999999; }
+                    qty-input := SpinBox { horizontal-stretch: 1; value: 0; minimum: 0; maximum: 999999; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Price/Unit"; }
-                    price-input := LineEdit { placeholder-text: "0.00"; }
+                    price-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.00"; }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Category"; }
+                    cat-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ProductsPageAdapter.category-names;
+                        current-value <=> ProductsPageAdapter.selected-category;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Supplier"; }
+                    supplier-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ProductsPageAdapter.supplier-names;
+                        current-value <=> ProductsPageAdapter.selected-supplier;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Location"; }
+                    loc-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ProductsPageAdapter.location-names;
+                        current-value <=> ProductsPageAdapter.selected-location;
+                    }
                 }
             }
 
@@ -122,12 +165,7 @@ export component ProductsPage inherits Page {
                 { title: "Location" },
             ];
 
-            rows: ProductsPageAdapter.filter-sort-model(
-                ProductsPageAdapter.row-data,
-                "",
-                root.sort-index,
-                root.sort-ascending
-            );
+            rows: ProductsPageAdapter.row-data;
         }
     }
 }

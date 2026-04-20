@@ -15,27 +15,33 @@ export component ReportsPage inherits Page {
         vertical-stretch: 0;
         title: "Inventory Report";
 
-        HorizontalBox {
-            spacing: 8px;
+        VerticalBox {
+            padding: 8px;
 
-            VerticalBox {
-                Text { text: "Format"; }
-                inv-format := ComboBox {
-                    model: ["Excel", "PDF", "CSV"];
+            HorizontalBox {
+                spacing: 12px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Format"; }
+                    inv-format := ComboBox {
+                        model: ["Excel", "PDF", "CSV"];
+                    }
                 }
-            }
 
-            inv-zero := CheckBox {
-                text: "Include zero-stock items";
-            }
+                inv-zero := CheckBox {
+                    text: "Include zero-stock items";
+                }
 
-            Button {
-                text: "Generate";
-                primary: true;
-                enabled: !root.generating;
-                clicked => {
-                    root.generating = true;
-                    AppState.generate-inventory-report(inv-format.current-value, inv-zero.checked);
+                Button {
+                    text: "Generate";
+                    min-width: 100px;
+                    primary: true;
+                    enabled: !root.generating;
+                    clicked => {
+                        root.generating = true;
+                        AppState.generate-inventory-report(inv-format.current-value, inv-zero.checked);
+                    }
                 }
             }
         }
@@ -45,23 +51,29 @@ export component ReportsPage inherits Page {
         vertical-stretch: 0;
         title: "Stock Movement Report";
 
-        HorizontalBox {
-            spacing: 8px;
+        VerticalBox {
+            padding: 8px;
 
-            VerticalBox {
-                Text { text: "Format"; }
-                stock-format := ComboBox {
-                    model: ["Excel", "PDF", "CSV"];
+            HorizontalBox {
+                spacing: 12px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Format"; }
+                    stock-format := ComboBox {
+                        model: ["Excel", "PDF", "CSV"];
+                    }
                 }
-            }
 
-            Button {
-                text: "Generate";
-                primary: true;
-                enabled: !root.generating;
-                clicked => {
-                    root.generating = true;
-                    AppState.generate-stock-report(stock-format.current-value);
+                Button {
+                    text: "Generate";
+                    min-width: 100px;
+                    primary: true;
+                    enabled: !root.generating;
+                    clicked => {
+                        root.generating = true;
+                        AppState.generate-stock-report(stock-format.current-value);
+                    }
                 }
             }
         }
@@ -71,27 +83,33 @@ export component ReportsPage inherits Page {
         vertical-stretch: 0;
         title: "Budget Report";
 
-        HorizontalBox {
-            spacing: 8px;
+        VerticalBox {
+            padding: 8px;
 
-            VerticalBox {
-                Text { text: "Format"; }
-                budget-format := ComboBox {
-                    model: ["Excel", "PDF", "CSV"];
+            HorizontalBox {
+                spacing: 12px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Format"; }
+                    budget-format := ComboBox {
+                        model: ["Excel", "PDF", "CSV"];
+                    }
                 }
-            }
 
-            budget-proj := CheckBox {
-                text: "Include projections";
-            }
+                budget-proj := CheckBox {
+                    text: "Include projections";
+                }
 
-            Button {
-                text: "Generate";
-                primary: true;
-                enabled: !root.generating;
-                clicked => {
-                    root.generating = true;
-                    AppState.generate-budget-report(budget-format.current-value, budget-proj.checked);
+                Button {
+                    text: "Generate";
+                    min-width: 100px;
+                    primary: true;
+                    enabled: !root.generating;
+                    clicked => {
+                        root.generating = true;
+                        AppState.generate-budget-report(budget-format.current-value, budget-proj.checked);
+                    }
                 }
             }
         }
@@ -101,30 +119,37 @@ export component ReportsPage inherits Page {
         vertical-stretch: 0;
         title: "Purchasing Deals Report";
 
-        HorizontalBox {
-            spacing: 8px;
+        VerticalBox {
+            padding: 8px;
 
-            VerticalBox {
-                Text { text: "Format"; }
-                deal-format := ComboBox {
-                    model: ["Excel", "PDF", "CSV"];
+            HorizontalBox {
+                spacing: 12px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Format"; }
+                    deal-format := ComboBox {
+                        model: ["Excel", "PDF", "CSV"];
+                    }
                 }
-            }
 
-            VerticalBox {
-                Text { text: "Status"; }
-                deal-status := ComboBox {
-                    model: ["All", "Active Only", "Completed Only"];
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Status"; }
+                    deal-status := ComboBox {
+                        model: ["All", "Active Only", "Completed Only"];
+                    }
                 }
-            }
 
-            Button {
-                text: "Generate";
-                primary: true;
-                enabled: !root.generating;
-                clicked => {
-                    root.generating = true;
-                    AppState.generate-purchasing-report(deal-format.current-value, deal-status.current-value);
+                Button {
+                    text: "Generate";
+                    min-width: 100px;
+                    primary: true;
+                    enabled: !root.generating;
+                    clicked => {
+                        root.generating = true;
+                        AppState.generate-purchasing-report(deal-format.current-value, deal-status.current-value);
+                    }
                 }
             }
         }

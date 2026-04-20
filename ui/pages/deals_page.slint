@@ -1,21 +1,27 @@
 // DealsPage — Deal management with frequency and status tracking
 
 import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
-         LineEdit, ComboBox, Palette, StyleMetrics } from "std-widgets.slint";
+         LineEdit, ComboBox, Palette, StyleMetrics, DatePickerPopup } from "std-widgets.slint";
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState, DealItem } from "../globals/app_state.slint";
 
 export global DealsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
-    pure callback filter-sort-model([[StandardListViewItem]], string, int, bool) -> [[StandardListViewItem]];
-    filter-sort-model(data, filter, sort-index, sort-ascending) => { return data; }
+    in property <[string]> supplier-names: [];
+    in property <[string]> product-names: [];
+    in property <[string]> manager-names: [];
+    in-out property <string> selected-supplier: "";
+    in-out property <string> selected-product: "";
+    in-out property <string> selected-manager: "";
 }
 
 export component DealsPage inherits Page {
     property <int> sort-index: -1;
     property <bool> sort-ascending;
     property <bool> show-form: false;
+    property <string> start-date-text: "Select start date";
+    property <string> end-date-text: "Select end date";
 
     title: "Deals";
     description: "Track supplier deals, recurring orders, and contract status.";
@@ -36,13 +42,15 @@ export component DealsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Title"; }
-                    title-input := LineEdit { placeholder-text: "Deal title"; }
+                    title-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Deal title"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Description"; }
-                    desc-input := LineEdit { placeholder-text: "Description"; }
+                    desc-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Description"; }
                 }
             }
 
@@ -50,9 +58,65 @@ export component DealsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Frequency"; }
                     freq-input := ComboBox {
+                        horizontal-stretch: 1;
                         model: ["OneTime", "Weekly", "Monthly", "Quarterly", "Yearly"];
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Start Date"; }
+                    Button {
+                        horizontal-stretch: 1;
+                        text: root.start-date-text;
+                        clicked => { start-date-picker.show(); }
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "End Date"; }
+                    Button {
+                        horizontal-stretch: 1;
+                        text: root.end-date-text;
+                        clicked => { end-date-picker.show(); }
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Supplier"; }
+                    supplier-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: DealsPageAdapter.supplier-names;
+                        current-value <=> DealsPageAdapter.selected-supplier;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Product"; }
+                    product-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: DealsPageAdapter.product-names;
+                        current-value <=> DealsPageAdapter.selected-product;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Manager"; }
+                    manager-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: DealsPageAdapter.manager-names;
+                        current-value <=> DealsPageAdapter.selected-manager;
                     }
                 }
             }
@@ -106,12 +170,23 @@ export component DealsPage inherits Page {
                 { title: "Status" },
             ];
 
-            rows: DealsPageAdapter.filter-sort-model(
-                DealsPageAdapter.row-data,
-                "",
-                root.sort-index,
-                root.sort-ascending
-            );
+            rows: DealsPageAdapter.row-data;
+        }
+    }
+
+    start-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        accepted(date) => {
+            root.start-date-text = date.year + "-" + date.month + "-" + date.day;
+        }
+    }
+
+    end-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        accepted(date) => {
+            root.end-date-text = date.year + "-" + date.month + "-" + date.day;
         }
     }
 }

@@ -5,7 +5,7 @@ import { SideBar } from "components/side_bar.slint";
 import { LoginPage } from "pages/login_page.slint";
 import { DashboardPage } from "pages/dashboard_page.slint";
 import { ProductsPage } from "pages/products_page.slint";
-import { CategoriesPage } from "pages/categories_page.slint";
+import { CategoriesPage, CategoriesPageAdapter } from "pages/categories_page.slint";
 import { PersonsPage } from "pages/persons_page.slint";
 import { DealsPage } from "pages/deals_page.slint";
 import { LocationsPage } from "pages/locations_page.slint";
@@ -23,7 +23,7 @@ import { LocationsPageAdapter } from "pages/locations_page.slint";
 
 export { AppState, AppSettings, StockTrackingAdapter, BudgetPageAdapter,
          ProductsPageAdapter, PersonsPageAdapter, DealsPageAdapter,
-         LocationsPageAdapter, UsersPageAdapter }
+         LocationsPageAdapter, UsersPageAdapter, CategoriesPageAdapter }
 
 export component App inherits Window {
     preferred-width: 1024px;

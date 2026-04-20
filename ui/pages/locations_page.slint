@@ -8,8 +8,6 @@ import { AppState, LocationItem } from "../globals/app_state.slint";
 
 export global LocationsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
-    pure callback filter-sort-model([[StandardListViewItem]], string, int, bool) -> [[StandardListViewItem]];
-    filter-sort-model(data, filter, sort-index, sort-ascending) => { return data; }
 }
 
 export component LocationsPage inherits Page {
@@ -36,13 +34,15 @@ export component LocationsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Name"; }
-                    name-input := LineEdit { placeholder-text: "Location name"; }
+                    name-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Location name"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Address"; }
-                    addr-input := LineEdit { placeholder-text: "Full address"; }
+                    addr-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Full address"; }
                 }
             }
 
@@ -50,18 +50,21 @@ export component LocationsPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Latitude"; }
-                    lat-input := LineEdit { placeholder-text: "0.0"; }
+                    lat-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.0"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Longitude"; }
-                    lng-input := LineEdit { placeholder-text: "0.0"; }
+                    lng-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.0"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Capacity"; }
-                    cap-input := SpinBox { value: 100; minimum: 1; maximum: 999999; }
+                    cap-input := SpinBox { horizontal-stretch: 1; value: 100; minimum: 1; maximum: 999999; }
                 }
             }
 
@@ -114,12 +117,7 @@ export component LocationsPage inherits Page {
                 { title: "Lng" },
             ];
 
-            rows: LocationsPageAdapter.filter-sort-model(
-                LocationsPageAdapter.row-data,
-                "",
-                root.sort-index,
-                root.sort-ascending
-            );
+            rows: LocationsPageAdapter.row-data;
         }
     }
 }

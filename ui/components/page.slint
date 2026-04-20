@@ -7,10 +7,14 @@ export component Page inherits VerticalBox {
     in property <string> title: "title";
     in property <string> description: "description";
 
+    vertical-stretch: 1;
+    horizontal-stretch: 1;
+
     accessible-role: tab-panel;
     accessible-label: root.title;
 
     HorizontalBox {
+        vertical-stretch: 0;
         Text {
             font-size: 20px;
             text <=> root.title;
@@ -29,6 +33,7 @@ export component Page inherits VerticalBox {
     }
 
     if root.description != "" : Text {
+        vertical-stretch: 0;
         text: root.description;
         wrap: word-wrap;
         color: Palette.foreground.transparentize(0.4);

@@ -1,9 +1,13 @@
 // CategoriesPage — Category tree management
 
-import { GroupBox, VerticalBox, HorizontalBox, StandardListView, Button, LineEdit, Palette } from "std-widgets.slint";
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button, LineEdit, Palette } from "std-widgets.slint";
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState, CategoryItem } from "../globals/app_state.slint";
+
+export global CategoriesPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+}
 
 export component CategoriesPage inherits Page {
     property <bool> show-form: false;
@@ -27,13 +31,15 @@ export component CategoriesPage inherits Page {
                 spacing: 8px;
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Name"; }
-                    name-input := LineEdit { placeholder-text: "Category name"; }
+                    name-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Category name"; }
                 }
 
                 VerticalBox {
+                    horizontal-stretch: 1;
                     Text { text: "Description"; }
-                    desc-input := LineEdit { placeholder-text: "Description"; }
+                    desc-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Description"; }
                 }
             }
 
@@ -62,10 +68,13 @@ export component CategoriesPage inherits Page {
         title: "Categories";
         vertical-stretch: 1;
 
-        StandardListView {
-            model: [
-                // Populated from Rust via AppState.categories mapping
+        StandardTableView {
+            columns: [
+                { title: "Name" },
+                { title: "Description" },
             ];
+
+            rows: CategoriesPageAdapter.row-data;
         }
     }
 }
