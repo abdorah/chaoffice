@@ -22,21 +22,28 @@ impl PdfWriter {
     }
 
     fn create_document(title: &str) -> Result<Document, ReportError> {
-        // Try multiple font locations: Windows (Arial), Linux (LiberationSans),
-        // macOS (Helvetica), and current directory as fallback.
+        // genpdf requires font files in the pattern: {family}-Regular.ttf, {family}-Bold.ttf
+        // Try multiple locations and naming conventions
         let font_family = fonts::from_files("C:\\Windows\\Fonts", "arial", None)
-            .or_else(|_| fonts::from_files("C:\\Windows\\Fonts", "Arial", None))
+            .or_else(|_| fonts::from_files("C:\\Windows\\Fonts", "times", None))
+            .or_else(|_| fonts::from_files("C:\\Windows\\Fonts", "cour", None))
             .or_else(|_| fonts::from_files("/usr/share/fonts/truetype/liberation", "LiberationSans", None))
-            .or_else(|_| fonts::from_files("/usr/share/fonts", "LiberationSans", None))
+            .or_else(|_| fonts::from_files("/usr/share/fonts/truetype/dejavu", "DejaVuSans", None))
             .or_else(|_| fonts::from_files("/System/Library/Fonts", "Helvetica", None))
-            .or_else(|_| fonts::from_files(".", "LiberationSans", None))
-            .map_err(|e| ReportError::PdfError {
-                details: format!(
-                    "Could not load any font for PDF generation: {}. \
-                     Install LiberationSans or ensure Arial is available.",
-                    e
-                ),
-            })?;
+            .or_else(|_| fonts::from_files(".", "LiberationSans", None));
+
+        let font_family = match font_family {
+            Ok(f) => f,
+            Err(_) => {
+                return Err(ReportError::PdfError {
+                    details: "PDF generation requires font files. On Windows, install LiberationSans fonts \
+                              or place LiberationSans-Regular.ttf, LiberationSans-Bold.ttf, \
+                              LiberationSans-Italic.ttf, LiberationSans-BoldItalic.ttf in the application directory. \
+                              Download from: https://github.com/liberationfonts/liberation-fonts/releases"
+                        .to_string(),
+                });
+            }
+        };
 
         let mut doc = Document::new(font_family);
         doc.set_title(title);

@@ -222,10 +222,13 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
             if let Some(app) = app_weak.upgrade() {
                 let size = app.window().size();
                 let scale = app.window().scale_factor();
+                let dark = app.global::<AppSettings>().get_dark_mode();
+                log::info!("Saving settings: size={}x{}, scale={}, dark_mode={}", 
+                    size.width, size.height, scale, dark);
                 let settings = UiSettings {
                     window_width: size.width as f32 / scale,
                     window_height: size.height as f32 / scale,
-                    dark_mode: app.global::<AppSettings>().get_dark_mode(),
+                    dark_mode: dark,
                 };
                 settings.save();
             }
