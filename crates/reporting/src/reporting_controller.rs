@@ -17,7 +17,6 @@ use crate::use_cases::generate_inventory_report_uc::GenerateInventoryReportUseCa
 use crate::use_cases::generate_purchasing_report_uc::GeneratePurchasingReportUseCase;
 use crate::use_cases::generate_stock_movement_report_uc::GenerateStockMovementReportUseCase;
 use anyhow::Result;
-use common::event::{Event, Origin};
 
 use common::long_operation::{LongOperationManager, OperationProgress};
 use common::{database::db_context::DbContext, event::EventHub};

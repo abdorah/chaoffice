@@ -52,20 +52,6 @@ impl PdfWriter {
 
         Ok(doc)
     }
-
-    fn push_table_header(doc: &mut Document, headers: &[String], col_count: usize) {
-        let mut table = TableLayout::new(vec![1; col_count]);
-        table.set_cell_decorator(genpdf::elements::FrameCellDecorator::new(true, true, false));
-        let header_row = table.row();
-        let mut row_handle = header_row;
-        for h in headers {
-            row_handle.push_element(
-                Paragraph::new(h.as_str()).styled(Style::new().bold().with_font_size(8)),
-            );
-        }
-        row_handle.push().expect("Failed to push header row");
-        doc.push(table);
-    }
 }
 
 impl ReportWriter for PdfWriter {
