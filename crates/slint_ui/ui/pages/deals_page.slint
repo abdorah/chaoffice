@@ -14,6 +14,14 @@ export global DealsPageAdapter {
     in-out property <string> selected-supplier: "";
     in-out property <string> selected-product: "";
     in-out property <string> selected-manager: "";
+    // Edit mode support
+    in-out property <int> editing-id: 0;
+    in-out property <string> edit-title: "";
+    in-out property <string> edit-description: "";
+    in-out property <string> edit-frequency: "OneTime";
+    in-out property <string> edit-status: "Draft";
+    // Deal IDs parallel to row-data for row selection
+    in property <[int]> deal-ids: [];
 }
 
 export component DealsPage inherits Page {
@@ -30,12 +38,20 @@ export component DealsPage inherits Page {
         vertical-stretch: 0;
         placeholder: "Search deals...";
         action-text: "New Deal";
-        action-clicked => { root.show-form = !root.show-form; }
+        action-clicked => {
+            // Reset edit mode when opening form for new deal
+            DealsPageAdapter.editing-id = 0;
+            DealsPageAdapter.edit-title = "";
+            DealsPageAdapter.edit-description = "";
+            DealsPageAdapter.edit-frequency = "OneTime";
+            DealsPageAdapter.edit-status = "Draft";
+            root.show-form = !root.show-form;
+        }
     }
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: "New Deal";
+        title: DealsPageAdapter.editing-id > 0 ? "Edit Deal" : "New Deal";
 
         VerticalBox {
             HorizontalBox {
@@ -44,13 +60,21 @@ export component DealsPage inherits Page {
                 VerticalBox {
                     horizontal-stretch: 1;
                     Text { text: "Title"; }
-                    title-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Deal title"; }
+                    title-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Deal title";
+                        text <=> DealsPageAdapter.edit-title;
+                    }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
                     Text { text: "Description"; }
-                    desc-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Description"; }
+                    desc-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Description";
+                        text <=> DealsPageAdapter.edit-description;
+                    }
                 }
             }
 
@@ -63,6 +87,17 @@ export component DealsPage inherits Page {
                     freq-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ["OneTime", "Weekly", "Monthly", "Quarterly", "Yearly"];
+                        current-value <=> DealsPageAdapter.edit-frequency;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Status"; }
+                    status-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ["Draft", "Active", "Completed", "Cancelled"];
+                        current-value <=> DealsPageAdapter.edit-status;
                     }
                 }
 
@@ -127,19 +162,33 @@ export component DealsPage inherits Page {
 
                 Button {
                     text: "Cancel";
-                    clicked => { root.show-form = false; }
+                    clicked => {
+                        DealsPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
                 }
 
                 Button {
-                    text: "Create";
+                    text: DealsPageAdapter.editing-id > 0 ? "Save" : "Create";
                     primary: true;
                     clicked => {
-                        AppState.create-deal(
-                            title-input.text,
-                            desc-input.text,
-                            0, 0, 0,
-                            freq-input.current-value
-                        );
+                        if DealsPageAdapter.editing-id > 0 {
+                            AppState.update-deal(
+                                DealsPageAdapter.editing-id,
+                                DealsPageAdapter.edit-title,
+                                DealsPageAdapter.edit-description,
+                                DealsPageAdapter.edit-frequency,
+                                DealsPageAdapter.edit-status,
+                            );
+                        } else {
+                            AppState.create-deal(
+                                title-input.text,
+                                desc-input.text,
+                                0, 0, 0,
+                                freq-input.current-value
+                            );
+                        }
+                        DealsPageAdapter.editing-id = 0;
                         root.show-form = false;
                     }
                 }
@@ -151,26 +200,49 @@ export component DealsPage inherits Page {
         title: "Deals";
         vertical-stretch: 1;
 
-        StandardTableView {
-            sort-ascending(index) => {
-                root.sort-index = index;
-                root.sort-ascending = true;
-            }
-            sort-descending(index) => {
-                root.sort-index = index;
-                root.sort-ascending = false;
+        VerticalBox {
+            deals-table := StandardTableView {
+                sort-ascending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = true;
+                }
+                sort-descending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = false;
+                }
+
+                columns: [
+                    { title: "Title" },
+                    { title: "Product" },
+                    { title: "Supplier" },
+                    { title: "Manager" },
+                    { title: "Frequency" },
+                    { title: "Status" },
+                ];
+
+                rows: DealsPageAdapter.row-data;
             }
 
-            columns: [
-                { title: "Title" },
-                { title: "Product" },
-                { title: "Supplier" },
-                { title: "Manager" },
-                { title: "Frequency" },
-                { title: "Status" },
-            ];
+            HorizontalBox {
+                vertical-stretch: 0;
+                alignment: start;
+                spacing: 8px;
 
-            rows: DealsPageAdapter.row-data;
+                Button {
+                    text: "Edit Selected";
+                    enabled: deals-table.current-row >= 0 && deals-table.current-row < DealsPageAdapter.row-data.length;
+                    clicked => {
+                        if deals-table.current-row >= 0 && deals-table.current-row < DealsPageAdapter.row-data.length {
+                            DealsPageAdapter.editing-id = DealsPageAdapter.deal-ids[deals-table.current-row];
+                            DealsPageAdapter.edit-title = DealsPageAdapter.row-data[deals-table.current-row][0].text;
+                            DealsPageAdapter.edit-description = "";
+                            DealsPageAdapter.edit-frequency = DealsPageAdapter.row-data[deals-table.current-row][4].text;
+                            DealsPageAdapter.edit-status = DealsPageAdapter.row-data[deals-table.current-row][5].text;
+                            root.show-form = true;
+                        }
+                    }
+                }
+            }
         }
     }
 

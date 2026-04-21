@@ -1,0 +1,168 @@
+// PersonsPage — Manage managers and suppliers with contact info
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
+         LineEdit, ComboBox, Palette, StyleMetrics } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { AppState, PersonItem } from "../globals/app_state.slint";
+
+export global PersonsPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    // Edit mode support
+    in-out property <int> editing-id: 0;
+    in-out property <string> edit-name: "";
+    in-out property <string> edit-role: "Manager";
+    // Person IDs parallel to row-data for row selection
+    in property <[int]> person-ids: [];
+}
+
+export component PersonsPage inherits Page {
+    property <int> sort-index: -1;
+    property <bool> sort-ascending;
+    property <bool> show-form: false;
+
+    title: "People";
+    description: "Manage managers and suppliers with their contact information.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search people...";
+        action-text: "Add Person";
+        action-clicked => {
+            // Reset edit mode when opening form for new person
+            PersonsPageAdapter.editing-id = 0;
+            PersonsPageAdapter.edit-name = "";
+            PersonsPageAdapter.edit-role = "Manager";
+            root.show-form = !root.show-form;
+        }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: PersonsPageAdapter.editing-id > 0 ? "Edit Person" : "New Person";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Name"; }
+                    name-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Full name";
+                        text <=> PersonsPageAdapter.edit-name;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Role"; }
+                    role-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ["Manager", "Supplier"];
+                        current-value <=> PersonsPageAdapter.edit-role;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Phone"; }
+                    phone-input := LineEdit { horizontal-stretch: 1; placeholder-text: "+1 234 567 890"; }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Email"; }
+                    email-input := LineEdit { horizontal-stretch: 1; placeholder-text: "email@example.com"; }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => {
+                        PersonsPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+
+                Button {
+                    text: PersonsPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    primary: true;
+                    clicked => {
+                        if PersonsPageAdapter.editing-id > 0 {
+                            AppState.update-person(
+                                PersonsPageAdapter.editing-id,
+                                PersonsPageAdapter.edit-name,
+                                PersonsPageAdapter.edit-role,
+                            );
+                        } else {
+                            AppState.create-person(
+                                name-input.text,
+                                role-input.current-value,
+                                phone-input.text,
+                                email-input.text
+                            );
+                        }
+                        PersonsPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "People";
+        vertical-stretch: 1;
+
+        VerticalBox {
+            persons-table := StandardTableView {
+                sort-ascending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = true;
+                }
+                sort-descending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = false;
+                }
+
+                columns: [
+                    { title: "Name" },
+                    { title: "Role" },
+                    { title: "Phone" },
+                    { title: "Email" },
+                ];
+
+                rows: PersonsPageAdapter.row-data;
+            }
+
+            HorizontalBox {
+                vertical-stretch: 0;
+                alignment: start;
+                spacing: 8px;
+
+                Button {
+                    text: "Edit Selected";
+                    enabled: persons-table.current-row >= 0 && persons-table.current-row < PersonsPageAdapter.row-data.length;
+                    clicked => {
+                        if persons-table.current-row >= 0 && persons-table.current-row < PersonsPageAdapter.row-data.length {
+                            PersonsPageAdapter.editing-id = PersonsPageAdapter.person-ids[persons-table.current-row];
+                            PersonsPageAdapter.edit-name = PersonsPageAdapter.row-data[persons-table.current-row][0].text;
+                            PersonsPageAdapter.edit-role = PersonsPageAdapter.row-data[persons-table.current-row][1].text;
+                            root.show-form = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -22,3 +22,11 @@
 - [ ] 3.4 CLI integration test: verify all commands work
 - [x] 3.5 Final `cargo test` — all 59 tests pass (23 auth + 8 integration + 25 infra + 3 frontend)
 - [ ] 3.6 Tag release: `git tag v0.1.0`
+
+## Step 4: UI Polish & Fixes
+- [x] 4.1 Callback wiring (all CRUD + reports + sync + logout) → `.kiro/specs/callback-wiring/tasks.md`
+- [x] 4.2 TODO cleanup & LibSQL integration → `.kiro/specs/libsql-integration/tasks.md`
+- [x] 4.3 UI fixes (tables, comboboxes, datepicker, layout) → `.kiro/specs/ui-fixes/tasks.md`
+- [x] 4.4 Remaining fixes (users, settings, reports, logout) → `.kiro/specs/remaining-fixes/tasks.md`
+- [x] 4.5 Polish fixes (PDF, theme, product names, sync settings, scroll, logout) → `.kiro/specs/polish-fixes/tasks.md`
+- [x] 4.6 Final fixes (sync persistence, theme persistence, row editing) → `.kiro/specs/final-fixes/tasks.md`

@@ -1,0 +1,137 @@
+// CategoriesPage — Category tree management
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button, LineEdit, Palette } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { AppState, CategoryItem } from "../globals/app_state.slint";
+
+export global CategoriesPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    // Edit mode support
+    in-out property <int> editing-id: 0;
+    in-out property <string> edit-name: "";
+    in-out property <string> edit-description: "";
+    // Category IDs parallel to row-data for row selection
+    in property <[int]> category-ids: [];
+}
+
+export component CategoriesPage inherits Page {
+    property <bool> show-form: false;
+
+    title: "Categories";
+    description: "Organize products into hierarchical categories.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search categories...";
+        action-text: "Add Category";
+        action-clicked => {
+            // Reset edit mode when opening form for new category
+            CategoriesPageAdapter.editing-id = 0;
+            CategoriesPageAdapter.edit-name = "";
+            CategoriesPageAdapter.edit-description = "";
+            root.show-form = !root.show-form;
+        }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: CategoriesPageAdapter.editing-id > 0 ? "Edit Category" : "New Category";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Name"; }
+                    name-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Category name";
+                        text <=> CategoriesPageAdapter.edit-name;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Description"; }
+                    desc-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Description";
+                        text <=> CategoriesPageAdapter.edit-description;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => {
+                        CategoriesPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+
+                Button {
+                    text: CategoriesPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    primary: true;
+                    clicked => {
+                        if CategoriesPageAdapter.editing-id > 0 {
+                            AppState.update-category(
+                                CategoriesPageAdapter.editing-id,
+                                CategoriesPageAdapter.edit-name,
+                                CategoriesPageAdapter.edit-description,
+                            );
+                        } else {
+                            AppState.create-category(
+                                CategoriesPageAdapter.edit-name,
+                                CategoriesPageAdapter.edit-description,
+                                0,
+                            );
+                        }
+                        CategoriesPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Categories";
+        vertical-stretch: 1;
+
+        VerticalBox {
+            categories-table := StandardTableView {
+                columns: [
+                    { title: "Name" },
+                    { title: "Description" },
+                ];
+
+                rows: CategoriesPageAdapter.row-data;
+            }
+
+            HorizontalBox {
+                vertical-stretch: 0;
+                alignment: start;
+                spacing: 8px;
+
+                Button {
+                    text: "Edit Selected";
+                    enabled: categories-table.current-row >= 0 && categories-table.current-row < CategoriesPageAdapter.row-data.length;
+                    clicked => {
+                        if categories-table.current-row >= 0 && categories-table.current-row < CategoriesPageAdapter.row-data.length {
+                            CategoriesPageAdapter.editing-id = CategoriesPageAdapter.category-ids[categories-table.current-row];
+                            CategoriesPageAdapter.edit-name = CategoriesPageAdapter.row-data[categories-table.current-row][0].text;
+                            CategoriesPageAdapter.edit-description = CategoriesPageAdapter.row-data[categories-table.current-row][1].text;
+                            root.show-form = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

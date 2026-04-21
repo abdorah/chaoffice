@@ -1,0 +1,185 @@
+// LocationsPage — Warehouse/location management with capacity tracking
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
+         LineEdit, SpinBox, Palette, StyleMetrics, ProgressIndicator } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { AppState, LocationItem } from "../globals/app_state.slint";
+
+export global LocationsPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    // Edit mode support
+    in-out property <int> editing-id: 0;
+    in-out property <string> edit-name: "";
+    in-out property <string> edit-address: "";
+    in-out property <int> edit-capacity: 100;
+    // Location IDs parallel to row-data for row selection
+    in property <[int]> location-ids: [];
+}
+
+export component LocationsPage inherits Page {
+    property <int> sort-index: -1;
+    property <bool> sort-ascending;
+    property <bool> show-form: false;
+
+    title: "Locations";
+    description: "Manage warehouses and storage locations with capacity tracking.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search locations...";
+        action-text: "Add Location";
+        action-clicked => {
+            // Reset edit mode when opening form for new location
+            LocationsPageAdapter.editing-id = 0;
+            LocationsPageAdapter.edit-name = "";
+            LocationsPageAdapter.edit-address = "";
+            LocationsPageAdapter.edit-capacity = 100;
+            root.show-form = !root.show-form;
+        }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: LocationsPageAdapter.editing-id > 0 ? "Edit Location" : "New Location";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Name"; }
+                    name-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Location name";
+                        text <=> LocationsPageAdapter.edit-name;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Address"; }
+                    addr-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Full address";
+                        text <=> LocationsPageAdapter.edit-address;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Latitude"; }
+                    lat-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.0"; }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Longitude"; }
+                    lng-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.0"; }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Capacity"; }
+                    cap-input := SpinBox {
+                        horizontal-stretch: 1;
+                        value <=> LocationsPageAdapter.edit-capacity;
+                        minimum: 1;
+                        maximum: 999999;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => {
+                        LocationsPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+
+                Button {
+                    text: LocationsPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    primary: true;
+                    clicked => {
+                        if LocationsPageAdapter.editing-id > 0 {
+                            AppState.update-location(
+                                LocationsPageAdapter.editing-id,
+                                LocationsPageAdapter.edit-name,
+                                LocationsPageAdapter.edit-address,
+                                LocationsPageAdapter.edit-capacity,
+                            );
+                        } else {
+                            AppState.create-location(
+                                name-input.text,
+                                addr-input.text,
+                                0.0, 0.0,
+                                cap-input.value
+                            );
+                        }
+                        LocationsPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Locations";
+        vertical-stretch: 1;
+
+        VerticalBox {
+            locations-table := StandardTableView {
+                sort-ascending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = true;
+                }
+                sort-descending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = false;
+                }
+
+                columns: [
+                    { title: "Name" },
+                    { title: "Address" },
+                    { title: "Capacity" },
+                    { title: "Used" },
+                    { title: "Lat" },
+                    { title: "Lng" },
+                ];
+
+                rows: LocationsPageAdapter.row-data;
+            }
+
+            HorizontalBox {
+                vertical-stretch: 0;
+                alignment: start;
+                spacing: 8px;
+
+                Button {
+                    text: "Edit Selected";
+                    enabled: locations-table.current-row >= 0 && locations-table.current-row < LocationsPageAdapter.row-data.length;
+                    clicked => {
+                        if locations-table.current-row >= 0 && locations-table.current-row < LocationsPageAdapter.row-data.length {
+                            LocationsPageAdapter.editing-id = LocationsPageAdapter.location-ids[locations-table.current-row];
+                            LocationsPageAdapter.edit-name = LocationsPageAdapter.row-data[locations-table.current-row][0].text;
+                            LocationsPageAdapter.edit-address = LocationsPageAdapter.row-data[locations-table.current-row][1].text;
+                            LocationsPageAdapter.edit-capacity = 0;
+                            root.show-form = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

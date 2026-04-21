@@ -55,7 +55,7 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
     - Test non-existent product_id, supplier_id, manager_id, empty title
     - _Requirements: 1.4, 1.5, 1.6, 1.7_
 
-- [ ] 4. Checkpoint - Ensure create deal tests pass
+- [x] 4. Checkpoint - Ensure create deal tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 5. Implement query handlers
@@ -81,7 +81,7 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
     - Test non-existent supplier, no matching deals, no active deals
     - _Requirements: 2.2, 2.3, 3.2_
 
-- [ ] 6. Checkpoint - Ensure all handler tests pass
+- [x] 6. Checkpoint - Ensure all handler tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 7. Wire handlers to Qleany controller and RBAC
@@ -96,20 +96,20 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
     - Verify Operator can query deals (has `*:read` via dashboard:read? — check permission matrix)
     - _Requirements: 1.13, 2.4, 3.3_
 
-- [ ] 8. Implement DealsPage UI
-  - [ ] 8.1 Create `ui/pages/deals_page.slint` with table view, search field, frequency/status filter dropdowns
+- [x] 8. Implement DealsPage UI
+  - [x] 8.1 Create `ui/pages/deals_page.slint` with table view, search field, frequency/status filter dropdowns
     - Table columns: title, supplier_name, product_name, status, frequency, unit_cost, total_value, start_date, end_date
     - Search field filters by title or supplier_name (case-insensitive)
     - Frequency dropdown with DealFrequency values + "All" option
     - Status dropdown with DealStatus values + "All" option
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
-  - [ ] 8.2 Implement add-deal form in DealsPage
+  - [x] 8.2 Implement add-deal form in DealsPage
     - Form fields: title, description, product dropdown, supplier dropdown, manager dropdown, unit_cost, total_value, frequency, start_date, end_date
     - Populate supplier dropdown from Person entities with role Supplier
     - Populate product dropdown from Product entities
     - Visible only for Admin/Manager roles
     - _Requirements: 5.5, 5.6, 5.7_
-  - [ ] 8.3 Wire DealsPage callbacks to Rust backend
+  - [x] 8.3 Wire DealsPage callbacks to Rust backend
     - Wire add-deal form submit to `create_purchase_deal` handler
     - Wire page load to fetch all deals and populate table
     - Wire search and filter inputs to client-side filtering logic
@@ -120,7 +120,7 @@ Implement the three use cases in the `purchasing` crate: `create_purchase_deal`,
     - **Property 10: Deals frequency and status filter correctness**
     - **Validates: Requirements 5.3, 5.4**
 
-- [ ] 9. Final checkpoint - Ensure all tests pass
+- [x] 9. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

@@ -143,8 +143,8 @@ Implement the reporting feature as a `reporting` crate with four use case handle
     - Viewer allowed for all four report types (Requirements 1.6, 2.6, 3.7, 4.7)
     - Manager allowed for all four report types (Requirements 1.6, 2.6, 3.7, 4.7)
 
-- [-] 13. Implement ReportsPage Slint UI
-  - [-] 13.1 Create `ui/pages/reports_page.slint`
+- [x] 13. Implement ReportsPage Slint UI
+  - [x] 13.1 Create `ui/pages/reports_page.slint`
     - Four report sections: Inventory, Stock Movement, Budget, Purchasing
     - Each section: format ComboBox (Excel/PDF/CSV), report-specific filter controls, output path input, generate button, progress bar, status label
     - Inventory section: include_zero_stock checkbox
@@ -153,7 +153,7 @@ Implement the reporting feature as a `reporting` crate with four use case handle
     - Purchasing section: status_filter ComboBox (All/Active Only/Completed Only)
     - Generate buttons hidden when user lacks report:generate permission
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
-  - [ ] 13.2 Wire ReportsPage to reporting controller in Rust bridge
+  - [x] 13.2 Wire ReportsPage to reporting controller in Rust bridge
     - Connect generate button callbacks to use case handlers via controller
     - Bind progress reporter to progress bar updates
     - Display success/error messages in status label

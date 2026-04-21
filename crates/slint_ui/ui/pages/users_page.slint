@@ -1,0 +1,173 @@
+// UsersPage — User management (Admin only)
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
+         LineEdit, ComboBox, Palette } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { AppState } from "../globals/app_state.slint";
+
+export global UsersPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    // Edit mode support
+    in-out property <int> editing-id: 0;
+    in-out property <string> edit-username: "";
+    in-out property <string> edit-password: "";
+    in-out property <string> edit-display-name: "";
+    in-out property <string> edit-role: "Admin";
+    // User IDs parallel to row-data for row selection
+    in property <[int]> user-ids: [];
+}
+
+export component UsersPage inherits Page {
+    property <bool> show-form: false;
+
+    title: "User Management";
+    description: "Create and manage user accounts and roles. Admin access required.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search users...";
+        action-text: "Add User";
+        action-clicked => {
+            // Reset edit mode when opening form for new user
+            UsersPageAdapter.editing-id = 0;
+            UsersPageAdapter.edit-username = "";
+            UsersPageAdapter.edit-password = "";
+            UsersPageAdapter.edit-display-name = "";
+            UsersPageAdapter.edit-role = "Admin";
+            root.show-form = !root.show-form;
+        }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: UsersPageAdapter.editing-id > 0 ? "Edit User" : "New User";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Username"; }
+                    LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "username";
+                        text <=> UsersPageAdapter.edit-username;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Display Name"; }
+                    LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Full name";
+                        text <=> UsersPageAdapter.edit-display-name;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Password"; }
+                    LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: UsersPageAdapter.editing-id > 0 ? "Leave empty to keep current" : "Password";
+                        input-type: InputType.password;
+                        text <=> UsersPageAdapter.edit-password;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Role"; }
+                    ComboBox {
+                        horizontal-stretch: 1;
+                        model: ["Admin", "Manager", "Operator", "Viewer"];
+                        current-value <=> UsersPageAdapter.edit-role;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => {
+                        UsersPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+
+                Button {
+                    text: UsersPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    primary: true;
+                    clicked => {
+                        if UsersPageAdapter.editing-id > 0 {
+                            AppState.update-user(
+                                UsersPageAdapter.editing-id,
+                                UsersPageAdapter.edit-username,
+                                UsersPageAdapter.edit-password,
+                                UsersPageAdapter.edit-display-name,
+                                UsersPageAdapter.edit-role,
+                            );
+                        } else {
+                            AppState.create-user(
+                                UsersPageAdapter.edit-username,
+                                UsersPageAdapter.edit-password,
+                                UsersPageAdapter.edit-display-name,
+                                UsersPageAdapter.edit-role,
+                            );
+                        }
+                        UsersPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Users";
+        vertical-stretch: 1;
+
+        VerticalBox {
+            users-table := StandardTableView {
+                columns: [
+                    { title: "Username" },
+                    { title: "Display Name" },
+                    { title: "Role" },
+                    { title: "Active" },
+                ];
+                rows: UsersPageAdapter.row-data;
+            }
+
+            HorizontalBox {
+                vertical-stretch: 0;
+                alignment: start;
+                spacing: 8px;
+
+                Button {
+                    text: "Edit Selected";
+                    enabled: users-table.current-row >= 0 && users-table.current-row < UsersPageAdapter.row-data.length;
+                    clicked => {
+                        if users-table.current-row >= 0 && users-table.current-row < UsersPageAdapter.row-data.length {
+                            UsersPageAdapter.editing-id = UsersPageAdapter.user-ids[users-table.current-row];
+                            UsersPageAdapter.edit-username = UsersPageAdapter.row-data[users-table.current-row][0].text;
+                            UsersPageAdapter.edit-display-name = UsersPageAdapter.row-data[users-table.current-row][1].text;
+                            UsersPageAdapter.edit-role = UsersPageAdapter.row-data[users-table.current-row][2].text;
+                            UsersPageAdapter.edit-password = "";
+                            root.show-form = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

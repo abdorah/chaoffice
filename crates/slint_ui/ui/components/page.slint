@@ -13,15 +13,12 @@ export component Page inherits VerticalLayout {
     accessible-role: tab-panel;
     accessible-label: root.title;
 
-    // Apply dark mode from settings on startup via a one-shot timer
+    // Apply dark mode from settings — keeps running until palette matches
     Timer {
-        interval: 100ms;
-        running: true;
+        interval: 200ms;
+        running: AppSettings.dark-mode && Palette.color-scheme != ColorScheme.dark;
         triggered => {
-            if AppSettings.dark-mode {
-                Palette.color-scheme = ColorScheme.dark;
-            }
-            self.running = false;
+            Palette.color-scheme = ColorScheme.dark;
         }
     }
 

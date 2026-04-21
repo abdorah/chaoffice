@@ -83,4 +83,4 @@
 - [x] 9. Implement StockTrackingAdapter callback bodies (record, history, summary)
 - [x] 10. Implement BudgetPageAdapter callback bodies (summary, projection, record)
 - [x] 11. Implement sync callback bodies (push, pull, configure)
-- [ ] 12. Verify all callbacks work end-to-end
+- [x] 12. Verify all callbacks work end-to-end

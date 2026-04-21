@@ -56,7 +56,7 @@ Implement the `inventory_sync` crate as a standalone Rust crate that bridges Qle
     - Generate random event sequences with duplicates, verify set semantics and drain behavior
     - **Validates: Requirements 7.1, 7.3, 7.4, 3.7**
 
-- [ ] 4. Checkpoint - Ensure all tests pass
+- [x] 4. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 5. Implement ConflictResolver
@@ -121,7 +121,7 @@ Implement the `inventory_sync` crate as a standalone Rust crate that bridges Qle
     - Generate random UserRoles, verify Admin/Manager can trigger sync, only Admin can configure
     - **Validates: Requirements 12.1, 12.2, 12.3, 12.4**
 
-- [ ] 8. Checkpoint - Ensure all tests pass
+- [x] 8. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Implement hydrate/dehydrate integration tests
@@ -168,7 +168,7 @@ Implement the `inventory_sync` crate as a standalone Rust crate that bridges Qle
     - Stop auto-sync timer
     - _Requirements: 14.2, 14.3, 13.2_
 
-- [ ] 12. Final checkpoint - Ensure all tests pass
+- [x] 12. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

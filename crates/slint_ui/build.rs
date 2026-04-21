@@ -2,6 +2,6 @@
 // Modified: point to the custom UI in the workspace root ui/ directory
 fn main() {
     let config = slint_build::CompilerConfiguration::new()
-        .with_include_paths(vec![std::path::PathBuf::from("../../ui")]);
-    slint_build::compile_with_config("../../ui/app.slint", config).unwrap();
+        .with_include_paths(vec![std::path::PathBuf::from("ui")]);
+    slint_build::compile_with_config("ui/app.slint", config).unwrap();
 }

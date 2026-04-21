@@ -6,6 +6,14 @@ import { Page } from "../components/page.slint";
 import { StatCard } from "../components/stat_card.slint";
 import { AppState } from "../globals/app_state.slint";
 
+// Persistent adapter — survives page destruction/recreation on navigation
+export global SyncPageAdapter {
+    in-out property <string> turso-url: "";
+    in-out property <string> turso-token: "";
+    in-out property <bool> auto-sync-enabled: false;
+    in-out property <int> sync-interval: 60;
+}
+
 export component SyncPage inherits Page {
     property <bool> syncing: false;
 
@@ -89,6 +97,7 @@ export component SyncPage inherits Page {
                     Text { text: "TursoDB URL"; }
                     turso-url := LineEdit {
                         horizontal-stretch: 1;
+                        text <=> SyncPageAdapter.turso-url;
                         placeholder-text: "libsql://your-db.turso.io";
                     }
                 }
@@ -103,6 +112,7 @@ export component SyncPage inherits Page {
                     Text { text: "Auth Token"; }
                     turso-token := LineEdit {
                         horizontal-stretch: 1;
+                        text <=> SyncPageAdapter.turso-token;
                         placeholder-text: "Token";
                         input-type: password;
                     }
@@ -115,7 +125,7 @@ export component SyncPage inherits Page {
 
                 auto-sync-switch := Switch {
                     text: "Auto-sync enabled";
-                    checked: false;
+                    checked <=> SyncPageAdapter.auto-sync-enabled;
                 }
 
                 VerticalBox {
@@ -123,7 +133,7 @@ export component SyncPage inherits Page {
                     Text { text: "Interval (seconds)"; }
                     sync-interval := SpinBox {
                         horizontal-stretch: 0;
-                        value: 60;
+                        value <=> SyncPageAdapter.sync-interval;
                         minimum: 10;
                         maximum: 3600;
                     }
@@ -141,10 +151,10 @@ export component SyncPage inherits Page {
                     primary: true;
                     clicked => {
                         AppState.configure-sync(
-                            turso-url.text,
-                            turso-token.text,
-                            auto-sync-switch.checked,
-                            sync-interval.value
+                            SyncPageAdapter.turso-url,
+                            SyncPageAdapter.turso-token,
+                            SyncPageAdapter.auto-sync-enabled,
+                            SyncPageAdapter.sync-interval
                         );
                     }
                 }

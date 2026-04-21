@@ -75,36 +75,42 @@ export global AppState {
 
     // ── User Management ────────────────────────────────────────
     callback create-user(string, string, string, string);
+    callback update-user(int, string, string, string, string);
     callback deactivate-user(int);
 
     // ── Products ───────────────────────────────────────────────
     in property <[ProductItem]> products: [];
     in property <int> product-count: 0;
     callback create-product(string, string, string, int, float);
+    callback update-product(int, string, string, string, int, float);
     callback delete-product(int);
     callback refresh-products();
 
     // ── Categories ─────────────────────────────────────────────
     in property <[CategoryItem]> categories: [];
     callback create-category(string, string, int);
+    callback update-category(int, string, string);
     callback delete-category(int);
     callback refresh-categories();
 
     // ── Persons ────────────────────────────────────────────────
     in property <[PersonItem]> persons: [];
     callback create-person(string, string, string, string);
+    callback update-person(int, string, string);
     callback delete-person(int);
     callback refresh-persons();
 
     // ── Deals ──────────────────────────────────────────────────
     in property <[DealItem]> deals: [];
     callback create-deal(string, string, int, int, int, string);
+    callback update-deal(int, string, string, string, string);
     callback delete-deal(int);
     callback refresh-deals();
 
     // ── Locations ──────────────────────────────────────────────
     in property <[LocationItem]> locations: [];
     callback create-location(string, string, float, float, int);
+    callback update-location(int, string, string, int);
     callback delete-location(int);
     callback refresh-locations();
 

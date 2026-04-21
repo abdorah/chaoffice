@@ -1,0 +1,248 @@
+// ProductsPage — Product listing with search, table view, and CRUD actions
+
+import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button, LineEdit,
+         ComboBox, SpinBox, Palette, StyleMetrics } from "std-widgets.slint";
+import { Page } from "../components/page.slint";
+import { SearchBar } from "../components/search_bar.slint";
+import { StatusBadge } from "../components/status_badge.slint";
+import { AppState, ProductItem } from "../globals/app_state.slint";
+
+export global ProductsPageAdapter {
+    in property <[[StandardListViewItem]]> row-data: [];
+    in property <[string]> category-names: [];
+    in property <[string]> supplier-names: [];
+    in property <[string]> location-names: [];
+    in-out property <string> selected-category: "";
+    in-out property <string> selected-supplier: "";
+    in-out property <string> selected-location: "";
+    // Edit mode support
+    in-out property <int> editing-id: 0;
+    in-out property <string> edit-name: "";
+    in-out property <string> edit-reference: "";
+    in-out property <string> edit-description: "";
+    in-out property <int> edit-quantity: 0;
+    in-out property <float> edit-price-unit: 0.0;
+    // Product IDs parallel to row-data for row selection
+    in property <[int]> product-ids: [];
+}
+
+export component ProductsPage inherits Page {
+    property <int> sort-index: -1;
+    property <bool> sort-ascending;
+    property <bool> show-form: false;
+
+    title: "Products";
+    description: "Manage your product inventory. Add, edit, and track stock levels.";
+
+    SearchBar {
+        vertical-stretch: 0;
+        placeholder: "Search products...";
+        action-text: "Add Product";
+        action-clicked => {
+            // Reset edit mode when opening form for new product
+            ProductsPageAdapter.editing-id = 0;
+            ProductsPageAdapter.edit-name = "";
+            ProductsPageAdapter.edit-reference = "";
+            ProductsPageAdapter.edit-description = "";
+            ProductsPageAdapter.edit-quantity = 0;
+            ProductsPageAdapter.edit-price-unit = 0.0;
+            root.show-form = !root.show-form;
+        }
+    }
+
+    if root.show-form : GroupBox {
+        vertical-stretch: 0;
+        title: ProductsPageAdapter.editing-id > 0 ? "Edit Product" : "New Product";
+
+        VerticalBox {
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Name"; }
+                    name-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Product name";
+                        text <=> ProductsPageAdapter.edit-name;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Reference"; }
+                    ref-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "SKU / Reference";
+                        text <=> ProductsPageAdapter.edit-reference;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Description"; }
+                    desc-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "Description";
+                        text <=> ProductsPageAdapter.edit-description;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Quantity"; }
+                    qty-input := SpinBox {
+                        horizontal-stretch: 1;
+                        value <=> ProductsPageAdapter.edit-quantity;
+                        minimum: 0;
+                        maximum: 999999;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Price/Unit"; }
+                    price-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "0.00";
+                    }
+                }
+            }
+
+            HorizontalBox {
+                spacing: 8px;
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Category"; }
+                    cat-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ProductsPageAdapter.category-names;
+                        current-value <=> ProductsPageAdapter.selected-category;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Supplier"; }
+                    supplier-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ProductsPageAdapter.supplier-names;
+                        current-value <=> ProductsPageAdapter.selected-supplier;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Location"; }
+                    loc-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: ProductsPageAdapter.location-names;
+                        current-value <=> ProductsPageAdapter.selected-location;
+                    }
+                }
+            }
+
+            HorizontalBox {
+                alignment: end;
+                spacing: 8px;
+
+                Button {
+                    text: "Cancel";
+                    clicked => {
+                        ProductsPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+
+                Button {
+                    text: ProductsPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    primary: true;
+                    clicked => {
+                        if ProductsPageAdapter.editing-id > 0 {
+                            AppState.update-product(
+                                ProductsPageAdapter.editing-id,
+                                ProductsPageAdapter.edit-name,
+                                ProductsPageAdapter.edit-reference,
+                                ProductsPageAdapter.edit-description,
+                                ProductsPageAdapter.edit-quantity,
+                                0.0
+                            );
+                        } else {
+                            AppState.create-product(
+                                ProductsPageAdapter.edit-name,
+                                ProductsPageAdapter.edit-reference,
+                                ProductsPageAdapter.edit-description,
+                                ProductsPageAdapter.edit-quantity,
+                                0.0
+                            );
+                        }
+                        ProductsPageAdapter.editing-id = 0;
+                        root.show-form = false;
+                    }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Product List";
+        vertical-stretch: 1;
+
+        VerticalBox {
+            products-table := StandardTableView {
+                sort-ascending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = true;
+                }
+                sort-descending(index) => {
+                    root.sort-index = index;
+                    root.sort-ascending = false;
+                }
+
+                columns: [
+                    { title: "Name" },
+                    { title: "Reference" },
+                    { title: "Quantity" },
+                    { title: "Price/Unit" },
+                    { title: "Status" },
+                    { title: "Category" },
+                    { title: "Location" },
+                ];
+
+                rows: ProductsPageAdapter.row-data;
+            }
+
+            HorizontalBox {
+                vertical-stretch: 0;
+                alignment: start;
+                spacing: 8px;
+
+                Button {
+                    text: "Edit Selected";
+                    enabled: products-table.current-row >= 0 && products-table.current-row < ProductsPageAdapter.row-data.length;
+                    clicked => {
+                        // Read the selected row data and populate the form
+                        if products-table.current-row >= 0 && products-table.current-row < ProductsPageAdapter.row-data.length {
+                            ProductsPageAdapter.editing-id = ProductsPageAdapter.product-ids[products-table.current-row];
+                            ProductsPageAdapter.edit-name = ProductsPageAdapter.row-data[products-table.current-row][0].text;
+                            ProductsPageAdapter.edit-reference = ProductsPageAdapter.row-data[products-table.current-row][1].text;
+                            ProductsPageAdapter.edit-description = "";
+                            ProductsPageAdapter.edit-quantity = 0;
+                            ProductsPageAdapter.edit-price-unit = 0.0;
+                            root.show-form = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
