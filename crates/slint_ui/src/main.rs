@@ -188,7 +188,7 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
     setup_budget_callbacks(&app, app_context);
 
     // Setup sync callbacks
-    setup_sync_callbacks(&app, &sync_engine);
+    setup_sync_callbacks(&app, &sync_engine, app_context);
 
     // Populate SyncPageAdapter from loaded SyncConfig (file-based, no network)
     {
@@ -2087,6 +2087,20 @@ fn init_sync_engine(app_context: &Arc<AppContext>) -> Arc<inventory_sync::SyncEn
     let config_path = PathBuf::from("sync_config.json");
     let config = SyncConfig::load(&config_path).unwrap_or_default();
 
+    // Clean up orphaned libsql auxiliary files from previous sessions.
+    // This prevents "metadata file exists but db file does not" errors
+    // when the app starts in local-only mode after a previous remote session.
+    let db_path = "inventory_data.db";
+    if !std::path::Path::new(db_path).exists() {
+        for suffix in &["-wal", "-shm", "-metadata"] {
+            let p = format!("{}{}", db_path, suffix);
+            if std::path::Path::new(&p).exists() {
+                let _ = std::fs::remove_file(&p);
+                log::info!("init_sync_engine: cleaned orphaned '{}'", p);
+            }
+        }
+    }
+
     let change_tracker = Arc::new(ChangeTracker::new());
 
     // Subscribe ChangeTracker to EventHub entity events
@@ -2178,7 +2192,7 @@ const SYNC_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
 
 /// Wire SyncPage callbacks to the SyncEngine.
 /// All callbacks spawn background threads to avoid blocking the Slint UI thread.
-fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>) {
+fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>, app_context: &Arc<AppContext>) {
     // sync-to-remote (Push / Dehydrate) — runs on background thread
     app.global::<AppState>().on_sync_to_remote({
         let engine = Arc::clone(sync_engine);
@@ -2266,9 +2280,11 @@ fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>
     app.global::<AppState>().on_sync_from_remote({
         let engine = Arc::clone(sync_engine);
         let app_weak = app.as_weak();
+        let ctx = Arc::clone(app_context);
         move || {
             let app_weak = app_weak.clone();
             let engine = Arc::clone(&engine);
+            let ctx = Arc::clone(&ctx);
 
             if let Some(app) = app_weak.upgrade() {
                 app.global::<AppState>().set_syncing(true);
@@ -2339,6 +2355,14 @@ fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>
                     };
                     app.global::<AppState>().set_sync_status(status);
                     app.global::<AppState>().set_syncing(false);
+                    // Refresh all UI tables after pull so the UI reflects pulled data
+                    refresh_products_table(&ctx, &app);
+                    refresh_categories_list(&ctx, &app);
+                    refresh_persons_table(&ctx, &app);
+                    refresh_deals_table(&ctx, &app);
+                    refresh_locations_table(&ctx, &app);
+                    refresh_users_table(&ctx, &app);
+                    log::info!("Pull: UI tables refreshed");
                 });
             });
         }

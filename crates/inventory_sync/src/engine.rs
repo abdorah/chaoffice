@@ -90,6 +90,20 @@ impl SyncEngine {
         let config = self.config.read().await.clone();
         let needs_remote = !config.turso_url.is_empty();
 
+        let db_path = "inventory_data.db";
+
+        // Pre-emptively clean up orphaned auxiliary files that can cause
+        // "metadata file exists but db file does not" errors.
+        if needs_remote && !std::path::Path::new(db_path).exists() {
+            for suffix in &["-wal", "-shm", "-metadata"] {
+                let p = format!("{}{}", db_path, suffix);
+                if std::path::Path::new(&p).exists() {
+                    let _ = std::fs::remove_file(&p);
+                    log::info!("ensure_db_matches_config: pre-cleaned orphaned '{}'", p);
+                }
+            }
+        }
+
         // Quick check: try db.sync() — if it fails on a local-only db with a
         // remote URL configured, we need to rebuild.
         if needs_remote {
