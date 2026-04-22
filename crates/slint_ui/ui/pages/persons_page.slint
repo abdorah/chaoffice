@@ -12,6 +12,8 @@ export global PersonsPageAdapter {
     in-out property <int> editing-id: 0;
     in-out property <string> edit-name: "";
     in-out property <string> edit-role: "Manager";
+    in-out property <string> edit-phone: "";
+    in-out property <string> edit-email: "";
     // Person IDs parallel to row-data for row selection
     in property <[int]> person-ids: [];
 }
@@ -33,6 +35,8 @@ export component PersonsPage inherits Page {
             PersonsPageAdapter.editing-id = 0;
             PersonsPageAdapter.edit-name = "";
             PersonsPageAdapter.edit-role = "Manager";
+            PersonsPageAdapter.edit-phone = "";
+            PersonsPageAdapter.edit-email = "";
             root.show-form = !root.show-form;
         }
     }
@@ -72,13 +76,21 @@ export component PersonsPage inherits Page {
                 VerticalBox {
                     horizontal-stretch: 1;
                     Text { text: "Phone"; }
-                    phone-input := LineEdit { horizontal-stretch: 1; placeholder-text: "+1 234 567 890"; }
+                    phone-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "+1 234 567 890";
+                        text <=> PersonsPageAdapter.edit-phone;
+                    }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
                     Text { text: "Email"; }
-                    email-input := LineEdit { horizontal-stretch: 1; placeholder-text: "email@example.com"; }
+                    email-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "email@example.com";
+                        text <=> PersonsPageAdapter.edit-email;
+                    }
                 }
             }
 
@@ -90,6 +102,8 @@ export component PersonsPage inherits Page {
                     text: "Cancel";
                     clicked => {
                         PersonsPageAdapter.editing-id = 0;
+                        PersonsPageAdapter.edit-phone = "";
+                        PersonsPageAdapter.edit-email = "";
                         root.show-form = false;
                     }
                 }
@@ -103,16 +117,20 @@ export component PersonsPage inherits Page {
                                 PersonsPageAdapter.editing-id,
                                 PersonsPageAdapter.edit-name,
                                 PersonsPageAdapter.edit-role,
+                                PersonsPageAdapter.edit-phone,
+                                PersonsPageAdapter.edit-email,
                             );
                         } else {
                             AppState.create-person(
-                                name-input.text,
-                                role-input.current-value,
-                                phone-input.text,
-                                email-input.text
+                                PersonsPageAdapter.edit-name,
+                                PersonsPageAdapter.edit-role,
+                                PersonsPageAdapter.edit-phone,
+                                PersonsPageAdapter.edit-email
                             );
                         }
                         PersonsPageAdapter.editing-id = 0;
+                        PersonsPageAdapter.edit-phone = "";
+                        PersonsPageAdapter.edit-email = "";
                         root.show-form = false;
                     }
                 }
@@ -158,6 +176,8 @@ export component PersonsPage inherits Page {
                             PersonsPageAdapter.editing-id = PersonsPageAdapter.person-ids[persons-table.current-row];
                             PersonsPageAdapter.edit-name = PersonsPageAdapter.row-data[persons-table.current-row][0].text;
                             PersonsPageAdapter.edit-role = PersonsPageAdapter.row-data[persons-table.current-row][1].text;
+                            PersonsPageAdapter.edit-phone = PersonsPageAdapter.row-data[persons-table.current-row][2].text;
+                            PersonsPageAdapter.edit-email = PersonsPageAdapter.row-data[persons-table.current-row][3].text;
                             root.show-form = true;
                         }
                     }

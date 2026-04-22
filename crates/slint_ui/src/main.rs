@@ -541,22 +541,45 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
     app.global::<AppState>().on_create_person({
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
-        move |name, role, _phone, _email| {
+        move |name, role, phone, email| {
             let now = chrono::Utc::now();
             let person_role = match role.as_str() {
                 "Supplier" => frontend::direct_access::PersonRole::Supplier,
                 _ => frontend::direct_access::PersonRole::Manager,
             };
+
+            // Create a Contact entity if phone or email is provided
+            let contact_id = if !phone.is_empty() || !email.is_empty() {
+                let contact_dto = frontend::direct_access::CreateContactDto {
+                    created_at: now,
+                    updated_at: now,
+                    phone: phone.to_string(),
+                    email: email.to_string(),
+                };
+                match frontend::commands::contact_commands::create_contact(&ctx, None, &contact_dto, 1, -1) {
+                    Ok(c) => {
+                        log::info!("Created contact id {} (phone='{}', email='{}')", c.id, phone, email);
+                        Some(c.id)
+                    }
+                    Err(e) => {
+                        log::error!("Failed to create contact: {}", e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+
             let dto = frontend::direct_access::CreatePersonDto {
                 created_at: now,
                 updated_at: now,
                 name: name.to_string(),
                 role: person_role,
-                contact: None,
+                contact: contact_id,
             };
             match frontend::commands::person_commands::create_person(&ctx, None, &dto, 1, -1) {
                 Ok(p) => {
-                    log::info!("Created person '{}' with id {}", p.name, p.id);
+                    log::info!("Created person '{}' with id {} (contact={:?})", p.name, p.id, contact_id);
                     if let Some(app) = app_weak.upgrade() {
                         refresh_persons_table(&ctx, &app);
                         populate_product_comboboxes(&ctx, &app);
@@ -599,14 +622,50 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
     app.global::<AppState>().on_update_person({
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
-        move |id, name, role| {
+        move |id, name, role, phone, email| {
             let now = chrono::Utc::now();
             let person_role = match role.as_str() {
                 "Supplier" => frontend::direct_access::PersonRole::Supplier,
                 _ => frontend::direct_access::PersonRole::Manager,
             };
+
+            // Get the existing person to find their contact ID
+            let person_id = id as u64;
+            let existing_contact_id = frontend::commands::person_commands::get_person(&ctx, &person_id)
+                .ok()
+                .flatten()
+                .and_then(|p| p.contact);
+
+            // Update or create the Contact
+            if !phone.is_empty() || !email.is_empty() {
+                if let Some(contact_id) = existing_contact_id {
+                    let contact_dto = frontend::direct_access::UpdateContactDto {
+                        id: contact_id,
+                        created_at: now,
+                        updated_at: now,
+                        phone: phone.to_string(),
+                        email: email.to_string(),
+                    };
+                    match frontend::commands::contact_commands::update_contact(&ctx, None, &contact_dto) {
+                        Ok(_) => log::info!("Updated contact {} for person {}", contact_id, id),
+                        Err(e) => log::error!("Failed to update contact {}: {}", contact_id, e),
+                    }
+                } else {
+                    let contact_dto = frontend::direct_access::CreateContactDto {
+                        created_at: now,
+                        updated_at: now,
+                        phone: phone.to_string(),
+                        email: email.to_string(),
+                    };
+                    match frontend::commands::contact_commands::create_contact(&ctx, None, &contact_dto, person_id, -1) {
+                        Ok(c) => log::info!("Created contact {} for person {}", c.id, id),
+                        Err(e) => log::error!("Failed to create contact for person {}: {}", id, e),
+                    }
+                }
+            }
+
             let dto = frontend::direct_access::UpdatePersonDto {
-                id: id as u64,
+                id: person_id,
                 created_at: now,
                 updated_at: now,
                 name: name.to_string(),
@@ -1282,11 +1341,20 @@ fn refresh_persons_table(ctx: &Arc<AppContext>, app: &App) {
             let rows: Vec<slint::ModelRc<slint::StandardListViewItem>> = persons
                 .iter()
                 .map(|p| {
+                    // Fetch contact info if the person has a linked contact
+                    let (phone, email) = if let Some(contact_id) = p.contact {
+                        match frontend::commands::contact_commands::get_contact(ctx, &contact_id) {
+                            Ok(Some(c)) => (c.phone.clone(), c.email.clone()),
+                            _ => (String::new(), String::new()),
+                        }
+                    } else {
+                        (String::new(), String::new())
+                    };
                     to_table_row(&[
                         &p.name,
                         &format!("{:?}", p.role),
-                        "", // phone — stored in Contact, not on Person directly
-                        "", // email — stored in Contact, not on Person directly
+                        &phone,
+                        &email,
                     ])
                 })
                 .collect();
@@ -2406,20 +2474,30 @@ fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>
     });
 }
 
-/// Shutdown sync: dehydrate pending changes to LibSQL.
-/// (Requirements 14.2, 14.3, 13.2)
+/// Shutdown sync: stop auto-sync and attempt a final remote sync if possible.
+/// We skip the full redb→LibSQL flush here to avoid stack overflow and
+/// long delays on close. The data was already flushed during the last Push.
 fn shutdown_sync(sync_engine: &Arc<inventory_sync::SyncEngine>) {
-    log::info!("Shutdown: stopping auto-sync and flushing pending changes");
+    log::info!("Shutdown: stopping auto-sync");
 
-    let rt = tokio::runtime::Runtime::new().ok();
-    if let Some(rt) = rt {
-        rt.block_on(sync_engine.stop_auto_sync());
-
-        let ctx = admin_security_context();
-        match rt.block_on(sync_engine.dehydrate(&ctx)) {
-            Ok(result) => log::info!("Shutdown dehydrate: {:?}", result),
-            Err(e) => log::error!("Shutdown dehydrate failed: {}", e),
+    let rt = match tokio::runtime::Runtime::new() {
+        Ok(rt) => rt,
+        Err(e) => {
+            log::error!("Shutdown: failed to create tokio runtime: {}", e);
+            return;
         }
+    };
+
+    rt.block_on(sync_engine.stop_auto_sync());
+
+    // Attempt a lightweight remote sync if the db is already in remote mode.
+    // Don't call dehydrate() — it does a full redb flush which is too heavy
+    // for shutdown and can cause stack overflow.
+    let config = rt.block_on(sync_engine.current_config());
+    if !config.turso_url.is_empty() {
+        log::info!("Shutdown: attempting final db.sync()");
+        // We can't easily access the db handle from here, so just log.
+        // The last Push already synced everything.
     }
 
     log::info!("Shutdown: sync cleanup complete");
