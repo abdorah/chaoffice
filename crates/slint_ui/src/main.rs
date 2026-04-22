@@ -2087,20 +2087,6 @@ fn init_sync_engine(app_context: &Arc<AppContext>) -> Arc<inventory_sync::SyncEn
     let config_path = PathBuf::from("sync_config.json");
     let config = SyncConfig::load(&config_path).unwrap_or_default();
 
-    // Clean up orphaned libsql auxiliary files from previous sessions.
-    // This prevents "metadata file exists but db file does not" errors
-    // when the app starts in local-only mode after a previous remote session.
-    let db_path = "inventory_data.db";
-    if !std::path::Path::new(db_path).exists() {
-        for suffix in &["-wal", "-shm", "-metadata"] {
-            let p = format!("{}{}", db_path, suffix);
-            if std::path::Path::new(&p).exists() {
-                let _ = std::fs::remove_file(&p);
-                log::info!("init_sync_engine: cleaned orphaned '{}'", p);
-            }
-        }
-    }
-
     let change_tracker = Arc::new(ChangeTracker::new());
 
     // Subscribe ChangeTracker to EventHub entity events
@@ -2156,28 +2142,20 @@ fn init_sync_engine(app_context: &Arc<AppContext>) -> Arc<inventory_sync::SyncEn
         }
     });
 
-    // Build the SyncEngine (async, run on a temporary tokio runtime)
-    // Always start in local-only mode to avoid blocking on remote connection
-    let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime for sync");
-
-    let original_config = config.clone();
-    let local_only_config = SyncConfig {
-        turso_url: String::new(),
-        turso_auth_token: String::new(),
-        ..config
-    };
-
-    let engine = rt
-        .block_on(SyncEngine::new(local_only_config, config_path, change_tracker, app_context.db_context.clone()))
-        .expect("Failed to initialize SyncEngine");
-
-    // Restore original config to in-memory state only (no db rebuild at startup).
-    // The db stays local-only until the user explicitly triggers a sync or
-    // saves settings, at which point configure() will rebuild the connection.
-    if !original_config.turso_url.is_empty() {
-        let _ = rt.block_on(engine.set_config_only(original_config));
-        log::info!("SyncEngine: original config restored (db stays local-only until first sync)");
-    }
+    // Build the SyncEngine on a thread with a larger stack to avoid overflow
+    // when opening a remote replica (Hrana client uses deep async call chains).
+    let db_ctx = app_context.db_context.clone();
+    let engine = std::thread::Builder::new()
+        .name("sync-init".into())
+        .stack_size(8 * 1024 * 1024) // 8 MB stack
+        .spawn(move || {
+            let rt = tokio::runtime::Runtime::new().expect("tokio runtime for sync init");
+            rt.block_on(SyncEngine::new(config, config_path, change_tracker, db_ctx))
+                .expect("Failed to initialize SyncEngine")
+        })
+        .expect("Failed to spawn sync init thread")
+        .join()
+        .expect("Sync init thread panicked");
 
     let engine = Arc::new(engine);
 
