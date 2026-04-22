@@ -23,6 +23,12 @@ struct UiSettings {
     window_width: f32,
     window_height: f32,
     dark_mode: bool,
+    #[serde(default)]
+    maximized: bool,
+    #[serde(default)]
+    window_x: Option<i32>,
+    #[serde(default)]
+    window_y: Option<i32>,
 }
 
 impl Default for UiSettings {
@@ -31,6 +37,9 @@ impl Default for UiSettings {
             window_width: 1024.0,
             window_height: 700.0,
             dark_mode: false,
+            maximized: false,
+            window_x: None,
+            window_y: None,
         }
     }
 }
@@ -42,16 +51,18 @@ impl UiSettings {
             .and_then(|s| toml::from_str(&s).ok())
             .unwrap_or_default();
         log::info!(
-            "UiSettings::load: {}x{}, dark_mode={}",
-            settings.window_width, settings.window_height, settings.dark_mode
+            "UiSettings::load: {}x{}, dark_mode={}, maximized={}, pos={:?},{:?}",
+            settings.window_width, settings.window_height, settings.dark_mode,
+            settings.maximized, settings.window_x, settings.window_y
         );
         settings
     }
 
     fn save(&self) {
         log::info!(
-            "UiSettings::save: {}x{}, dark_mode={}",
-            self.window_width, self.window_height, self.dark_mode
+            "UiSettings::save: {}x{}, dark_mode={}, maximized={}, pos={:?},{:?}",
+            self.window_width, self.window_height, self.dark_mode,
+            self.maximized, self.window_x, self.window_y
         );
         if let Ok(s) = toml::to_string_pretty(self) {
             let _ = std::fs::write(UI_SETTINGS_PATH, s);
@@ -158,6 +169,13 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
     let ui_settings = UiSettings::load();
     app.window()
         .set_size(slint::LogicalSize::new(ui_settings.window_width, ui_settings.window_height));
+    if let (Some(x), Some(y)) = (ui_settings.window_x, ui_settings.window_y) {
+        app.window()
+            .set_position(slint::PhysicalPosition::new(x, y));
+    }
+    if ui_settings.maximized {
+        app.window().set_maximized(true);
+    }
     if ui_settings.dark_mode {
         app.global::<AppSettings>().set_dark_mode(true);
         DARK_MODE.store(true, Ordering::Relaxed);
@@ -268,15 +286,30 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
 
             // Save UI settings
             if let Some(app) = app_weak.upgrade() {
+                let maximized = app.window().is_maximized();
                 let size = app.window().size();
                 let scale = app.window().scale_factor();
+                let pos = app.window().position();
                 let dark = DARK_MODE.load(Ordering::Relaxed);
-                log::info!("Saving settings: size={}x{}, scale={}, dark_mode={}", 
-                    size.width, size.height, scale, dark);
+                log::info!("Saving settings: size={}x{}, scale={}, dark_mode={}, maximized={}, pos={},{}", 
+                    size.width, size.height, scale, dark, maximized, pos.x, pos.y);
+
+                // When maximized, preserve the previous windowed size/position
+                // so restoring doesn't produce a full-screen-sized window
+                let (w, h, x, y) = if maximized {
+                    let prev = UiSettings::load();
+                    (prev.window_width, prev.window_height, prev.window_x, prev.window_y)
+                } else {
+                    (size.width as f32 / scale, size.height as f32 / scale, Some(pos.x), Some(pos.y))
+                };
+
                 let settings = UiSettings {
-                    window_width: size.width as f32 / scale,
-                    window_height: size.height as f32 / scale,
+                    window_width: w,
+                    window_height: h,
                     dark_mode: dark,
+                    maximized,
+                    window_x: x,
+                    window_y: y,
                 };
                 settings.save();
             }
