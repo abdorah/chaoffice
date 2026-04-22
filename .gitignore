@@ -3,3 +3,4 @@ target
 sync_config.json
 ui_settings.toml
 inventory_data.*
+reports

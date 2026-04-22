@@ -22,12 +22,8 @@ impl PdfWriter {
     }
 
     fn create_document(title: &str) -> Result<Document, ReportError> {
-        // genpdf requires font files in the pattern: {family}-Regular.ttf, {family}-Bold.ttf
-        // Try multiple locations and naming conventions
-        let font_family = fonts::from_files("C:\\Windows\\Fonts", "arial", None)
-            .or_else(|_| fonts::from_files("C:\\Windows\\Fonts", "times", None))
-            .or_else(|_| fonts::from_files("C:\\Windows\\Fonts", "cour", None))
-            .or_else(|_| fonts::from_files("/usr/share/fonts/truetype/liberation", "LiberationSans", None))
+        // Try the standard genpdf from_files approach first (works on Linux with Liberation fonts)
+        let font_family = fonts::from_files("/usr/share/fonts/truetype/liberation", "LiberationSans", None)
             .or_else(|_| fonts::from_files("/usr/share/fonts/truetype/dejavu", "DejaVuSans", None))
             .or_else(|_| fonts::from_files("/System/Library/Fonts", "Helvetica", None))
             .or_else(|_| fonts::from_files(".", "LiberationSans", None));
@@ -35,13 +31,23 @@ impl PdfWriter {
         let font_family = match font_family {
             Ok(f) => f,
             Err(_) => {
-                return Err(ReportError::PdfError {
-                    details: "PDF generation requires font files. On Windows, install LiberationSans fonts \
-                              or place LiberationSans-Regular.ttf, LiberationSans-Bold.ttf, \
-                              LiberationSans-Italic.ttf, LiberationSans-BoldItalic.ttf in the application directory. \
-                              Download from: https://github.com/liberationfonts/liberation-fonts/releases"
-                        .to_string(),
-                });
+                // Windows: load individual font files with non-standard naming
+                let fonts_dir = std::path::Path::new("C:\\Windows\\Fonts");
+                let try_load = |regular: &str, bold: &str, italic: &str, bold_italic: &str| -> Result<genpdf::fonts::FontFamily<genpdf::fonts::FontData>, String> {
+                    let r = genpdf::fonts::FontData::load(fonts_dir.join(regular), None).map_err(|e| e.to_string())?;
+                    let b = genpdf::fonts::FontData::load(fonts_dir.join(bold), None).map_err(|e| e.to_string())?;
+                    let i = genpdf::fonts::FontData::load(fonts_dir.join(italic), None).map_err(|e| e.to_string())?;
+                    let bi = genpdf::fonts::FontData::load(fonts_dir.join(bold_italic), None).map_err(|e| e.to_string())?;
+                    Ok(genpdf::fonts::FontFamily { regular: r, bold: b, italic: i, bold_italic: bi })
+                };
+
+                // Try Arial first, then Times New Roman, then Courier New
+                try_load("arial.ttf", "arialbd.ttf", "ariali.ttf", "arialbi.ttf")
+                    .or_else(|_| try_load("times.ttf", "timesbd.ttf", "timesi.ttf", "timesbi.ttf"))
+                    .or_else(|_| try_load("cour.ttf", "courbd.ttf", "couri.ttf", "courbi.ttf"))
+                    .map_err(|_| ReportError::PdfError {
+                        details: "No suitable fonts found. Ensure Arial, Times New Roman, or Courier New are installed in C:\\Windows\\Fonts".to_string(),
+                    })?
             }
         };
 
