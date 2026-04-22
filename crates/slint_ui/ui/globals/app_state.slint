@@ -62,6 +62,8 @@ export struct SyncStatus {
     last-sync-at: string,
     pending-changes: int,
     is-online: bool,
+    sync-message: string,
+    has-remote-url: bool,
 }
 
 export global AppState {
@@ -133,14 +135,18 @@ export global AppState {
     callback record-budget-entry(string, string, string);
 
     // ── Sync ───────────────────────────────────────────────────
+    in property <bool> syncing: false;
     in property <SyncStatus> sync-status: {
         last-sync-at: "Never",
         pending-changes: 0,
         is-online: false,
+        sync-message: "Local mode",
+        has-remote-url: false,
     };
     callback sync-to-remote();
     callback sync-from-remote();
     callback configure-sync(string, string, bool, int);
+    callback test-connection();
 
     // ── Reports ────────────────────────────────────────────────
     in-out property <bool> report-generating: false;

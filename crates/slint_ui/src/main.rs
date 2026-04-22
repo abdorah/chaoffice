@@ -172,10 +172,10 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
     // Setup sync callbacks
     setup_sync_callbacks(&app, &sync_engine);
 
-    // Populate SyncPageAdapter from loaded SyncConfig
+    // Populate SyncPageAdapter from loaded SyncConfig (file-based, no network)
     {
-        let rt = tokio::runtime::Runtime::new().expect("tokio runtime for sync config");
-        let config = rt.block_on(sync_engine.current_config());
+        let config = inventory_sync::SyncConfig::load(std::path::Path::new("sync_config.json"))
+            .unwrap_or_default();
         app.global::<SyncPageAdapter>()
             .set_turso_url(slint::SharedString::from(&config.turso_url));
         app.global::<SyncPageAdapter>()
@@ -2042,10 +2042,27 @@ fn init_sync_engine(app_context: &Arc<AppContext>) -> Arc<inventory_sync::SyncEn
     });
 
     // Build the SyncEngine (async, run on a temporary tokio runtime)
+    // Always start in local-only mode to avoid blocking on remote connection
     let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime for sync");
+
+    let original_config = config.clone();
+    let local_only_config = SyncConfig {
+        turso_url: String::new(),
+        turso_auth_token: String::new(),
+        ..config
+    };
+
     let engine = rt
-        .block_on(SyncEngine::new(config, config_path, change_tracker))
+        .block_on(SyncEngine::new(local_only_config, config_path, change_tracker, app_context.db_context.clone()))
         .expect("Failed to initialize SyncEngine");
+
+    // Restore original config to in-memory state only (no db rebuild at startup).
+    // The db stays local-only until the user explicitly triggers a sync or
+    // saves settings, at which point configure() will rebuild the connection.
+    if !original_config.turso_url.is_empty() {
+        let _ = rt.block_on(engine.set_config_only(original_config));
+        log::info!("SyncEngine: original config restored (db stays local-only until first sync)");
+    }
 
     let engine = Arc::new(engine);
 
@@ -2055,84 +2072,304 @@ fn init_sync_engine(app_context: &Arc<AppContext>) -> Arc<inventory_sync::SyncEn
     engine
 }
 
+/// Timeout for remote sync operations (60 seconds).
+const SYNC_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
+
 /// Wire SyncPage callbacks to the SyncEngine.
-/// (Requirements 11.1-11.7)
-///
-/// NOTE: These remain stubbed because the actual LibSQL integration is not yet
-/// wired. Each callback logs the request and updates the UI status so the user
-/// gets feedback without a panic.
+/// All callbacks spawn background threads to avoid blocking the Slint UI thread.
 fn setup_sync_callbacks(app: &App, sync_engine: &Arc<inventory_sync::SyncEngine>) {
-    // sync-to-remote (Push / Dehydrate)
+    // sync-to-remote (Push / Dehydrate) — runs on background thread
     app.global::<AppState>().on_sync_to_remote({
         let engine = Arc::clone(sync_engine);
         let app_weak = app.as_weak();
         move || {
-            let Some(app) = app_weak.upgrade() else {
-                return;
-            };
+            let app_weak = app_weak.clone();
+            let engine = Arc::clone(&engine);
+
+            // Set syncing=true on UI thread before spawning
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_syncing(true);
+            }
 
             log::info!("Sync: push to remote requested");
 
-            // Update pending count on the UI
-            let pending = engine.change_tracker().pending_count() as i32;
-            app.global::<AppState>().set_sync_status(SyncStatus {
-                last_sync_at: slint::SharedString::from("Local mode (no remote configured)"),
-                pending_changes: pending,
-                is_online: true,
-            });
+            std::thread::spawn(move || {
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
+                    let sec = admin_security_context();
+                    let pending = engine.change_tracker().pending_count() as i32;
+                    let outcome = rt.block_on(async {
+                        tokio::time::timeout(SYNC_TIMEOUT, engine.dehydrate(&sec)).await
+                    });
+                    (outcome, pending)
+                }));
 
-            log::warn!("Sync push: LibSQL integration not yet wired — no data pushed");
+                let _ = slint::invoke_from_event_loop(move || {
+                    let Some(app) = app_weak.upgrade() else { return };
+                    let status = match result {
+                        Ok((Ok(Ok(res)), _)) => {
+                            let pending = res.entities_written.values().sum::<usize>() as i32;
+                            let now = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+                            log::info!("Sync push completed: {:?}", res.entities_written);
+                            SyncStatus {
+                                last_sync_at: slint::SharedString::from(&now),
+                                pending_changes: pending,
+                                is_online: res.remote_sync_succeeded,
+                                sync_message: slint::SharedString::from(
+                                    if res.remote_sync_succeeded { "Push completed" } else { "Push done (local only)" }
+                                ),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                        Ok((Ok(Err(e)), pending)) => {
+                            log::error!("Sync push failed: {}", e);
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: pending,
+                                is_online: false,
+                                sync_message: slint::SharedString::from(format!("Push failed: {}", e)),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                        Ok((Err(_elapsed), pending)) => {
+                            log::error!("Sync push timed out after {}s", SYNC_TIMEOUT.as_secs());
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: pending,
+                                is_online: false,
+                                sync_message: slint::SharedString::from(
+                                    format!("Push timeout — remote unreachable ({}s)", SYNC_TIMEOUT.as_secs())
+                                ),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                        Err(_panic) => {
+                            log::error!("Sync push panicked");
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: 0,
+                                is_online: false,
+                                sync_message: slint::SharedString::from("Internal error during push"),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                    };
+                    app.global::<AppState>().set_sync_status(status);
+                    app.global::<AppState>().set_syncing(false);
+                });
+            });
         }
     });
 
-    // sync-from-remote (Pull / Hydrate)
+    // sync-from-remote (Pull / Hydrate) — runs on background thread
     app.global::<AppState>().on_sync_from_remote({
         let engine = Arc::clone(sync_engine);
         let app_weak = app.as_weak();
         move || {
-            let Some(app) = app_weak.upgrade() else {
-                return;
-            };
+            let app_weak = app_weak.clone();
+            let engine = Arc::clone(&engine);
+
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_syncing(true);
+            }
 
             log::info!("Sync: pull from remote requested");
 
-            let pending = engine.change_tracker().pending_count() as i32;
-            app.global::<AppState>().set_sync_status(SyncStatus {
-                last_sync_at: slint::SharedString::from("Local mode (no remote configured)"),
-                pending_changes: pending,
-                is_online: true,
-            });
+            std::thread::spawn(move || {
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
+                    let sec = admin_security_context();
+                    let pending = engine.change_tracker().pending_count() as i32;
+                    let outcome = rt.block_on(async {
+                        tokio::time::timeout(SYNC_TIMEOUT, engine.hydrate(&sec)).await
+                    });
+                    (outcome, pending)
+                }));
 
-            log::warn!("Sync pull: LibSQL integration not yet wired — no data pulled");
+                let _ = slint::invoke_from_event_loop(move || {
+                    let Some(app) = app_weak.upgrade() else { return };
+                    let status = match result {
+                        Ok((Ok(Ok(res)), _)) => {
+                            let total: usize = res.entities_loaded.values().sum();
+                            let now = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+                            log::info!("Sync pull completed: {:?}", res.entities_loaded);
+                            SyncStatus {
+                                last_sync_at: slint::SharedString::from(&now),
+                                pending_changes: 0,
+                                is_online: res.was_online,
+                                sync_message: slint::SharedString::from(
+                                    format!("Pull completed — {} entities loaded", total)
+                                ),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                        Ok((Ok(Err(e)), pending)) => {
+                            log::error!("Sync pull failed: {}", e);
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: pending,
+                                is_online: false,
+                                sync_message: slint::SharedString::from(format!("Pull failed: {}", e)),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                        Ok((Err(_elapsed), pending)) => {
+                            log::error!("Sync pull timed out after {}s", SYNC_TIMEOUT.as_secs());
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: pending,
+                                is_online: false,
+                                sync_message: slint::SharedString::from(
+                                    format!("Pull timeout — remote unreachable ({}s)", SYNC_TIMEOUT.as_secs())
+                                ),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                        Err(_panic) => {
+                            log::error!("Sync pull panicked");
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: 0,
+                                is_online: false,
+                                sync_message: slint::SharedString::from("Internal error during pull"),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                    };
+                    app.global::<AppState>().set_sync_status(status);
+                    app.global::<AppState>().set_syncing(false);
+                });
+            });
         }
     });
 
-    // configure-sync
+    // configure-sync — runs on background thread, auto-tests connection on success
     app.global::<AppState>().on_configure_sync({
-        let _engine = Arc::clone(sync_engine);
+        let engine = Arc::clone(sync_engine);
         let app_weak = app.as_weak();
-        move |url, _token, auto_sync, interval| {
-            let Some(_app) = app_weak.upgrade() else {
-                return;
-            };
+        move |url, token, auto_sync, interval| {
+            let app_weak = app_weak.clone();
+            let engine = Arc::clone(&engine);
+            let url_str = url.to_string();
+            let token_str = token.to_string();
+            let has_url = !url_str.trim().is_empty();
 
             log::info!(
                 "Sync: configure requested (url={}, auto={}, interval={})",
-                url,
-                auto_sync,
-                interval
+                url, auto_sync, interval
             );
 
-            log::warn!("Sync configure: LibSQL integration not yet wired — config not applied");
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_syncing(true);
+            }
+
+            std::thread::spawn(move || {
+                let new_config = inventory_sync::SyncConfig {
+                    turso_url: url_str,
+                    turso_auth_token: token_str,
+                    auto_sync_enabled: auto_sync,
+                    sync_interval_seconds: interval as u64,
+                    default_strategy: inventory_sync::SyncStrategy::Incremental,
+                };
+
+                let sec = admin_security_context();
+                let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
+                let configure_result = rt.block_on(engine.configure(&sec, new_config));
+
+                // If configure succeeded and URL is set, auto-test connection
+                let online = if configure_result.is_ok() && has_url {
+                    rt.block_on(async {
+                        tokio::time::timeout(SYNC_TIMEOUT, engine.is_online()).await.unwrap_or(false)
+                    })
+                } else {
+                    false
+                };
+
+                let _ = slint::invoke_from_event_loop(move || {
+                    let Some(app) = app_weak.upgrade() else { return };
+                    let status = match configure_result {
+                        Ok(()) => {
+                            let msg = if has_url {
+                                if online { "Settings saved — connected" } else { "Settings saved — remote unreachable" }
+                            } else {
+                                "Settings saved — local mode"
+                            };
+                            log::info!("Sync config saved: {}", msg);
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: app.global::<AppState>().get_sync_status().pending_changes,
+                                is_online: online,
+                                sync_message: slint::SharedString::from(msg),
+                                has_remote_url: has_url,
+                            }
+                        }
+                        Err(e) => {
+                            log::error!("Failed to save sync config: {}", e);
+                            SyncStatus {
+                                last_sync_at: app.global::<AppState>().get_sync_status().last_sync_at,
+                                pending_changes: app.global::<AppState>().get_sync_status().pending_changes,
+                                is_online: false,
+                                sync_message: slint::SharedString::from(format!("Config error: {}", e)),
+                                has_remote_url: app.global::<AppState>().get_sync_status().has_remote_url,
+                            }
+                        }
+                    };
+                    app.global::<AppState>().set_sync_status(status);
+                    app.global::<AppState>().set_syncing(false);
+                });
+            });
         }
     });
 
-    // Update pending changes count on the UI
+    // test-connection — runs on background thread
+    app.global::<AppState>().on_test_connection({
+        let engine = Arc::clone(sync_engine);
+        let app_weak = app.as_weak();
+        move || {
+            let app_weak = app_weak.clone();
+            let engine = Arc::clone(&engine);
+
+            if let Some(app) = app_weak.upgrade() {
+                app.global::<AppState>().set_syncing(true);
+                let mut status = app.global::<AppState>().get_sync_status();
+                status.sync_message = slint::SharedString::from("Testing connection...");
+                app.global::<AppState>().set_sync_status(status);
+            }
+
+            log::info!("Sync: testing connection");
+
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
+                let online = rt.block_on(async {
+                    tokio::time::timeout(SYNC_TIMEOUT, engine.is_online()).await.unwrap_or(false)
+                });
+
+                let _ = slint::invoke_from_event_loop(move || {
+                    let Some(app) = app_weak.upgrade() else { return };
+                    let mut status = app.global::<AppState>().get_sync_status();
+                    status.is_online = online;
+                    status.sync_message = slint::SharedString::from(
+                        if online { "Connection successful" } else { "Connection failed — remote unreachable" }
+                    );
+                    app.global::<AppState>().set_sync_status(status);
+                    app.global::<AppState>().set_syncing(false);
+                    log::info!("Connection test result: online={}", online);
+                });
+            });
+        }
+    });
+
+    // Set initial sync status
     let pending = sync_engine.change_tracker().pending_count() as i32;
+    let config = inventory_sync::SyncConfig::load(std::path::Path::new("sync_config.json"))
+        .unwrap_or_default();
+    let has_url = !config.turso_url.trim().is_empty();
     app.global::<AppState>().set_sync_status(SyncStatus {
-        last_sync_at: slint::SharedString::from("Local mode"),
+        last_sync_at: slint::SharedString::from("Never"),
         pending_changes: pending,
-        is_online: true,
+        is_online: false,
+        sync_message: slint::SharedString::from(if has_url { "Ready — not yet synced" } else { "Local mode" }),
+        has_remote_url: has_url,
     });
 }
 

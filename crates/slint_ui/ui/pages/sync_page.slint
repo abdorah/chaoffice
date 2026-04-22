@@ -15,8 +15,6 @@ export global SyncPageAdapter {
 }
 
 export component SyncPage inherits Page {
-    property <bool> syncing: false;
-
     title: "Sync";
     description: "Manage online/offline synchronization with TursoDB via LibSQL.";
 
@@ -52,7 +50,15 @@ export component SyncPage inherits Page {
                 }
             }
 
-            if root.syncing : ProgressIndicator {
+            HorizontalBox {
+                Text { text: "Status:"; }
+                Text {
+                    text: AppState.sync-status.sync-message;
+                    color: AppState.sync-status.is-online ? #4CAF50 : Palette.foreground.transparentize(0.3);
+                }
+            }
+
+            if AppState.syncing : ProgressIndicator {
                 indeterminate: true;
             }
 
@@ -62,18 +68,16 @@ export component SyncPage inherits Page {
                 Button {
                     text: "Push to Remote";
                     primary: true;
-                    enabled: !root.syncing && AppState.sync-status.is-online;
+                    enabled: !AppState.syncing && AppState.sync-status.has-remote-url;
                     clicked => {
-                        root.syncing = true;
                         AppState.sync-to-remote();
                     }
                 }
 
                 Button {
                     text: "Pull from Remote";
-                    enabled: !root.syncing && AppState.sync-status.is-online;
+                    enabled: !AppState.syncing && AppState.sync-status.has-remote-url;
                     clicked => {
-                        root.syncing = true;
                         AppState.sync-from-remote();
                     }
                 }
@@ -145,6 +149,14 @@ export component SyncPage inherits Page {
             HorizontalBox {
                 alignment: end;
                 spacing: 8px;
+
+                Button {
+                    text: "Test Connection";
+                    enabled: !AppState.syncing && SyncPageAdapter.turso-url != "";
+                    clicked => {
+                        AppState.test-connection();
+                    }
+                }
 
                 Button {
                     text: "Save Settings";
