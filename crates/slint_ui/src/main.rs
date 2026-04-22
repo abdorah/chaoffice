@@ -6,10 +6,17 @@ mod seed_data;
 use frontend::AppContext;
 use frontend::event_hub_client::EventHubClient;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 slint::include_modules!();
 
 const UI_SETTINGS_PATH: &str = "ui_settings.toml";
+
+/// Rust-side dark mode tracker — survives Slint global resets during window close.
+static DARK_MODE: AtomicBool = AtomicBool::new(false);
+
+/// Rust-side session token — stored on login, used for logout.
+static SESSION_TOKEN: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
 
 #[derive(serde::Serialize, serde::Deserialize)]
 struct UiSettings {
@@ -153,6 +160,7 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
         .set_size(slint::LogicalSize::new(ui_settings.window_width, ui_settings.window_height));
     if ui_settings.dark_mode {
         app.global::<AppSettings>().set_dark_mode(true);
+        DARK_MODE.store(true, Ordering::Relaxed);
     }
 
     // Setup stock tracking adapter callbacks
@@ -185,6 +193,12 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
     // Populate StockTracking ComboBoxes on page load
     populate_stock_tracking_comboboxes(app_context, &app);
 
+    // Track dark mode changes from the UI Switch
+    app.global::<AppSettings>().on_dark_mode_changed(|is_dark| {
+        DARK_MODE.store(is_dark, Ordering::Relaxed);
+        log::info!("Dark mode changed to: {}", is_dark);
+    });
+
     // ── Auth callback wiring ──────────────────────────────────────────
     {
         let ctx = Arc::clone(app_context);
@@ -205,6 +219,10 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
                     app.global::<AppState>()
                         .set_login_error(slint::SharedString::from(""));
                     log::info!("Login successful for user '{}'", username);
+                    // Store session token for logout
+                    if let Ok(mut token) = SESSION_TOKEN.lock() {
+                        *token = result.token.clone();
+                    }
                     // Auto-refresh all tables after login
                     refresh_products_table(&ctx, &app);
                     refresh_categories_list(&ctx, &app);
@@ -252,7 +270,7 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
             if let Some(app) = app_weak.upgrade() {
                 let size = app.window().size();
                 let scale = app.window().scale_factor();
-                let dark = app.global::<AppSettings>().get_dark_mode();
+                let dark = DARK_MODE.load(Ordering::Relaxed);
                 log::info!("Saving settings: size={}x{}, scale={}, dark_mode={}", 
                     size.width, size.height, scale, dark);
                 let settings = UiSettings {
@@ -808,12 +826,15 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
         move || {
-            let dto = frontend::authentication::LogoutDto {
-                token: String::new(),
-            };
+            let token = SESSION_TOKEN.lock().map(|t| t.clone()).unwrap_or_default();
+            let dto = frontend::authentication::LogoutDto { token };
             match frontend::commands::authentication_commands::logout(&ctx, &dto) {
                 Ok(()) => log::info!("Logout successful"),
-                Err(e) => log::error!("Logout failed: {}", e),
+                Err(e) => log::warn!("Logout backend: {}", e),
+            }
+            // Clear stored token
+            if let Ok(mut t) = SESSION_TOKEN.lock() {
+                t.clear();
             }
             if let Some(app) = app_weak.upgrade() {
                 app.global::<AppState>().set_is_authenticated(false);

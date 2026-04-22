@@ -429,8 +429,17 @@ mod tests {
 
     // Example implementation of a long operation
     pub struct FileProcessingOperation {
-        pub file_path: String,
+        pub _file_path: String,
         pub total_files: usize,
+    }
+
+    impl FileProcessingOperation {
+        pub fn new(file_path: String, total_files: usize) -> FileProcessingOperation {
+            FileProcessingOperation {
+                _file_path: file_path,
+                total_files,
+            }
+        }
     }
 
     impl LongOperation for FileProcessingOperation {
@@ -468,10 +477,7 @@ mod tests {
     fn test_operation_manager() {
         let manager = LongOperationManager::new();
 
-        let operation = FileProcessingOperation {
-            file_path: "/tmp/test".to_string(),
-            total_files: 5,
-        };
+        let operation = FileProcessingOperation::new("/tmp/test".to_string(),5);
 
         let op_id = manager.start_operation(operation);
 

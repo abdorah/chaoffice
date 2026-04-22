@@ -37,6 +37,7 @@ export component Page inherits VerticalLayout {
             checked <=> AppSettings.dark-mode;
             toggled => {
                 Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                AppSettings.dark-mode-changed(self.checked);
             }
         }
     }

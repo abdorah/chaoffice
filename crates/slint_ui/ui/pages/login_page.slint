@@ -2,11 +2,21 @@
 
 import { VerticalBox, HorizontalBox, LineEdit, Button, Palette } from "std-widgets.slint";
 import { AppState } from "../globals/app_state.slint";
+import { AppSettings } from "../globals/app_settings.slint";
 
 export component LoginPage inherits Rectangle {
     background: Palette.background;
 
     callback login(string, string);
+
+    // Apply dark mode on the login screen too
+    Timer {
+        interval: 200ms;
+        running: AppSettings.dark-mode && Palette.color-scheme != ColorScheme.dark;
+        triggered => {
+            Palette.color-scheme = ColorScheme.dark;
+        }
+    }
 
     Rectangle {
         x: (parent.width - self.width) / 2;
