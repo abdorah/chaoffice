@@ -1,19 +1,19 @@
 // LocationsPage — Warehouse/location management with capacity tracking
 
 import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
-         LineEdit, SpinBox, Palette, StyleMetrics, ProgressIndicator } from "std-widgets.slint";
+         LineEdit, SpinBox, ComboBox, Palette, StyleMetrics, ProgressIndicator } from "std-widgets.slint";
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState, LocationItem } from "../globals/app_state.slint";
 
 export global LocationsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
-    // Edit mode support
     in-out property <int> editing-id: 0;
     in-out property <string> edit-name: "";
     in-out property <string> edit-address: "";
     in-out property <int> edit-capacity: 100;
-    // Location IDs parallel to row-data for row selection
+    in-out property <string> selected-manager: "";
+    in property <[string]> manager-names: [];
     in property <[int]> location-ids: [];
 }
 
@@ -35,6 +35,7 @@ export component LocationsPage inherits Page {
             LocationsPageAdapter.edit-name = "";
             LocationsPageAdapter.edit-address = "";
             LocationsPageAdapter.edit-capacity = 100;
+            LocationsPageAdapter.selected-manager = "";
             root.show-form = !root.show-form;
         }
     }
@@ -91,6 +92,16 @@ export component LocationsPage inherits Page {
                         value <=> LocationsPageAdapter.edit-capacity;
                         minimum: 1;
                         maximum: 999999;
+                    }
+                }
+
+                VerticalBox {
+                    horizontal-stretch: 1;
+                    Text { text: "Manager"; }
+                    manager-input := ComboBox {
+                        horizontal-stretch: 1;
+                        model: LocationsPageAdapter.manager-names;
+                        current-value <=> LocationsPageAdapter.selected-manager;
                     }
                 }
             }
@@ -152,6 +163,7 @@ export component LocationsPage inherits Page {
                 columns: [
                     { title: "Name" },
                     { title: "Address" },
+                    { title: "Manager" },
                     { title: "Capacity" },
                     { title: "Used" },
                     { title: "Lat" },
@@ -174,6 +186,7 @@ export component LocationsPage inherits Page {
                             LocationsPageAdapter.editing-id = LocationsPageAdapter.location-ids[locations-table.current-row];
                             LocationsPageAdapter.edit-name = LocationsPageAdapter.row-data[locations-table.current-row][0].text;
                             LocationsPageAdapter.edit-address = LocationsPageAdapter.row-data[locations-table.current-row][1].text;
+                            LocationsPageAdapter.selected-manager = LocationsPageAdapter.row-data[locations-table.current-row][2].text;
                             LocationsPageAdapter.edit-capacity = 0;
                             root.show-form = true;
                         }

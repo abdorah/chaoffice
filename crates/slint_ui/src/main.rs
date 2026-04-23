@@ -283,6 +283,7 @@ fn run_slint(app_context: &Arc<AppContext>, sync_engine: Arc<inventory_sync::Syn
                     populate_product_comboboxes(&ctx, &app);
                     populate_deal_comboboxes(&ctx, &app);
                     populate_stock_tracking_comboboxes(&ctx, &app);
+                    populate_location_manager_combobox(&ctx, &app);
                     // Populate dashboard alerts
                     refresh_dashboard_alerts(&ctx, &app);
                     // Auto-load stock tracking summary
@@ -863,6 +864,14 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let app_weak = app.as_weak();
         move |name, address, lat, lng, capacity| {
             let now = chrono::Utc::now();
+
+            // Read selected manager from the adapter
+            let manager_id = if let Some(app) = app_weak.upgrade() {
+                let sel = app.global::<LocationsPageAdapter>().get_selected_manager();
+                if sel.is_empty() { None }
+                else { resolve_person_id_by_role(&ctx, &sel, frontend::direct_access::PersonRole::Manager) }
+            } else { None };
+
             let dto = frontend::direct_access::CreateLocationDto {
                 created_at: now,
                 updated_at: now,
@@ -871,7 +880,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 latitude: lat as f64,
                 longitude: lng as f64,
                 capacity: capacity as i64,
-                manager: None,
+                manager: manager_id,
             };
             match frontend::commands::location_commands::create_location(&ctx, None, &dto, 1, -1) {
                 Ok(l) => {
@@ -921,6 +930,14 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let app_weak = app.as_weak();
         move |id, name, address, capacity| {
             let now = chrono::Utc::now();
+
+            // Read selected manager from the adapter
+            let manager_id = if let Some(app) = app_weak.upgrade() {
+                let sel = app.global::<LocationsPageAdapter>().get_selected_manager();
+                if sel.is_empty() { None }
+                else { resolve_person_id_by_role(&ctx, &sel, frontend::direct_access::PersonRole::Manager) }
+            } else { None };
+
             let dto = frontend::direct_access::UpdateLocationDto {
                 id: id as u64,
                 created_at: now,
@@ -930,7 +947,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 latitude: 0.0,
                 longitude: 0.0,
                 capacity: capacity as i64,
-                manager: None,
+                manager: manager_id,
             };
             match frontend::commands::location_commands::update_location(&ctx, None, &dto) {
                 Ok(l) => {
@@ -1445,11 +1462,17 @@ fn refresh_locations_table(ctx: &Arc<AppContext>, app: &App) {
             let rows: Vec<slint::ModelRc<slint::StandardListViewItem>> = locations
                 .iter()
                 .map(|l| {
+                    // Resolve manager name
+                    let manager_name = l.manager
+                        .and_then(|mid| frontend::commands::person_commands::get_person(ctx, &mid).ok().flatten())
+                        .map(|p| p.name.clone())
+                        .unwrap_or_default();
                     to_table_row(&[
                         &l.name,
                         &l.address,
+                        &manager_name,
                         &l.capacity.to_string(),
-                        "0", // used capacity — not tracked on Location entity directly
+                        "0",
                         &format!("{:.4}", l.latitude),
                         &format!("{:.4}", l.longitude),
                     ])
@@ -1590,6 +1613,22 @@ fn populate_stock_tracking_comboboxes(ctx: &Arc<AppContext>, app: &App) {
         let loc_model = std::rc::Rc::new(slint::VecModel::from(loc_names));
         app.global::<StockTrackingAdapter>()
             .set_location_names(slint::ModelRc::from(loc_model));
+    }
+}
+
+/// Populate the Locations page Manager ComboBox with persons who have role=Manager.
+fn populate_location_manager_combobox(ctx: &Arc<AppContext>, app: &App) {
+    if let Ok(persons) = frontend::commands::person_commands::get_all_person(ctx) {
+        let manager_names: Vec<slint::SharedString> = std::iter::once(slint::SharedString::from(""))
+            .chain(
+                persons.iter()
+                    .filter(|p| format!("{:?}", p.role) == "Manager")
+                    .map(|p| slint::SharedString::from(&p.name))
+            )
+            .collect();
+        let model = std::rc::Rc::new(slint::VecModel::from(manager_names));
+        app.global::<LocationsPageAdapter>()
+            .set_manager_names(slint::ModelRc::from(model));
     }
 }
 
