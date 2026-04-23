@@ -6,6 +6,7 @@ import { Page } from "../components/page.slint";
 import { LineChart } from "../components/line_chart.slint";
 import { StatCard } from "../components/stat_card.slint";
 import { AppState } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export global StockTrackingAdapter {
     in property <[[StandardListViewItem]]> movement-rows: [];
@@ -29,27 +30,27 @@ export global StockTrackingAdapter {
 export component StockTrackingPage inherits Page {
     property <bool> show-form: false;
 
-    title: "Stock Tracking";
-    description: "Track stock movements and visualize inventory trends over time.";
+    title: TranslationStrings.stock-title;
+    description: TranslationStrings.stock-description;
 
     HorizontalBox {
         vertical-stretch: 0;
         spacing: 12px;
 
         StatCard {
-            label: "Total Inbound (30d)";
+            label: TranslationStrings.stock-total-inbound-30d;
             value: AppState.stock-inbound-30d;
             accent-color: #4CAF50;
         }
 
         StatCard {
-            label: "Total Outbound (30d)";
+            label: TranslationStrings.stock-total-outbound-30d;
             value: AppState.stock-outbound-30d;
             accent-color: #FF9800;
         }
 
         StatCard {
-            label: "Net Change (30d)";
+            label: TranslationStrings.stock-net-change-30d;
             value: AppState.stock-net-30d;
             accent-color: #2196F3;
         }
@@ -58,7 +59,7 @@ export component StockTrackingPage inherits Page {
     LineChart {
         vertical-stretch: 0;
         min-height: 180px;
-        title: "Stock Level Trend";
+        title: TranslationStrings.stock-stock-level-trend;
         svg-path: StockTrackingAdapter.stock-trend-path;
         fill-path: StockTrackingAdapter.stock-trend-fill;
         x-labels: StockTrackingAdapter.trend-x-labels;
@@ -69,7 +70,7 @@ export component StockTrackingPage inherits Page {
         vertical-stretch: 0;
 
         Button {
-            text: "Record Movement";
+            text: TranslationStrings.stock-record-movement;
             primary: true;
             clicked => { root.show-form = !root.show-form; }
         }
@@ -95,7 +96,7 @@ export component StockTrackingPage inherits Page {
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: "New Stock Movement";
+        title: TranslationStrings.stock-new-movement;
 
         VerticalBox {
             HorizontalBox {
@@ -103,7 +104,7 @@ export component StockTrackingPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Product"; }
+                    Text { text: TranslationStrings.stock-product; }
                     product-input := ComboBox {
                         horizontal-stretch: 1;
                         model: StockTrackingAdapter.product-names;
@@ -112,7 +113,7 @@ export component StockTrackingPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Type"; }
+                    Text { text: TranslationStrings.stock-type; }
                     type-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ["Inbound", "Outbound", "Transfer", "Adjustment", "Return"];
@@ -121,7 +122,7 @@ export component StockTrackingPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Quantity"; }
+                    Text { text: TranslationStrings.stock-quantity; }
                     qty-input := SpinBox { horizontal-stretch: 1; value: 1; minimum: 1; maximum: 999999; }
                 }
             }
@@ -131,7 +132,7 @@ export component StockTrackingPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "From Location"; }
+                    Text { text: TranslationStrings.stock-from-location; }
                     from-loc-input := ComboBox {
                         horizontal-stretch: 1;
                         model: StockTrackingAdapter.location-names;
@@ -140,7 +141,7 @@ export component StockTrackingPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "To Location"; }
+                    Text { text: TranslationStrings.stock-to-location; }
                     to-loc-input := ComboBox {
                         horizontal-stretch: 1;
                         model: StockTrackingAdapter.location-names;
@@ -153,8 +154,8 @@ export component StockTrackingPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Note"; }
-                    note-input := LineEdit { horizontal-stretch: 1; placeholder-text: "Movement note"; }
+                    Text { text: TranslationStrings.stock-note; }
+                    note-input := LineEdit { horizontal-stretch: 1; placeholder-text: TranslationStrings.stock-note-placeholder; }
                 }
             }
 
@@ -163,12 +164,12 @@ export component StockTrackingPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Cancel";
+                    text: TranslationStrings.common-cancel;
                     clicked => { root.show-form = false; }
                 }
 
                 Button {
-                    text: "Record";
+                    text: TranslationStrings.common-record;
                     primary: true;
                     clicked => {
                         StockTrackingAdapter.record-movement(
@@ -187,19 +188,19 @@ export component StockTrackingPage inherits Page {
     }
 
     GroupBox {
-        title: "Movement History";
+        title: TranslationStrings.stock-movement-history;
         vertical-stretch: 1;
 
         StandardTableView {
             columns: [
-                { title: "Date" },
-                { title: "Type" },
-                { title: "Product" },
-                { title: "Qty" },
-                { title: "From" },
-                { title: "To" },
-                { title: "User" },
-                { title: "Note" },
+                { title: TranslationStrings.stock-col-date },
+                { title: TranslationStrings.stock-col-type },
+                { title: TranslationStrings.stock-col-product },
+                { title: TranslationStrings.stock-col-qty },
+                { title: TranslationStrings.stock-col-from },
+                { title: TranslationStrings.stock-col-to },
+                { title: TranslationStrings.stock-col-user },
+                { title: TranslationStrings.stock-col-note },
             ];
             rows: StockTrackingAdapter.movement-rows;
         }

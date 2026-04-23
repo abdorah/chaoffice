@@ -5,6 +5,7 @@ import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState, PersonItem } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export global PersonsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
@@ -23,13 +24,13 @@ export component PersonsPage inherits Page {
     property <bool> sort-ascending;
     property <bool> show-form: false;
 
-    title: "People";
-    description: "Manage managers and suppliers with their contact information.";
+    title: TranslationStrings.persons-title;
+    description: TranslationStrings.persons-description;
 
     SearchBar {
         vertical-stretch: 0;
-        placeholder: "Search people...";
-        action-text: "Add Person";
+        placeholder: TranslationStrings.persons-search-placeholder;
+        action-text: TranslationStrings.persons-add-person;
         action-clicked => {
             // Reset edit mode when opening form for new person
             PersonsPageAdapter.editing-id = 0;
@@ -43,7 +44,7 @@ export component PersonsPage inherits Page {
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: PersonsPageAdapter.editing-id > 0 ? "Edit Person" : "New Person";
+        title: PersonsPageAdapter.editing-id > 0 ? TranslationStrings.persons-edit-person : TranslationStrings.persons-new-person;
 
         VerticalBox {
             HorizontalBox {
@@ -51,17 +52,17 @@ export component PersonsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Name"; }
+                    Text { text: TranslationStrings.persons-name; }
                     name-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Full name";
+                        placeholder-text: TranslationStrings.persons-name-placeholder;
                         text <=> PersonsPageAdapter.edit-name;
                     }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Role"; }
+                    Text { text: TranslationStrings.persons-role; }
                     role-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ["Manager", "Supplier"];
@@ -75,20 +76,20 @@ export component PersonsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Phone"; }
+                    Text { text: TranslationStrings.persons-phone; }
                     phone-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "+1 234 567 890";
+                        placeholder-text: TranslationStrings.persons-phone-placeholder;
                         text <=> PersonsPageAdapter.edit-phone;
                     }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Email"; }
+                    Text { text: TranslationStrings.persons-email; }
                     email-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "email@example.com";
+                        placeholder-text: TranslationStrings.persons-email-placeholder;
                         text <=> PersonsPageAdapter.edit-email;
                     }
                 }
@@ -99,7 +100,7 @@ export component PersonsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Cancel";
+                    text: TranslationStrings.common-cancel;
                     clicked => {
                         PersonsPageAdapter.editing-id = 0;
                         PersonsPageAdapter.edit-phone = "";
@@ -109,7 +110,7 @@ export component PersonsPage inherits Page {
                 }
 
                 Button {
-                    text: PersonsPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    text: PersonsPageAdapter.editing-id > 0 ? TranslationStrings.common-save : TranslationStrings.common-create;
                     primary: true;
                     clicked => {
                         if PersonsPageAdapter.editing-id > 0 {
@@ -139,7 +140,7 @@ export component PersonsPage inherits Page {
     }
 
     GroupBox {
-        title: "People";
+        title: TranslationStrings.persons-group-title;
         vertical-stretch: 1;
 
         VerticalBox {
@@ -154,10 +155,10 @@ export component PersonsPage inherits Page {
                 }
 
                 columns: [
-                    { title: "Name" },
-                    { title: "Role" },
-                    { title: "Phone" },
-                    { title: "Email" },
+                    { title: TranslationStrings.persons-name },
+                    { title: TranslationStrings.persons-role },
+                    { title: TranslationStrings.persons-phone },
+                    { title: TranslationStrings.persons-email },
                 ];
 
                 rows: PersonsPageAdapter.row-data;
@@ -169,7 +170,7 @@ export component PersonsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Edit Selected";
+                    text: TranslationStrings.common-edit-selected;
                     enabled: persons-table.current-row >= 0 && persons-table.current-row < PersonsPageAdapter.row-data.length;
                     clicked => {
                         if persons-table.current-row >= 0 && persons-table.current-row < PersonsPageAdapter.row-data.length {

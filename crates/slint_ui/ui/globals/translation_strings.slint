@@ -1,0 +1,303 @@
+// Global translation strings for internationalization (i18n)
+// Every translatable UI string is exposed as a property with English defaults.
+// Rust-side TranslationManager sets these properties when the locale changes.
+
+export global TranslationStrings {
+    // ── Metadata ──────────────────────────────────────────────
+    in property <string> current-locale: "en";
+    in property <bool> is-rtl: false;
+    callback change-locale(int);
+
+    // ── App ───────────────────────────────────────────────────
+    in property <string> app-title: "Inventory Manager";
+    in property <string> app-logged-in-as: "Logged in as: {username}";
+    in property <string> app-logged-in-prefix: "Logged in as: ";
+
+    // ── Common ────────────────────────────────────────────────
+    in property <string> common-cancel: "Cancel";
+    in property <string> common-save: "Save";
+    in property <string> common-create: "Create";
+    in property <string> common-logout: "Logout";
+    in property <string> common-edit-selected: "Edit Selected";
+    in property <string> common-dark-mode: "Dark Mode";
+    in property <string> common-search: "Search...";
+    in property <string> common-name: "Name";
+    in property <string> common-description: "Description";
+    in property <string> common-generate: "Generate";
+    in property <string> common-format: "Format";
+    in property <string> common-record: "Record";
+    in property <string> common-apply: "Apply";
+    in property <string> common-from: "From:";
+    in property <string> common-to: "To:";
+
+    // ── Login ─────────────────────────────────────────────────
+    in property <string> login-title: "Inventory Manager";
+    in property <string> login-subtitle: "Sign in to continue";
+    in property <string> login-username: "Username";
+    in property <string> login-password: "Password";
+    in property <string> login-username-placeholder: "Enter username";
+    in property <string> login-password-placeholder: "Enter password";
+    in property <string> login-sign-in: "Sign In";
+
+    // ── Navigation ────────────────────────────────────────────
+    in property <string> nav-sidebar-title: "Inventory";
+    in property <string> nav-dashboard: "Dashboard";
+    in property <string> nav-products: "Products";
+    in property <string> nav-categories: "Categories";
+    in property <string> nav-people: "People";
+    in property <string> nav-purchasing: "Purchasing";
+    in property <string> nav-locations: "Locations";
+    in property <string> nav-stock-tracking: "Stock Tracking";
+    in property <string> nav-budget: "Budget";
+    in property <string> nav-reports: "Reports";
+    in property <string> nav-users: "Users";
+    in property <string> nav-sync: "Sync";
+
+    // ── Dashboard ─────────────────────────────────────────────
+    in property <string> dashboard-title: "Dashboard";
+    in property <string> dashboard-description: "Overview of inventory status, active deals, and stock alerts.";
+    in property <string> dashboard-total-products: "Total Products";
+    in property <string> dashboard-active-deals: "Active Deals";
+    in property <string> dashboard-low-stock-items: "Low Stock Items";
+    in property <string> dashboard-stock-alerts: "Stock Alerts";
+    in property <string> dashboard-qty: "Qty: {quantity}";
+    in property <string> dashboard-qty-prefix: "Qty: ";
+    in property <string> dashboard-sync-status: "Sync Status";
+    in property <string> dashboard-status: "Status:";
+    in property <string> dashboard-online: "Online";
+    in property <string> dashboard-local: "Local";
+    in property <string> dashboard-last-sync: "Last sync:";
+    in property <string> dashboard-pending: "Pending:";
+
+    // ── Products ──────────────────────────────────────────────
+    in property <string> products-title: "Products";
+    in property <string> products-description: "Manage your product inventory. Add, edit, and track stock levels.";
+    in property <string> products-search-placeholder: "Search products...";
+    in property <string> products-add-product: "Add Product";
+    in property <string> products-new-product: "New Product";
+    in property <string> products-edit-product: "Edit Product";
+    in property <string> products-product-list: "Product List";
+    in property <string> products-name: "Name";
+    in property <string> products-reference: "Reference";
+    in property <string> products-description-label: "Description";
+    in property <string> products-quantity: "Quantity";
+    in property <string> products-price-unit: "Price/Unit";
+    in property <string> products-category: "Category";
+    in property <string> products-supplier: "Supplier";
+    in property <string> products-location: "Location";
+    in property <string> products-status: "Status";
+    in property <string> products-name-placeholder: "Product name";
+    in property <string> products-reference-placeholder: "SKU / Reference";
+    in property <string> products-description-placeholder: "Description";
+    in property <string> products-price-placeholder: "0.00";
+
+    // ── Categories ────────────────────────────────────────────
+    in property <string> categories-title: "Categories";
+    in property <string> categories-description: "Organize products into hierarchical categories.";
+    in property <string> categories-search-placeholder: "Search categories...";
+    in property <string> categories-add-category: "Add Category";
+    in property <string> categories-new-category: "New Category";
+    in property <string> categories-edit-category: "Edit Category";
+    in property <string> categories-group-title: "Categories";
+    in property <string> categories-name: "Name";
+    in property <string> categories-description-label: "Description";
+    in property <string> categories-name-placeholder: "Category name";
+    in property <string> categories-description-placeholder: "Description";
+
+    // ── Persons ───────────────────────────────────────────────
+    in property <string> persons-title: "People";
+    in property <string> persons-description: "Manage managers and suppliers with their contact information.";
+    in property <string> persons-search-placeholder: "Search people...";
+    in property <string> persons-add-person: "Add Person";
+    in property <string> persons-new-person: "New Person";
+    in property <string> persons-edit-person: "Edit Person";
+    in property <string> persons-group-title: "People";
+    in property <string> persons-name: "Name";
+    in property <string> persons-role: "Role";
+    in property <string> persons-phone: "Phone";
+    in property <string> persons-email: "Email";
+    in property <string> persons-name-placeholder: "Full name";
+    in property <string> persons-phone-placeholder: "+1 234 567 890";
+    in property <string> persons-email-placeholder: "email@example.com";
+
+    // ── Deals ─────────────────────────────────────────────────
+    in property <string> deals-title: "Deals";
+    in property <string> deals-description: "Track supplier deals, recurring orders, and contract status.";
+    in property <string> deals-search-placeholder: "Search deals...";
+    in property <string> deals-new-deal: "New Deal";
+    in property <string> deals-edit-deal: "Edit Deal";
+    in property <string> deals-group-title: "Deals";
+    in property <string> deals-deal-title: "Title";
+    in property <string> deals-description-label: "Description";
+    in property <string> deals-frequency: "Frequency";
+    in property <string> deals-status: "Status";
+    in property <string> deals-start-date: "Start Date";
+    in property <string> deals-end-date: "End Date";
+    in property <string> deals-supplier: "Supplier";
+    in property <string> deals-product: "Product";
+    in property <string> deals-manager: "Manager";
+    in property <string> deals-title-placeholder: "Deal title";
+    in property <string> deals-description-placeholder: "Description";
+    in property <string> deals-select-start-date: "Select start date";
+    in property <string> deals-select-end-date: "Select end date";
+    in property <string> deals-col-title: "Title";
+    in property <string> deals-col-product: "Product";
+    in property <string> deals-col-supplier: "Supplier";
+    in property <string> deals-col-manager: "Manager";
+    in property <string> deals-col-frequency: "Frequency";
+    in property <string> deals-col-status: "Status";
+
+    // ── Locations ─────────────────────────────────────────────
+    in property <string> locations-title: "Locations";
+    in property <string> locations-description: "Manage warehouses and storage locations with capacity tracking.";
+    in property <string> locations-search-placeholder: "Search locations...";
+    in property <string> locations-add-location: "Add Location";
+    in property <string> locations-new-location: "New Location";
+    in property <string> locations-edit-location: "Edit Location";
+    in property <string> locations-group-title: "Locations";
+    in property <string> locations-name: "Name";
+    in property <string> locations-address: "Address";
+    in property <string> locations-latitude: "Latitude";
+    in property <string> locations-longitude: "Longitude";
+    in property <string> locations-capacity: "Capacity";
+    in property <string> locations-manager: "Manager";
+    in property <string> locations-name-placeholder: "Location name";
+    in property <string> locations-address-placeholder: "Full address";
+    in property <string> locations-lat-placeholder: "0.0";
+    in property <string> locations-lng-placeholder: "0.0";
+    in property <string> locations-col-name: "Name";
+    in property <string> locations-col-address: "Address";
+    in property <string> locations-col-manager: "Manager";
+    in property <string> locations-col-capacity: "Capacity";
+    in property <string> locations-col-used: "Used";
+    in property <string> locations-col-lat: "Lat";
+    in property <string> locations-col-lng: "Lng";
+
+    // ── Stock Tracking ────────────────────────────────────────
+    in property <string> stock-title: "Stock Tracking";
+    in property <string> stock-description: "Track stock movements and visualize inventory trends over time.";
+    in property <string> stock-total-inbound-30d: "Total Inbound (30d)";
+    in property <string> stock-total-outbound-30d: "Total Outbound (30d)";
+    in property <string> stock-net-change-30d: "Net Change (30d)";
+    in property <string> stock-stock-level-trend: "Stock Level Trend";
+    in property <string> stock-record-movement: "Record Movement";
+    in property <string> stock-new-movement: "New Stock Movement";
+    in property <string> stock-movement-history: "Movement History";
+    in property <string> stock-product: "Product";
+    in property <string> stock-type: "Type";
+    in property <string> stock-quantity: "Quantity";
+    in property <string> stock-from-location: "From Location";
+    in property <string> stock-to-location: "To Location";
+    in property <string> stock-note: "Note";
+    in property <string> stock-note-placeholder: "Movement note";
+    in property <string> stock-col-date: "Date";
+    in property <string> stock-col-type: "Type";
+    in property <string> stock-col-product: "Product";
+    in property <string> stock-col-qty: "Qty";
+    in property <string> stock-col-from: "From";
+    in property <string> stock-col-to: "To";
+    in property <string> stock-col-user: "User";
+    in property <string> stock-col-note: "Note";
+
+    // ── Budget ────────────────────────────────────────────────
+    in property <string> budget-title: "Budget & Finance";
+    in property <string> budget-description: "Track purchases, sales, expenses, and project future budgets.";
+    in property <string> budget-total-purchases: "Total Purchases";
+    in property <string> budget-total-sales: "Total Sales";
+    in property <string> budget-total-expenses: "Total Expenses";
+    in property <string> budget-net-balance: "Net Balance";
+    in property <string> budget-select-start-date: "Select start date";
+    in property <string> budget-select-end-date: "Select end date";
+    in property <string> budget-tab-overview: "Overview";
+    in property <string> budget-tab-projection: "Projection";
+    in property <string> budget-tab-trends: "Trends";
+    in property <string> budget-monthly-breakdown: "Monthly Breakdown";
+    in property <string> budget-budget-entries: "Budget Entries";
+    in property <string> budget-col-date: "Date";
+    in property <string> budget-col-type: "Type";
+    in property <string> budget-col-amount: "Amount";
+    in property <string> budget-col-description: "Description";
+    in property <string> budget-col-product: "Product";
+    in property <string> budget-col-deal: "Deal";
+    in property <string> budget-col-recorded-by: "Recorded By";
+    in property <string> budget-months-ahead: "Months ahead:";
+    in property <string> budget-projected-income: "Projected Income";
+    in property <string> budget-projected-expenses: "Projected Expenses";
+    in property <string> budget-projected-balance: "Projected Balance";
+    in property <string> budget-income-trend: "Income Trend";
+    in property <string> budget-expense-trend: "Expense Trend";
+    in property <string> budget-add-entry: "Add Entry";
+    in property <string> budget-new-entry: "New Budget Entry";
+    in property <string> budget-type: "Type";
+    in property <string> budget-amount: "Amount";
+    in property <string> budget-date: "Date";
+    in property <string> budget-description-label: "Description";
+    in property <string> budget-amount-placeholder: "0.00";
+    in property <string> budget-description-placeholder: "Description";
+
+    // ── Reports ───────────────────────────────────────────────
+    in property <string> reports-title: "Reports";
+    in property <string> reports-description: "Generate and export reports in Excel, PDF, or CSV format.";
+    in property <string> reports-inventory-report: "Inventory Report";
+    in property <string> reports-stock-movement-report: "Stock Movement Report";
+    in property <string> reports-budget-report: "Budget Report";
+    in property <string> reports-purchasing-report: "Purchasing Deals Report";
+    in property <string> reports-format: "Format";
+    in property <string> reports-include-zero-stock: "Include zero-stock items";
+    in property <string> reports-include-projections: "Include projections";
+    in property <string> reports-status: "Status";
+    in property <string> reports-status-all: "All";
+    in property <string> reports-status-active-only: "Active Only";
+    in property <string> reports-status-completed-only: "Completed Only";
+    in property <string> reports-output: "Output";
+
+    // ── Users ─────────────────────────────────────────────────
+    in property <string> users-title: "User Management";
+    in property <string> users-description: "Create and manage user accounts and roles. Admin access required.";
+    in property <string> users-search-placeholder: "Search users...";
+    in property <string> users-add-user: "Add User";
+    in property <string> users-new-user: "New User";
+    in property <string> users-edit-user: "Edit User";
+    in property <string> users-group-title: "Users";
+    in property <string> users-username: "Username";
+    in property <string> users-display-name: "Display Name";
+    in property <string> users-password: "Password";
+    in property <string> users-role: "Role";
+    in property <string> users-username-placeholder: "username";
+    in property <string> users-display-name-placeholder: "Full name";
+    in property <string> users-password-placeholder: "Password";
+    in property <string> users-password-edit-placeholder: "Leave empty to keep current";
+    in property <string> users-col-username: "Username";
+    in property <string> users-col-display-name: "Display Name";
+    in property <string> users-col-role: "Role";
+    in property <string> users-col-active: "Active";
+
+    // ── Sync ──────────────────────────────────────────────────
+    in property <string> sync-title: "Sync";
+    in property <string> sync-description: "Manage online/offline synchronization with TursoDB via LibSQL.";
+    in property <string> sync-pending-changes: "Pending Changes";
+    in property <string> sync-connection: "Connection";
+    in property <string> sync-online: "Online";
+    in property <string> sync-local: "Local";
+    in property <string> sync-sync-actions: "Sync Actions";
+    in property <string> sync-last-synchronized: "Last synchronized:";
+    in property <string> sync-status: "Status:";
+    in property <string> sync-push-to-remote: "Push to Remote";
+    in property <string> sync-pull-from-remote: "Pull from Remote";
+    in property <string> sync-database-settings: "Database Settings";
+    in property <string> sync-turso-url: "TursoDB URL";
+    in property <string> sync-turso-url-placeholder: "libsql://your-db.turso.io";
+    in property <string> sync-auth-token: "Auth Token";
+    in property <string> sync-auth-token-placeholder: "Token";
+    in property <string> sync-auto-sync-enabled: "Auto-sync enabled";
+    in property <string> sync-interval-seconds: "Interval (seconds)";
+    in property <string> sync-test-connection: "Test Connection";
+    in property <string> sync-save-settings: "Save Settings";
+    in property <string> sync-offline-mode: "Offline Mode";
+    in property <string> sync-offline-description: "When offline, all changes are stored locally and will be synchronized when connectivity is restored. TursoDB with LibSQL provides automatic conflict resolution for concurrent edits.";
+
+    // ── Confirm Dialog ────────────────────────────────────────
+    in property <string> confirm-default-message: "Are you sure?";
+    in property <string> confirm-confirm: "Confirm";
+    in property <string> confirm-cancel: "Cancel";
+}

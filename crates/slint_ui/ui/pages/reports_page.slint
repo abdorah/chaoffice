@@ -4,14 +4,15 @@ import { GroupBox, VerticalBox, HorizontalBox, Button, ComboBox,
          CheckBox, ProgressIndicator, LineEdit, Palette } from "std-widgets.slint";
 import { Page } from "../components/page.slint";
 import { AppState } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export component ReportsPage inherits Page {
-    title: "Reports";
-    description: "Generate and export reports in Excel, PDF, or CSV format.";
+    title: TranslationStrings.reports-title;
+    description: TranslationStrings.reports-description;
 
     GroupBox {
         vertical-stretch: 0;
-        title: "Inventory Report";
+        title: TranslationStrings.reports-inventory-report;
 
         VerticalBox {
             padding: 8px;
@@ -21,18 +22,18 @@ export component ReportsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Format"; }
+                    Text { text: TranslationStrings.common-format; }
                     inv-format := ComboBox {
                         model: ["Excel", "PDF", "CSV"];
                     }
                 }
 
                 inv-zero := CheckBox {
-                    text: "Include zero-stock items";
+                    text: TranslationStrings.reports-include-zero-stock;
                 }
 
                 Button {
-                    text: "Generate";
+                    text: TranslationStrings.common-generate;
                     min-width: 100px;
                     primary: true;
                     enabled: !AppState.report-generating;
@@ -48,7 +49,7 @@ export component ReportsPage inherits Page {
 
     GroupBox {
         vertical-stretch: 0;
-        title: "Stock Movement Report";
+        title: TranslationStrings.reports-stock-movement-report;
 
         VerticalBox {
             padding: 8px;
@@ -58,14 +59,14 @@ export component ReportsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Format"; }
+                    Text { text: TranslationStrings.common-format; }
                     stock-format := ComboBox {
                         model: ["Excel", "PDF", "CSV"];
                     }
                 }
 
                 Button {
-                    text: "Generate";
+                    text: TranslationStrings.common-generate;
                     min-width: 100px;
                     primary: true;
                     enabled: !AppState.report-generating;
@@ -81,7 +82,7 @@ export component ReportsPage inherits Page {
 
     GroupBox {
         vertical-stretch: 0;
-        title: "Budget Report";
+        title: TranslationStrings.reports-budget-report;
 
         VerticalBox {
             padding: 8px;
@@ -91,18 +92,18 @@ export component ReportsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Format"; }
+                    Text { text: TranslationStrings.common-format; }
                     budget-format := ComboBox {
                         model: ["Excel", "PDF", "CSV"];
                     }
                 }
 
                 budget-proj := CheckBox {
-                    text: "Include projections";
+                    text: TranslationStrings.reports-include-projections;
                 }
 
                 Button {
-                    text: "Generate";
+                    text: TranslationStrings.common-generate;
                     min-width: 100px;
                     primary: true;
                     enabled: !AppState.report-generating;
@@ -118,7 +119,7 @@ export component ReportsPage inherits Page {
 
     GroupBox {
         vertical-stretch: 0;
-        title: "Purchasing Deals Report";
+        title: TranslationStrings.reports-purchasing-report;
 
         VerticalBox {
             padding: 8px;
@@ -128,7 +129,7 @@ export component ReportsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Format"; }
+                    Text { text: TranslationStrings.common-format; }
                     deal-format := ComboBox {
                         model: ["Excel", "PDF", "CSV"];
                     }
@@ -136,14 +137,14 @@ export component ReportsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Status"; }
+                    Text { text: TranslationStrings.reports-status; }
                     deal-status := ComboBox {
-                        model: ["All", "Active Only", "Completed Only"];
+                        model: [TranslationStrings.reports-status-all, TranslationStrings.reports-status-active-only, TranslationStrings.reports-status-completed-only];
                     }
                 }
 
                 Button {
-                    text: "Generate";
+                    text: TranslationStrings.common-generate;
                     min-width: 100px;
                     primary: true;
                     enabled: !AppState.report-generating;
@@ -164,7 +165,7 @@ export component ReportsPage inherits Page {
 
     if AppState.report-output != "" : GroupBox {
         vertical-stretch: 0;
-        title: "Output";
+        title: TranslationStrings.reports-output;
 
         Text {
             text: AppState.report-output;

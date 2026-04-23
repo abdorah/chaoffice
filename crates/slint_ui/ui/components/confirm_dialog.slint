@@ -1,11 +1,12 @@
 // ConfirmDialog — Modal confirmation overlay
 
 import { Button, VerticalBox, HorizontalBox, Palette } from "std-widgets.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export component ConfirmDialog inherits Rectangle {
-    in property <string> message: "Are you sure?";
-    in property <string> confirm-text: "Confirm";
-    in property <string> cancel-text: "Cancel";
+    in property <string> message: TranslationStrings.confirm-default-message;
+    in property <string> confirm-text: TranslationStrings.confirm-confirm;
+    in property <string> cancel-text: TranslationStrings.confirm-cancel;
     in-out property <bool> show: false;
 
     callback confirmed();

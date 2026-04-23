@@ -3,6 +3,7 @@
 import { VerticalBox, HorizontalBox, LineEdit, Button, Palette } from "std-widgets.slint";
 import { AppState } from "../globals/app_state.slint";
 import { AppSettings } from "../globals/app_settings.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export component LoginPage inherits Rectangle {
     background: Palette.background;
@@ -31,13 +32,13 @@ export component LoginPage inherits Rectangle {
             spacing: 16px;
 
             Text {
-                text: "Inventory Manager";
+                text: TranslationStrings.login-title;
                 font-size: 22px;
                 horizontal-alignment: center;
             }
 
             Text {
-                text: "Sign in to continue";
+                text: TranslationStrings.login-subtitle;
                 font-size: 12px;
                 horizontal-alignment: center;
                 color: Palette.foreground.transparentize(0.4);
@@ -46,18 +47,18 @@ export component LoginPage inherits Rectangle {
             VerticalBox {
                 spacing: 8px;
 
-                Text { text: "Username"; }
+                Text { text: TranslationStrings.login-username; }
                 username-input := LineEdit {
-                    placeholder-text: "Enter username";
+                    placeholder-text: TranslationStrings.login-username-placeholder;
                 }
             }
 
             VerticalBox {
                 spacing: 8px;
 
-                Text { text: "Password"; }
+                Text { text: TranslationStrings.login-password; }
                 password-input := LineEdit {
-                    placeholder-text: "Enter password";
+                    placeholder-text: TranslationStrings.login-password-placeholder;
                     input-type: InputType.password;
                 }
             }
@@ -70,7 +71,7 @@ export component LoginPage inherits Rectangle {
             }
 
             Button {
-                text: "Sign In";
+                text: TranslationStrings.login-sign-in;
                 primary: true;
                 clicked => {
                     root.login(username-input.text, password-input.text);

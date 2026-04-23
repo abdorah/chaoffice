@@ -5,6 +5,7 @@ import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState, LocationItem } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export global LocationsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
@@ -22,13 +23,13 @@ export component LocationsPage inherits Page {
     property <bool> sort-ascending;
     property <bool> show-form: false;
 
-    title: "Locations";
-    description: "Manage warehouses and storage locations with capacity tracking.";
+    title: TranslationStrings.locations-title;
+    description: TranslationStrings.locations-description;
 
     SearchBar {
         vertical-stretch: 0;
-        placeholder: "Search locations...";
-        action-text: "Add Location";
+        placeholder: TranslationStrings.locations-search-placeholder;
+        action-text: TranslationStrings.locations-add-location;
         action-clicked => {
             // Reset edit mode when opening form for new location
             LocationsPageAdapter.editing-id = 0;
@@ -42,7 +43,7 @@ export component LocationsPage inherits Page {
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: LocationsPageAdapter.editing-id > 0 ? "Edit Location" : "New Location";
+        title: LocationsPageAdapter.editing-id > 0 ? TranslationStrings.locations-edit-location : TranslationStrings.locations-new-location;
 
         VerticalBox {
             HorizontalBox {
@@ -50,20 +51,20 @@ export component LocationsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Name"; }
+                    Text { text: TranslationStrings.locations-name; }
                     name-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Location name";
+                        placeholder-text: TranslationStrings.locations-name-placeholder;
                         text <=> LocationsPageAdapter.edit-name;
                     }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Address"; }
+                    Text { text: TranslationStrings.locations-address; }
                     addr-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Full address";
+                        placeholder-text: TranslationStrings.locations-address-placeholder;
                         text <=> LocationsPageAdapter.edit-address;
                     }
                 }
@@ -74,19 +75,19 @@ export component LocationsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Latitude"; }
-                    lat-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.0"; }
+                    Text { text: TranslationStrings.locations-latitude; }
+                    lat-input := LineEdit { horizontal-stretch: 1; placeholder-text: TranslationStrings.locations-lat-placeholder; }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Longitude"; }
-                    lng-input := LineEdit { horizontal-stretch: 1; placeholder-text: "0.0"; }
+                    Text { text: TranslationStrings.locations-longitude; }
+                    lng-input := LineEdit { horizontal-stretch: 1; placeholder-text: TranslationStrings.locations-lng-placeholder; }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Capacity"; }
+                    Text { text: TranslationStrings.locations-capacity; }
                     cap-input := SpinBox {
                         horizontal-stretch: 1;
                         value <=> LocationsPageAdapter.edit-capacity;
@@ -97,7 +98,7 @@ export component LocationsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Manager"; }
+                    Text { text: TranslationStrings.locations-manager; }
                     manager-input := ComboBox {
                         horizontal-stretch: 1;
                         model: LocationsPageAdapter.manager-names;
@@ -111,7 +112,7 @@ export component LocationsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Cancel";
+                    text: TranslationStrings.common-cancel;
                     clicked => {
                         LocationsPageAdapter.editing-id = 0;
                         root.show-form = false;
@@ -119,7 +120,7 @@ export component LocationsPage inherits Page {
                 }
 
                 Button {
-                    text: LocationsPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    text: LocationsPageAdapter.editing-id > 0 ? TranslationStrings.common-save : TranslationStrings.common-create;
                     primary: true;
                     clicked => {
                         if LocationsPageAdapter.editing-id > 0 {
@@ -146,7 +147,7 @@ export component LocationsPage inherits Page {
     }
 
     GroupBox {
-        title: "Locations";
+        title: TranslationStrings.locations-group-title;
         vertical-stretch: 1;
 
         VerticalBox {
@@ -161,13 +162,13 @@ export component LocationsPage inherits Page {
                 }
 
                 columns: [
-                    { title: "Name" },
-                    { title: "Address" },
-                    { title: "Manager" },
-                    { title: "Capacity" },
-                    { title: "Used" },
-                    { title: "Lat" },
-                    { title: "Lng" },
+                    { title: TranslationStrings.locations-col-name },
+                    { title: TranslationStrings.locations-col-address },
+                    { title: TranslationStrings.locations-col-manager },
+                    { title: TranslationStrings.locations-col-capacity },
+                    { title: TranslationStrings.locations-col-used },
+                    { title: TranslationStrings.locations-col-lat },
+                    { title: TranslationStrings.locations-col-lng },
                 ];
 
                 rows: LocationsPageAdapter.row-data;
@@ -179,7 +180,7 @@ export component LocationsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Edit Selected";
+                    text: TranslationStrings.common-edit-selected;
                     enabled: locations-table.current-row >= 0 && locations-table.current-row < LocationsPageAdapter.row-data.length;
                     clicked => {
                         if locations-table.current-row >= 0 && locations-table.current-row < LocationsPageAdapter.row-data.length {

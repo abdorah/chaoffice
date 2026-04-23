@@ -4,6 +4,7 @@ import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button, LineEd
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState, CategoryItem } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export global CategoriesPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
@@ -18,13 +19,13 @@ export global CategoriesPageAdapter {
 export component CategoriesPage inherits Page {
     property <bool> show-form: false;
 
-    title: "Categories";
-    description: "Organize products into hierarchical categories.";
+    title: TranslationStrings.categories-title;
+    description: TranslationStrings.categories-description;
 
     SearchBar {
         vertical-stretch: 0;
-        placeholder: "Search categories...";
-        action-text: "Add Category";
+        placeholder: TranslationStrings.categories-search-placeholder;
+        action-text: TranslationStrings.categories-add-category;
         action-clicked => {
             // Reset edit mode when opening form for new category
             CategoriesPageAdapter.editing-id = 0;
@@ -36,7 +37,7 @@ export component CategoriesPage inherits Page {
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: CategoriesPageAdapter.editing-id > 0 ? "Edit Category" : "New Category";
+        title: CategoriesPageAdapter.editing-id > 0 ? TranslationStrings.categories-edit-category : TranslationStrings.categories-new-category;
 
         VerticalBox {
             HorizontalBox {
@@ -44,20 +45,20 @@ export component CategoriesPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Name"; }
+                    Text { text: TranslationStrings.categories-name; }
                     name-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Category name";
+                        placeholder-text: TranslationStrings.categories-name-placeholder;
                         text <=> CategoriesPageAdapter.edit-name;
                     }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Description"; }
+                    Text { text: TranslationStrings.categories-description-label; }
                     desc-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Description";
+                        placeholder-text: TranslationStrings.categories-description-placeholder;
                         text <=> CategoriesPageAdapter.edit-description;
                     }
                 }
@@ -68,7 +69,7 @@ export component CategoriesPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Cancel";
+                    text: TranslationStrings.common-cancel;
                     clicked => {
                         CategoriesPageAdapter.editing-id = 0;
                         root.show-form = false;
@@ -76,7 +77,7 @@ export component CategoriesPage inherits Page {
                 }
 
                 Button {
-                    text: CategoriesPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    text: CategoriesPageAdapter.editing-id > 0 ? TranslationStrings.common-save : TranslationStrings.common-create;
                     primary: true;
                     clicked => {
                         if CategoriesPageAdapter.editing-id > 0 {
@@ -101,14 +102,14 @@ export component CategoriesPage inherits Page {
     }
 
     GroupBox {
-        title: "Categories";
+        title: TranslationStrings.categories-group-title;
         vertical-stretch: 1;
 
         VerticalBox {
             categories-table := StandardTableView {
                 columns: [
-                    { title: "Name" },
-                    { title: "Description" },
+                    { title: TranslationStrings.categories-name },
+                    { title: TranslationStrings.categories-description-label },
                 ];
 
                 rows: CategoriesPageAdapter.row-data;
@@ -120,7 +121,7 @@ export component CategoriesPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Edit Selected";
+                    text: TranslationStrings.common-edit-selected;
                     enabled: categories-table.current-row >= 0 && categories-table.current-row < CategoriesPageAdapter.row-data.length;
                     clicked => {
                         if categories-table.current-row >= 0 && categories-table.current-row < CategoriesPageAdapter.row-data.length {

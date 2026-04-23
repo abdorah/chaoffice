@@ -6,6 +6,7 @@ import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { StatusBadge } from "../components/status_badge.slint";
 import { AppState, ProductItem } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export global ProductsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
@@ -31,13 +32,13 @@ export component ProductsPage inherits Page {
     property <bool> sort-ascending;
     property <bool> show-form: false;
 
-    title: "Products";
-    description: "Manage your product inventory. Add, edit, and track stock levels.";
+    title: TranslationStrings.products-title;
+    description: TranslationStrings.products-description;
 
     SearchBar {
         vertical-stretch: 0;
-        placeholder: "Search products...";
-        action-text: "Add Product";
+        placeholder: TranslationStrings.products-search-placeholder;
+        action-text: TranslationStrings.products-add-product;
         action-clicked => {
             // Reset edit mode when opening form for new product
             ProductsPageAdapter.editing-id = 0;
@@ -52,7 +53,7 @@ export component ProductsPage inherits Page {
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: ProductsPageAdapter.editing-id > 0 ? "Edit Product" : "New Product";
+        title: ProductsPageAdapter.editing-id > 0 ? TranslationStrings.products-edit-product : TranslationStrings.products-new-product;
 
         VerticalBox {
             HorizontalBox {
@@ -60,20 +61,20 @@ export component ProductsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Name"; }
+                    Text { text: TranslationStrings.products-name; }
                     name-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Product name";
+                        placeholder-text: TranslationStrings.products-name-placeholder;
                         text <=> ProductsPageAdapter.edit-name;
                     }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Reference"; }
+                    Text { text: TranslationStrings.products-reference; }
                     ref-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "SKU / Reference";
+                        placeholder-text: TranslationStrings.products-reference-placeholder;
                         text <=> ProductsPageAdapter.edit-reference;
                     }
                 }
@@ -84,10 +85,10 @@ export component ProductsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Description"; }
+                    Text { text: TranslationStrings.products-description-label; }
                     desc-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Description";
+                        placeholder-text: TranslationStrings.products-description-placeholder;
                         text <=> ProductsPageAdapter.edit-description;
                     }
                 }
@@ -98,7 +99,7 @@ export component ProductsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Quantity"; }
+                    Text { text: TranslationStrings.products-quantity; }
                     qty-input := SpinBox {
                         horizontal-stretch: 1;
                         value <=> ProductsPageAdapter.edit-quantity;
@@ -109,10 +110,10 @@ export component ProductsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Price/Unit"; }
+                    Text { text: TranslationStrings.products-price-unit; }
                     price-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "0.00";
+                        placeholder-text: TranslationStrings.products-price-placeholder;
                     }
                 }
             }
@@ -122,7 +123,7 @@ export component ProductsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Category"; }
+                    Text { text: TranslationStrings.products-category; }
                     cat-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ProductsPageAdapter.category-names;
@@ -132,7 +133,7 @@ export component ProductsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Supplier"; }
+                    Text { text: TranslationStrings.products-supplier; }
                     supplier-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ProductsPageAdapter.supplier-names;
@@ -142,7 +143,7 @@ export component ProductsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Location"; }
+                    Text { text: TranslationStrings.products-location; }
                     loc-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ProductsPageAdapter.location-names;
@@ -156,7 +157,7 @@ export component ProductsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Cancel";
+                    text: TranslationStrings.common-cancel;
                     clicked => {
                         ProductsPageAdapter.editing-id = 0;
                         root.show-form = false;
@@ -164,7 +165,7 @@ export component ProductsPage inherits Page {
                 }
 
                 Button {
-                    text: ProductsPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    text: ProductsPageAdapter.editing-id > 0 ? TranslationStrings.common-save : TranslationStrings.common-create;
                     primary: true;
                     clicked => {
                         if ProductsPageAdapter.editing-id > 0 {
@@ -194,7 +195,7 @@ export component ProductsPage inherits Page {
     }
 
     GroupBox {
-        title: "Product List";
+        title: TranslationStrings.products-product-list;
         vertical-stretch: 1;
 
         VerticalBox {
@@ -209,13 +210,13 @@ export component ProductsPage inherits Page {
                 }
 
                 columns: [
-                    { title: "Name" },
-                    { title: "Reference" },
-                    { title: "Quantity" },
-                    { title: "Price/Unit" },
-                    { title: "Status" },
-                    { title: "Category" },
-                    { title: "Location" },
+                    { title: TranslationStrings.products-name },
+                    { title: TranslationStrings.products-reference },
+                    { title: TranslationStrings.products-quantity },
+                    { title: TranslationStrings.products-price-unit },
+                    { title: TranslationStrings.products-status },
+                    { title: TranslationStrings.products-category },
+                    { title: TranslationStrings.products-location },
                 ];
 
                 rows: ProductsPageAdapter.row-data;
@@ -227,7 +228,7 @@ export component ProductsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Edit Selected";
+                    text: TranslationStrings.common-edit-selected;
                     enabled: products-table.current-row >= 0 && products-table.current-row < ProductsPageAdapter.row-data.length;
                     clicked => {
                         // Read the selected row data and populate the form

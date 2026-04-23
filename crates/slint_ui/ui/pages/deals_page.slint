@@ -5,6 +5,7 @@ import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState, DealItem } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export global DealsPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
@@ -28,16 +29,16 @@ export component DealsPage inherits Page {
     property <int> sort-index: -1;
     property <bool> sort-ascending;
     property <bool> show-form: false;
-    property <string> start-date-text: "Select start date";
-    property <string> end-date-text: "Select end date";
+    property <string> start-date-text: TranslationStrings.deals-select-start-date;
+    property <string> end-date-text: TranslationStrings.deals-select-end-date;
 
-    title: "Deals";
-    description: "Track supplier deals, recurring orders, and contract status.";
+    title: TranslationStrings.deals-title;
+    description: TranslationStrings.deals-description;
 
     SearchBar {
         vertical-stretch: 0;
-        placeholder: "Search deals...";
-        action-text: "New Deal";
+        placeholder: TranslationStrings.deals-search-placeholder;
+        action-text: TranslationStrings.deals-new-deal;
         action-clicked => {
             // Reset edit mode when opening form for new deal
             DealsPageAdapter.editing-id = 0;
@@ -51,7 +52,7 @@ export component DealsPage inherits Page {
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: DealsPageAdapter.editing-id > 0 ? "Edit Deal" : "New Deal";
+        title: DealsPageAdapter.editing-id > 0 ? TranslationStrings.deals-edit-deal : TranslationStrings.deals-new-deal;
 
         VerticalBox {
             HorizontalBox {
@@ -59,20 +60,20 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Title"; }
+                    Text { text: TranslationStrings.deals-deal-title; }
                     title-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Deal title";
+                        placeholder-text: TranslationStrings.deals-title-placeholder;
                         text <=> DealsPageAdapter.edit-title;
                     }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Description"; }
+                    Text { text: TranslationStrings.deals-description-label; }
                     desc-input := LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Description";
+                        placeholder-text: TranslationStrings.deals-description-placeholder;
                         text <=> DealsPageAdapter.edit-description;
                     }
                 }
@@ -83,7 +84,7 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Frequency"; }
+                    Text { text: TranslationStrings.deals-frequency; }
                     freq-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ["OneTime", "Weekly", "Monthly", "Quarterly", "Yearly"];
@@ -93,7 +94,7 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Status"; }
+                    Text { text: TranslationStrings.deals-status; }
                     status-input := ComboBox {
                         horizontal-stretch: 1;
                         model: ["Draft", "Active", "Completed", "Cancelled"];
@@ -103,7 +104,7 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Start Date"; }
+                    Text { text: TranslationStrings.deals-start-date; }
                     Button {
                         horizontal-stretch: 1;
                         text: root.start-date-text;
@@ -113,7 +114,7 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "End Date"; }
+                    Text { text: TranslationStrings.deals-end-date; }
                     Button {
                         horizontal-stretch: 1;
                         text: root.end-date-text;
@@ -127,7 +128,7 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Supplier"; }
+                    Text { text: TranslationStrings.deals-supplier; }
                     supplier-input := ComboBox {
                         horizontal-stretch: 1;
                         model: DealsPageAdapter.supplier-names;
@@ -137,7 +138,7 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Product"; }
+                    Text { text: TranslationStrings.deals-product; }
                     product-input := ComboBox {
                         horizontal-stretch: 1;
                         model: DealsPageAdapter.product-names;
@@ -147,7 +148,7 @@ export component DealsPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Manager"; }
+                    Text { text: TranslationStrings.deals-manager; }
                     manager-input := ComboBox {
                         horizontal-stretch: 1;
                         model: DealsPageAdapter.manager-names;
@@ -161,7 +162,7 @@ export component DealsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Cancel";
+                    text: TranslationStrings.common-cancel;
                     clicked => {
                         DealsPageAdapter.editing-id = 0;
                         root.show-form = false;
@@ -169,7 +170,7 @@ export component DealsPage inherits Page {
                 }
 
                 Button {
-                    text: DealsPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    text: DealsPageAdapter.editing-id > 0 ? TranslationStrings.common-save : TranslationStrings.common-create;
                     primary: true;
                     clicked => {
                         if DealsPageAdapter.editing-id > 0 {
@@ -197,7 +198,7 @@ export component DealsPage inherits Page {
     }
 
     GroupBox {
-        title: "Deals";
+        title: TranslationStrings.deals-group-title;
         vertical-stretch: 1;
 
         VerticalBox {
@@ -212,12 +213,12 @@ export component DealsPage inherits Page {
                 }
 
                 columns: [
-                    { title: "Title" },
-                    { title: "Product" },
-                    { title: "Supplier" },
-                    { title: "Manager" },
-                    { title: "Frequency" },
-                    { title: "Status" },
+                    { title: TranslationStrings.deals-col-title },
+                    { title: TranslationStrings.deals-col-product },
+                    { title: TranslationStrings.deals-col-supplier },
+                    { title: TranslationStrings.deals-col-manager },
+                    { title: TranslationStrings.deals-col-frequency },
+                    { title: TranslationStrings.deals-col-status },
                 ];
 
                 rows: DealsPageAdapter.row-data;
@@ -229,7 +230,7 @@ export component DealsPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Edit Selected";
+                    text: TranslationStrings.common-edit-selected;
                     enabled: deals-table.current-row >= 0 && deals-table.current-row < DealsPageAdapter.row-data.length;
                     clicked => {
                         if deals-table.current-row >= 0 && deals-table.current-row < DealsPageAdapter.row-data.length {

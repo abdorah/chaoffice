@@ -4,29 +4,30 @@ import { GroupBox, VerticalBox, HorizontalBox, StandardListView, Palette } from 
 import { Page } from "../components/page.slint";
 import { StatCard } from "../components/stat_card.slint";
 import { AppState } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export component DashboardPage inherits Page {
-    title: "Dashboard";
-    description: "Overview of inventory status, active deals, and stock alerts.";
+    title: TranslationStrings.dashboard-title;
+    description: TranslationStrings.dashboard-description;
 
     HorizontalBox {
         vertical-stretch: 0;
         spacing: 12px;
 
         StatCard {
-            label: "Total Products";
+            label: TranslationStrings.dashboard-total-products;
             value: AppState.total-products;
             accent-color: #4CAF50;
         }
 
         StatCard {
-            label: "Active Deals";
+            label: TranslationStrings.dashboard-active-deals;
             value: AppState.active-deals;
             accent-color: #2196F3;
         }
 
         StatCard {
-            label: "Low Stock Items";
+            label: TranslationStrings.dashboard-low-stock-items;
             value: AppState.low-stock-count;
             accent-color: #FF9800;
         }
@@ -37,7 +38,7 @@ export component DashboardPage inherits Page {
         spacing: 12px;
 
         GroupBox {
-            title: "Stock Alerts";
+            title: TranslationStrings.dashboard-stock-alerts;
             horizontal-stretch: 1;
 
             VerticalBox {
@@ -57,7 +58,7 @@ export component DashboardPage inherits Page {
                         }
 
                         Text {
-                            text: "Qty: " + alert.quantity;
+                            text: TranslationStrings.dashboard-qty-prefix + alert.quantity;
                             color: #FF9800;
                         }
 
@@ -71,7 +72,7 @@ export component DashboardPage inherits Page {
         }
 
         GroupBox {
-            title: "Sync Status";
+            title: TranslationStrings.dashboard-sync-status;
             horizontal-stretch: 0;
             min-width: 220px;
 
@@ -79,20 +80,20 @@ export component DashboardPage inherits Page {
                 spacing: 8px;
 
                 HorizontalBox {
-                    Text { text: "Status:"; }
+                    Text { text: TranslationStrings.dashboard-status; }
                     Text {
-                        text: AppState.sync-status.is-online ? "Online" : "Local";
+                        text: AppState.sync-status.is-online ? TranslationStrings.dashboard-online : TranslationStrings.dashboard-local;
                         color: AppState.sync-status.is-online ? #4CAF50 : #2196F3;
                     }
                 }
 
                 HorizontalBox {
-                    Text { text: "Last sync:"; }
+                    Text { text: TranslationStrings.dashboard-last-sync; }
                     Text { text: AppState.sync-status.last-sync-at; }
                 }
 
                 HorizontalBox {
-                    Text { text: "Pending:"; }
+                    Text { text: TranslationStrings.dashboard-pending; }
                     Text { text: AppState.sync-status.pending-changes; }
                 }
             }

@@ -5,6 +5,7 @@ import { GroupBox, VerticalBox, HorizontalBox, StandardTableView, Button,
 import { Page } from "../components/page.slint";
 import { SearchBar } from "../components/search_bar.slint";
 import { AppState } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export global UsersPageAdapter {
     in property <[[StandardListViewItem]]> row-data: [];
@@ -21,13 +22,13 @@ export global UsersPageAdapter {
 export component UsersPage inherits Page {
     property <bool> show-form: false;
 
-    title: "User Management";
-    description: "Create and manage user accounts and roles. Admin access required.";
+    title: TranslationStrings.users-title;
+    description: TranslationStrings.users-description;
 
     SearchBar {
         vertical-stretch: 0;
-        placeholder: "Search users...";
-        action-text: "Add User";
+        placeholder: TranslationStrings.users-search-placeholder;
+        action-text: TranslationStrings.users-add-user;
         action-clicked => {
             // Reset edit mode when opening form for new user
             UsersPageAdapter.editing-id = 0;
@@ -41,7 +42,7 @@ export component UsersPage inherits Page {
 
     if root.show-form : GroupBox {
         vertical-stretch: 0;
-        title: UsersPageAdapter.editing-id > 0 ? "Edit User" : "New User";
+        title: UsersPageAdapter.editing-id > 0 ? TranslationStrings.users-edit-user : TranslationStrings.users-new-user;
 
         VerticalBox {
             HorizontalBox {
@@ -49,20 +50,20 @@ export component UsersPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Username"; }
+                    Text { text: TranslationStrings.users-username; }
                     LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "username";
+                        placeholder-text: TranslationStrings.users-username-placeholder;
                         text <=> UsersPageAdapter.edit-username;
                     }
                 }
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Display Name"; }
+                    Text { text: TranslationStrings.users-display-name; }
                     LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: "Full name";
+                        placeholder-text: TranslationStrings.users-display-name-placeholder;
                         text <=> UsersPageAdapter.edit-display-name;
                     }
                 }
@@ -73,10 +74,10 @@ export component UsersPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Password"; }
+                    Text { text: TranslationStrings.users-password; }
                     LineEdit {
                         horizontal-stretch: 1;
-                        placeholder-text: UsersPageAdapter.editing-id > 0 ? "Leave empty to keep current" : "Password";
+                        placeholder-text: UsersPageAdapter.editing-id > 0 ? TranslationStrings.users-password-edit-placeholder : TranslationStrings.users-password-placeholder;
                         input-type: InputType.password;
                         text <=> UsersPageAdapter.edit-password;
                     }
@@ -84,7 +85,7 @@ export component UsersPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Role"; }
+                    Text { text: TranslationStrings.users-role; }
                     ComboBox {
                         horizontal-stretch: 1;
                         model: ["Admin", "Manager", "Operator", "Viewer"];
@@ -98,7 +99,7 @@ export component UsersPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Cancel";
+                    text: TranslationStrings.common-cancel;
                     clicked => {
                         UsersPageAdapter.editing-id = 0;
                         root.show-form = false;
@@ -106,7 +107,7 @@ export component UsersPage inherits Page {
                 }
 
                 Button {
-                    text: UsersPageAdapter.editing-id > 0 ? "Save" : "Create";
+                    text: UsersPageAdapter.editing-id > 0 ? TranslationStrings.common-save : TranslationStrings.common-create;
                     primary: true;
                     clicked => {
                         if UsersPageAdapter.editing-id > 0 {
@@ -134,16 +135,16 @@ export component UsersPage inherits Page {
     }
 
     GroupBox {
-        title: "Users";
+        title: TranslationStrings.users-group-title;
         vertical-stretch: 1;
 
         VerticalBox {
             users-table := StandardTableView {
                 columns: [
-                    { title: "Username" },
-                    { title: "Display Name" },
-                    { title: "Role" },
-                    { title: "Active" },
+                    { title: TranslationStrings.users-col-username },
+                    { title: TranslationStrings.users-col-display-name },
+                    { title: TranslationStrings.users-col-role },
+                    { title: TranslationStrings.users-col-active },
                 ];
                 rows: UsersPageAdapter.row-data;
             }
@@ -154,7 +155,7 @@ export component UsersPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Edit Selected";
+                    text: TranslationStrings.common-edit-selected;
                     enabled: users-table.current-row >= 0 && users-table.current-row < UsersPageAdapter.row-data.length;
                     clicked => {
                         if users-table.current-row >= 0 && users-table.current-row < UsersPageAdapter.row-data.length {

@@ -1,6 +1,6 @@
 // Inventory Manager — Main Application Shell
 
-import { Palette, Button, HorizontalBox } from "std-widgets.slint";
+import { Palette, Button, HorizontalBox, ComboBox } from "std-widgets.slint";
 import { SideBar } from "components/side_bar.slint";
 import { LoginPage } from "pages/login_page.slint";
 import { DashboardPage } from "pages/dashboard_page.slint";
@@ -16,15 +16,16 @@ import { UsersPage, UsersPageAdapter } from "pages/users_page.slint";
 import { SyncPage, SyncPageAdapter } from "pages/sync_page.slint";
 import { AppSettings } from "globals/app_settings.slint";
 import { AppState } from "globals/app_state.slint";
+import { TranslationStrings } from "globals/translation_strings.slint";
 import { ProductsPageAdapter } from "pages/products_page.slint";
 import { PersonsPageAdapter } from "pages/persons_page.slint";
 import { DealsPageAdapter } from "pages/deals_page.slint";
 import { LocationsPageAdapter } from "pages/locations_page.slint";
 
-export { AppState, AppSettings, StockTrackingAdapter, BudgetPageAdapter,
-         ProductsPageAdapter, PersonsPageAdapter, DealsPageAdapter,
-         LocationsPageAdapter, UsersPageAdapter, CategoriesPageAdapter,
-         SyncPageAdapter }
+export { AppState, AppSettings, TranslationStrings, StockTrackingAdapter,
+         BudgetPageAdapter, ProductsPageAdapter, PersonsPageAdapter,
+         DealsPageAdapter, LocationsPageAdapter, UsersPageAdapter,
+         CategoriesPageAdapter, SyncPageAdapter }
 
 export component App inherits Window {
     preferred-width: 1024px;
@@ -38,23 +39,65 @@ export component App inherits Window {
 
     // Main app shell when authenticated
     if AppState.is-authenticated : VerticalLayout {
-        // Top bar with user info and logout
-        HorizontalBox {
+        // Helper: map current-locale string to ComboBox index
+        property <int> locale-index: TranslationStrings.current-locale == "fr" ? 1
+                                   : TranslationStrings.current-locale == "ar" ? 2
+                                   : 0;
+
+        // LTR top bar: user info on left, language switcher and logout on right
+        if !TranslationStrings.is-rtl : HorizontalBox {
             vertical-stretch: 0;
             height: 40px;
             padding: 8px;
 
             Text {
-                text: "Logged in as: " + AppState.current-user;
+                text: TranslationStrings.app-logged-in-prefix + AppState.current-user;
                 vertical-alignment: center;
                 color: Palette.foreground.transparentize(0.3);
             }
 
             Rectangle { horizontal-stretch: 1; }
 
+            lang-combo-ltr := ComboBox {
+                model: ["English", "Français", "العربية"];
+                current-index: locale-index;
+                selected(value) => {
+                    TranslationStrings.change-locale(self.current-index);
+                }
+            }
+
             Button {
-                text: "Logout";
+                text: TranslationStrings.common-logout;
                 clicked => { AppState.logout(); }
+            }
+        }
+
+        // RTL top bar: logout and language switcher on left, user info on right
+        if TranslationStrings.is-rtl : HorizontalBox {
+            vertical-stretch: 0;
+            height: 40px;
+            padding: 8px;
+
+            Button {
+                text: TranslationStrings.common-logout;
+                clicked => { AppState.logout(); }
+            }
+
+            lang-combo-rtl := ComboBox {
+                model: ["English", "Français", "العربية"];
+                current-index: locale-index;
+                selected(value) => {
+                    TranslationStrings.change-locale(self.current-index);
+                }
+            }
+
+            Rectangle { horizontal-stretch: 1; }
+
+            Text {
+                text: TranslationStrings.app-logged-in-prefix + AppState.current-user;
+                vertical-alignment: center;
+                horizontal-alignment: right;
+                color: Palette.foreground.transparentize(0.3);
             }
         }
 
@@ -62,19 +105,19 @@ export component App inherits Window {
             vertical-stretch: 1;
 
             side-bar := SideBar {
-                title: "Inventory";
+                title: TranslationStrings.nav-sidebar-title;
                 model: [
-                    "Dashboard",
-                    "Products",
-                    "Categories",
-                    "People",
-                    "Purchasing",
-                    "Locations",
-                    "Stock Tracking",
-                    "Budget",
-                    "Reports",
-                    "Users",
-                    "Sync",
+                    TranslationStrings.nav-dashboard,
+                    TranslationStrings.nav-products,
+                    TranslationStrings.nav-categories,
+                    TranslationStrings.nav-people,
+                    TranslationStrings.nav-purchasing,
+                    TranslationStrings.nav-locations,
+                    TranslationStrings.nav-stock-tracking,
+                    TranslationStrings.nav-budget,
+                    TranslationStrings.nav-reports,
+                    TranslationStrings.nav-users,
+                    TranslationStrings.nav-sync,
                 ];
             }
 

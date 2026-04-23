@@ -5,6 +5,7 @@ import { GroupBox, VerticalBox, HorizontalBox, Button, ProgressIndicator, Palett
 import { Page } from "../components/page.slint";
 import { StatCard } from "../components/stat_card.slint";
 import { AppState } from "../globals/app_state.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 // Persistent adapter — survives page destruction/recreation on navigation
 export global SyncPageAdapter {
@@ -15,35 +16,35 @@ export global SyncPageAdapter {
 }
 
 export component SyncPage inherits Page {
-    title: "Sync";
-    description: "Manage online/offline synchronization with TursoDB via LibSQL.";
+    title: TranslationStrings.sync-title;
+    description: TranslationStrings.sync-description;
 
     HorizontalBox {
         vertical-stretch: 0;
         spacing: 12px;
 
         StatCard {
-            label: "Pending Changes";
+            label: TranslationStrings.sync-pending-changes;
             value: AppState.sync-status.pending-changes;
             accent-color: AppState.sync-status.pending-changes > 0 ? #FF9800 : #4CAF50;
         }
 
         StatCard {
-            label: "Connection";
-            value: AppState.sync-status.is-online ? "Online" : "Local";
+            label: TranslationStrings.sync-connection;
+            value: AppState.sync-status.is-online ? TranslationStrings.sync-online : TranslationStrings.sync-local;
             accent-color: AppState.sync-status.is-online ? #4CAF50 : #2196F3;
         }
     }
 
     GroupBox {
-        title: "Sync Actions";
+        title: TranslationStrings.sync-sync-actions;
         vertical-stretch: 0;
 
         VerticalBox {
             spacing: 12px;
 
             HorizontalBox {
-                Text { text: "Last synchronized:"; }
+                Text { text: TranslationStrings.sync-last-synchronized; }
                 Text {
                     text: AppState.sync-status.last-sync-at;
                     color: Palette.foreground.transparentize(0.3);
@@ -51,7 +52,7 @@ export component SyncPage inherits Page {
             }
 
             HorizontalBox {
-                Text { text: "Status:"; }
+                Text { text: TranslationStrings.sync-status; }
                 Text {
                     text: AppState.sync-status.sync-message;
                     color: AppState.sync-status.is-online ? #4CAF50 : Palette.foreground.transparentize(0.3);
@@ -66,7 +67,7 @@ export component SyncPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Push to Remote";
+                    text: TranslationStrings.sync-push-to-remote;
                     primary: true;
                     enabled: !AppState.syncing && AppState.sync-status.has-remote-url;
                     clicked => {
@@ -75,7 +76,7 @@ export component SyncPage inherits Page {
                 }
 
                 Button {
-                    text: "Pull from Remote";
+                    text: TranslationStrings.sync-pull-from-remote;
                     enabled: !AppState.syncing && AppState.sync-status.has-remote-url;
                     clicked => {
                         AppState.sync-from-remote();
@@ -86,7 +87,7 @@ export component SyncPage inherits Page {
     }
 
     GroupBox {
-        title: "Database Settings";
+        title: TranslationStrings.sync-database-settings;
         vertical-stretch: 0;
 
         VerticalBox {
@@ -98,11 +99,11 @@ export component SyncPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "TursoDB URL"; }
+                    Text { text: TranslationStrings.sync-turso-url; }
                     turso-url := LineEdit {
                         horizontal-stretch: 1;
                         text <=> SyncPageAdapter.turso-url;
-                        placeholder-text: "libsql://your-db.turso.io";
+                        placeholder-text: TranslationStrings.sync-turso-url-placeholder;
                     }
                 }
             }
@@ -113,11 +114,11 @@ export component SyncPage inherits Page {
 
                 VerticalBox {
                     horizontal-stretch: 1;
-                    Text { text: "Auth Token"; }
+                    Text { text: TranslationStrings.sync-auth-token; }
                     turso-token := LineEdit {
                         horizontal-stretch: 1;
                         text <=> SyncPageAdapter.turso-token;
-                        placeholder-text: "Token";
+                        placeholder-text: TranslationStrings.sync-auth-token-placeholder;
                         input-type: password;
                     }
                 }
@@ -128,13 +129,13 @@ export component SyncPage inherits Page {
                 vertical-stretch: 0;
 
                 auto-sync-switch := Switch {
-                    text: "Auto-sync enabled";
+                    text: TranslationStrings.sync-auto-sync-enabled;
                     checked <=> SyncPageAdapter.auto-sync-enabled;
                 }
 
                 VerticalBox {
                     horizontal-stretch: 0;
-                    Text { text: "Interval (seconds)"; }
+                    Text { text: TranslationStrings.sync-interval-seconds; }
                     sync-interval := SpinBox {
                         horizontal-stretch: 0;
                         value <=> SyncPageAdapter.sync-interval;
@@ -151,7 +152,7 @@ export component SyncPage inherits Page {
                 spacing: 8px;
 
                 Button {
-                    text: "Test Connection";
+                    text: TranslationStrings.sync-test-connection;
                     enabled: !AppState.syncing && SyncPageAdapter.turso-url != "";
                     clicked => {
                         AppState.test-connection();
@@ -159,7 +160,7 @@ export component SyncPage inherits Page {
                 }
 
                 Button {
-                    text: "Save Settings";
+                    text: TranslationStrings.sync-save-settings;
                     primary: true;
                     clicked => {
                         AppState.configure-sync(
@@ -175,12 +176,12 @@ export component SyncPage inherits Page {
     }
 
     GroupBox {
-        title: "Offline Mode";
+        title: TranslationStrings.sync-offline-mode;
         vertical-stretch: 1;
 
         VerticalBox {
             Text {
-                text: "When offline, all changes are stored locally and will be synchronized when connectivity is restored. TursoDB with LibSQL provides automatic conflict resolution for concurrent edits.";
+                text: TranslationStrings.sync-offline-description;
                 wrap: word-wrap;
                 color: Palette.foreground.transparentize(0.3);
             }

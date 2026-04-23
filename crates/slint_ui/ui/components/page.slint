@@ -2,6 +2,7 @@
 
 import { Switch, HorizontalBox, VerticalBox, Palette, ScrollView } from "std-widgets.slint";
 import { AppSettings } from "../globals/app_settings.slint";
+import { TranslationStrings } from "../globals/translation_strings.slint";
 
 export component Page inherits VerticalLayout {
     in property <string> title: "title";
@@ -22,7 +23,8 @@ export component Page inherits VerticalLayout {
         }
     }
 
-    HorizontalBox {
+    // LTR title bar: title on left, dark mode switch on right
+    if !TranslationStrings.is-rtl : HorizontalBox {
         vertical-stretch: 0;
         Text {
             font-size: 20px;
@@ -33,7 +35,7 @@ export component Page inherits VerticalLayout {
 
         Switch {
             horizontal-stretch: 0;
-            text: "Dark Mode";
+            text: TranslationStrings.common-dark-mode;
             checked <=> AppSettings.dark-mode;
             toggled => {
                 Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
@@ -42,11 +44,34 @@ export component Page inherits VerticalLayout {
         }
     }
 
+    // RTL title bar: dark mode switch on left, title on right
+    if TranslationStrings.is-rtl : HorizontalBox {
+        vertical-stretch: 0;
+        Switch {
+            horizontal-stretch: 0;
+            text: TranslationStrings.common-dark-mode;
+            checked <=> AppSettings.dark-mode;
+            toggled => {
+                Palette.color-scheme = self.checked ? ColorScheme.dark : ColorScheme.light;
+                AppSettings.dark-mode-changed(self.checked);
+            }
+        }
+
+        Rectangle { }
+
+        Text {
+            font-size: 20px;
+            text <=> root.title;
+            horizontal-alignment: right;
+        }
+    }
+
     if root.description != "" : Text {
         vertical-stretch: 0;
         text: root.description;
         wrap: word-wrap;
         color: Palette.foreground.transparentize(0.4);
+        horizontal-alignment: TranslationStrings.is-rtl ? right : left;
     }
 
     ScrollView {
