@@ -60,6 +60,7 @@ pub fn seed_if_empty(ctx: &Arc<AppContext>) {
             created_at: now, updated_at: now,
             name: name.to_string(), address: addr.to_string(),
             latitude: *lat, longitude: *lng, capacity: *cap,
+            manager: None,
         };
         match frontend::commands::location_commands::create_location(ctx, None, &dto, 1, -1) {
             Ok(l) => { location_ids.push(l.id); }

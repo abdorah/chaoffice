@@ -41,6 +41,8 @@ export component DashboardPage inherits Page {
             horizontal-stretch: 1;
 
             VerticalBox {
+                alignment: start;
+
                 for alert in AppState.stock-alerts : Rectangle {
                     height: 40px;
                     border-radius: 4px;

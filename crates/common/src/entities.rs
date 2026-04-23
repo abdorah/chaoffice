@@ -260,6 +260,7 @@ pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
     pub capacity: i64,
+    pub manager: Option<EntityId>,
 }
 
 impl HasId for Location {

@@ -75,6 +75,7 @@ impl SchemaManager {
                 latitude REAL DEFAULT 0.0,
                 longitude REAL DEFAULT 0.0,
                 capacity INTEGER DEFAULT 0,
+                manager_id INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 deleted_at TEXT

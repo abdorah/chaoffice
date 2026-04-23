@@ -495,7 +495,7 @@ impl SyncEngine {
             let mut n = 0usize;
             for l in &items {
                 let (ts, us) = (l.created_at.to_rfc3339(), l.updated_at.to_rfc3339());
-                let params = libsql::params![l.id as i64, l.name.as_str(), l.address.as_str(), l.latitude, l.longitude, l.capacity, ts.as_str(), us.as_str()];
+                let params = libsql::params![l.id as i64, l.name.as_str(), l.address.as_str(), l.latitude, l.longitude, l.capacity, l.manager.map(|v| v as i64), ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("locations".into(), n);
@@ -720,7 +720,7 @@ impl SyncEngine {
 
         // Locations
         import_entity!("locations",
-            "SELECT id, name, address, latitude, longitude, capacity, created_at, updated_at FROM locations WHERE deleted_at IS NULL",
+            "SELECT id, name, address, latitude, longitude, capacity, manager_id, created_at, updated_at FROM locations WHERE deleted_at IS NULL",
             write::create_location_repository,
             row => common::entities::Location {
                 id: row.get::<i64>(0).unwrap_or(0) as u64,
@@ -729,8 +729,9 @@ impl SyncEngine {
                 latitude: row.get::<f64>(3).unwrap_or(0.0),
                 longitude: row.get::<f64>(4).unwrap_or(0.0),
                 capacity: row.get::<i64>(5).unwrap_or(0),
-                created_at: parse_dt(&row.get::<String>(6).unwrap_or_default()),
-                updated_at: parse_dt(&row.get::<String>(7).unwrap_or_default()),
+                manager: row.get::<i64>(6).ok().map(|v| v as u64),
+                created_at: parse_dt(&row.get::<String>(7).unwrap_or_default()),
+                updated_at: parse_dt(&row.get::<String>(8).unwrap_or_default()),
             }
         );
 

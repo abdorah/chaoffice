@@ -318,11 +318,11 @@ impl EntityBridge for LocationBridge {
 
     fn upsert_sql() -> String {
         format!(
-            "INSERT INTO {} (id, name, address, latitude, longitude, capacity, created_at, updated_at) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?) \
+            "INSERT INTO {} (id, name, address, latitude, longitude, capacity, manager_id, created_at, updated_at) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) \
              ON CONFLICT(id) DO UPDATE SET name=excluded.name, address=excluded.address, \
              latitude=excluded.latitude, longitude=excluded.longitude, capacity=excluded.capacity, \
-             updated_at=excluded.updated_at",
+             manager_id=excluded.manager_id, updated_at=excluded.updated_at",
             Self::table_name()
         )
     }

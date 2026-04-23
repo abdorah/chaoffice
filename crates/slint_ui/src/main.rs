@@ -86,6 +86,38 @@ fn main() {
     // ── Initialize sync engine ────────────────────────────────────────
     let sync_engine = init_sync_engine(&app_context);
 
+    // ── Auto-pull from remote on startup if configured ────────────────
+    {
+        let config = inventory_sync::SyncConfig::load(std::path::Path::new("sync_config.json"))
+            .unwrap_or_default();
+        if !config.turso_url.is_empty() {
+            log::info!("Startup: remote URL configured, attempting auto-pull");
+            let engine = Arc::clone(&sync_engine);
+            let handle = std::thread::Builder::new()
+                .name("startup-pull".into())
+                .stack_size(8 * 1024 * 1024)
+                .spawn(move || {
+                    let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
+                    let sec = admin_security_context();
+                    match rt.block_on(async {
+                        tokio::time::timeout(
+                            std::time::Duration::from_secs(30),
+                            engine.hydrate(&sec),
+                        ).await
+                    }) {
+                        Ok(Ok(result)) => log::info!("Startup pull: {:?}", result.entities_loaded),
+                        Ok(Err(e)) => log::warn!("Startup pull failed: {}", e),
+                        Err(_) => log::warn!("Startup pull timed out"),
+                    }
+                })
+                .ok();
+            // Wait for the pull to complete (blocking, but before UI starts)
+            if let Some(h) = handle {
+                let _ = h.join();
+            }
+        }
+    }
+
     // Run the Slint UI
     run_slint(&app_context, sync_engine.clone());
 
@@ -839,6 +871,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 latitude: lat as f64,
                 longitude: lng as f64,
                 capacity: capacity as i64,
+                manager: None,
             };
             match frontend::commands::location_commands::create_location(&ctx, None, &dto, 1, -1) {
                 Ok(l) => {
@@ -897,6 +930,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 latitude: 0.0,
                 longitude: 0.0,
                 capacity: capacity as i64,
+                manager: None,
             };
             match frontend::commands::location_commands::update_location(&ctx, None, &dto) {
                 Ok(l) => {
