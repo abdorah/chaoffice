@@ -4,3 +4,6 @@ sync_config.json
 ui_settings.toml
 inventory_data.*
 reports
+android/.gradle
+android/local.properties
+android/app/build

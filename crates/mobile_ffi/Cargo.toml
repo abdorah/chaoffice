@@ -1,0 +1,43 @@
+[package]
+name = "inventory-manager-mobile-ffi"
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+name = "mobile_ffi"
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+uniffi = { version = "0.28", features = ["cli"] }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+thiserror = { workspace = true }
+once_cell = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
+
+# Internal crates
+frontend = { workspace = true }
+common = { workspace = true }
+direct_access = { workspace = true }
+authentication = { workspace = true }
+inventory_sync = { workspace = true }
+reporting = { workspace = true }
+purchasing = { workspace = true }
+stock_tracking = { workspace = true }
+budget_finance = { workspace = true }
+user_management = { workspace = true }
+inventory_security = { workspace = true }
+
+[build-dependencies]
+uniffi = { version = "0.28", features = ["build"] }
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
+
+[lints]
+workspace = true

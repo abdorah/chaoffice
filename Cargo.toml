@@ -21,6 +21,7 @@ members = [
     "crates/inventory_auth",
     "crates/inventory_security_macros",
     "crates/inventory_sync",
+    "crates/mobile_ffi",
     ]
 default-members = [
     "crates/slint_ui",

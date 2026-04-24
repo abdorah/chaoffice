@@ -71,14 +71,15 @@ impl RecordBudgetEntryUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // 2. Validate product_id (0 = absent, non-zero must exist)
+        // 2. Snapshot for undo support — must be created before any tables
+        //    are opened, otherwise redb returns SavepointError::InvalidSavepoint.
+        let _savepoint = uow.create_savepoint()?;
+
+        // 3. Validate product_id (0 = absent, non-zero must exist)
         let product_ref = validate_product(dto.product_id, |id| uow.get_product(id))?;
 
-        // 3. Validate deal_id (0 = absent, non-zero must exist)
+        // 4. Validate deal_id (0 = absent, non-zero must exist)
         let deal_ref = validate_deal(dto.deal_id, |id| uow.get_deal(id))?;
-
-        // 4. Snapshot for undo support — take savepoint before creation
-        let _savepoint = uow.create_savepoint()?;
 
         // 5. Get root entity for ownership
         let root = uow

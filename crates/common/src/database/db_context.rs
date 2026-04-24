@@ -24,6 +24,19 @@ impl DbContext {
         })
     }
 
+    pub fn new_with_path(path: &str) -> Result<Self, RepositoryError> {
+        let db = Database::create(path)?;
+
+        // Initialize all necessary tables
+        let write_txn = db.begin_write()?;
+        initialize_all_tables(&write_txn)?;
+        write_txn.commit()?;
+
+        Ok(DbContext {
+            database: Arc::new(db),
+        })
+    }
+
     fn create_db_in_memory() -> Result<Database, RepositoryError> {
         let redb_builder = redb::Builder::new();
         let in_memory_backend = redb::backends::InMemoryBackend::new();
@@ -33,5 +46,46 @@ impl DbContext {
 
     pub fn get_database(&self) -> &Database {
         &self.database
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_creates_in_memory_db() {
+        let ctx = DbContext::new().expect("should create in-memory DbContext");
+        // Verify we can access the database
+        let _db = ctx.get_database();
+    }
+
+    #[test]
+    fn test_new_with_path_creates_file_backed_db() {
+        let dir = tempfile::tempdir().expect("should create temp dir");
+        let db_path = dir.path().join("test.db");
+        let path_str = db_path.to_str().unwrap();
+
+        let ctx = DbContext::new_with_path(path_str).expect("should create file-backed DbContext");
+        let _db = ctx.get_database();
+
+        // Verify the database file was created on disk
+        assert!(db_path.exists(), "database file should exist on disk");
+    }
+
+    #[test]
+    fn test_new_with_path_persists_across_reopens() {
+        let dir = tempfile::tempdir().expect("should create temp dir");
+        let db_path = dir.path().join("persist.db");
+        let path_str = db_path.to_str().unwrap();
+
+        // Create and drop the first context
+        {
+            let _ctx = DbContext::new_with_path(path_str).expect("first open should succeed");
+        }
+
+        // Reopen the same path — tables already exist, should still succeed
+        let ctx2 = DbContext::new_with_path(path_str).expect("second open should succeed");
+        let _db = ctx2.get_database();
     }
 }
