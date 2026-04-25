@@ -131,7 +131,7 @@ fun CategoryListScreen(categoryViewModel: CategoryViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(categories, key = { it.id }) { category ->
+                    items(categories, key = { it.id.toLong() }) { category ->
                         EntityListItem(
                             title = category.name,
                             subtitle = category.description.ifEmpty { null },

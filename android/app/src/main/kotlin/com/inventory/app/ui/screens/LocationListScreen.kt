@@ -144,7 +144,7 @@ fun LocationListScreen(locationViewModel: LocationViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(locations, key = { it.id }) { location ->
+                    items(locations, key = { it.id.toLong() }) { location ->
                         EntityListItem(
                             title = location.name,
                             subtitle = "${location.address} · Cap: ${location.capacity}",

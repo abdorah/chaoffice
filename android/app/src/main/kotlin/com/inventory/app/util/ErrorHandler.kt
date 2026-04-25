@@ -25,4 +25,18 @@ object ErrorHandler {
         }
         return message
     }
+
+    /**
+     * Handles any exception from an FFI call. Catches both FfiException and
+     * unexpected RuntimeExceptions (e.g. UniFFI checksum mismatches, JNA errors).
+     */
+    fun handleAnyError(error: Throwable): String {
+        return when (error) {
+            is FfiException -> handleFfiError(error)
+            else -> {
+                android.util.Log.e("ErrorHandler", "Unexpected error", error)
+                error.message ?: "Unexpected error"
+            }
+        }
+    }
 }

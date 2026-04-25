@@ -20,6 +20,10 @@ uuid = { workspace = true }
 common = { workspace = true }
 inventory_security = { workspace = true }
 inventory_security_macros = { workspace = true }
+# Bundled Mozilla CA certificates for TLS on Android where the native
+# cert store is not accessible via standard filesystem paths.
+webpki-roots = "0.26"
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 
 [dev-dependencies]
 proptest = "1"

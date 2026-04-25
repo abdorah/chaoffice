@@ -38,6 +38,9 @@ class UserViewModel : ViewModel() {
                 _users.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = "Unexpected error: ${e.message}"
+                android.util.Log.e("UserViewModel", "loadUsers failed", e)
             } finally {
                 _isLoading.value = false
             }
@@ -56,6 +59,9 @@ class UserViewModel : ViewModel() {
                 onSuccess()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = "Unexpected error: ${e.message}"
+                android.util.Log.e("UserViewModel", "createUser failed", e)
             } finally {
                 _isLoading.value = false
             }
@@ -73,6 +79,9 @@ class UserViewModel : ViewModel() {
                 loadUsers()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = "Unexpected error: ${e.message}"
+                android.util.Log.e("UserViewModel", "deactivateUser failed", e)
             } finally {
                 _isLoading.value = false
             }

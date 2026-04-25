@@ -71,7 +71,7 @@ fun ProductListScreen(
                 }
                 else -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(products, key = { it.id }) { product ->
+                        items(products, key = { it.id.toLong() }) { product ->
                             EntityListItem(
                                 title = product.name,
                                 subtitle = "${product.reference} · Qty: ${product.quantity}",

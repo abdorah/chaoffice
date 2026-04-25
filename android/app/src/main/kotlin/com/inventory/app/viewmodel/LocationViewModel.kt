@@ -40,6 +40,8 @@ class LocationViewModel : ViewModel() {
                 _locations.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -58,6 +60,8 @@ class LocationViewModel : ViewModel() {
                 onSuccess()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -76,6 +80,8 @@ class LocationViewModel : ViewModel() {
                 onSuccess()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -93,6 +99,8 @@ class LocationViewModel : ViewModel() {
                 loadLocations()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }

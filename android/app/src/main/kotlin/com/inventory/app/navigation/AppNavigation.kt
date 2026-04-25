@@ -1,6 +1,10 @@
 package com.inventory.app.navigation
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DrawerValue
@@ -150,21 +154,27 @@ fun AppNavigation(
                             start = 16.dp, top = 24.dp, end = 16.dp, bottom = 16.dp
                         )
                     )
-                    drawerScreens.forEach { screen ->
-                        NavigationDrawerItem(
-                            label = { Text(screen.title) },
-                            selected = currentRoute == screen.route,
-                            onClick = {
-                                scope.launch { drawerState.close() }
-                                if (currentRoute != screen.route) {
-                                    navController.navigate(screen.route) {
-                                        popUpTo(Screen.Dashboard.route) { inclusive = false }
-                                        launchSingleTop = true
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        drawerScreens.forEach { screen ->
+                            NavigationDrawerItem(
+                                label = { Text(screen.title) },
+                                selected = currentRoute == screen.route,
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    if (currentRoute != screen.route) {
+                                        navController.navigate(screen.route) {
+                                            popUpTo(Screen.Dashboard.route) { inclusive = false }
+                                            launchSingleTop = true
+                                        }
                                     }
-                                }
-                            },
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        )
+                                },
+                                modifier = Modifier.padding(horizontal = 12.dp)
+                            )
+                        }
                     }
                 }
             },

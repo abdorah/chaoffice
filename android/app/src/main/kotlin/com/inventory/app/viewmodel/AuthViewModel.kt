@@ -49,6 +49,8 @@ class AuthViewModel : ViewModel() {
                 _isLoggedIn.value = true
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -68,6 +70,8 @@ class AuthViewModel : ViewModel() {
                 }
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _sessionToken.value = null
                 _userRole.value = null
@@ -107,6 +111,8 @@ class AuthViewModel : ViewModel() {
                 _error.value = ErrorHandler.handleFfiError(e)
             } catch (e: IllegalStateException) {
                 _error.value = e.message
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }

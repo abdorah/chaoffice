@@ -43,6 +43,8 @@ class StockViewModel : ViewModel() {
                 _summary.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -60,6 +62,8 @@ class StockViewModel : ViewModel() {
                 _history.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -78,6 +82,8 @@ class StockViewModel : ViewModel() {
                 onSuccess()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }

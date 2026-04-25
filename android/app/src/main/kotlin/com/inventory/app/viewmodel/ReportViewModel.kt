@@ -40,6 +40,8 @@ class ReportViewModel : ViewModel() {
                 _result.value = res
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -61,6 +63,8 @@ class ReportViewModel : ViewModel() {
                 _result.value = res
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -83,6 +87,8 @@ class ReportViewModel : ViewModel() {
                 _result.value = res
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -101,6 +107,8 @@ class ReportViewModel : ViewModel() {
                 _result.value = res
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }

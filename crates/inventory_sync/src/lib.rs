@@ -10,7 +10,7 @@ pub mod types;
 // Public re-exports
 pub use config::{SyncConfig, SyncStrategy};
 pub use conflict::{ConflictResolver, ResolvedEntity};
-pub use engine::SyncEngine;
+pub use engine::{SyncEngine, set_libsql_db_dir};
 pub use error::SyncError;
 pub use tracker::ChangeTracker;
 pub use types::{DehydrateResult, EntityRow, HydrateResult, SyncResult};

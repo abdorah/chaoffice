@@ -44,6 +44,8 @@ class ProductViewModel : ViewModel() {
                 _products.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -61,6 +63,8 @@ class ProductViewModel : ViewModel() {
                 _selectedProduct.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -79,6 +83,8 @@ class ProductViewModel : ViewModel() {
                 onSuccess()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -97,6 +103,8 @@ class ProductViewModel : ViewModel() {
                 onSuccess()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -114,6 +122,8 @@ class ProductViewModel : ViewModel() {
                 loadProducts()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }

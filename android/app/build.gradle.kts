@@ -39,6 +39,15 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packaging {
+        jniLibs {
+            // Use page-aligned extraction for 16 KB device support (Android 15+).
+            // This ensures all native libraries, including third-party ones like
+            // JNA's libjnidispatch.so, are properly aligned at install time.
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
@@ -75,7 +84,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
 
     // JNA (required by UniFFI generated bindings)
-    implementation("net.java.dev.jna:jna:5.14.0@aar")
+    implementation("net.java.dev.jna:jna:5.17.0@aar")
 
     // Unit testing
     testImplementation("junit:junit:4.13.2")

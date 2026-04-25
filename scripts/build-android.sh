@@ -20,6 +20,10 @@ KOTLIN_OUT_DIR="android/app/src/main/kotlin"
 
 echo "==> Building mobile_ffi for Android targets..."
 
+# Ensure 16 KB page alignment for Android 15+ compatibility.
+# This flag is passed through cargo-ndk to the NDK linker.
+export CARGO_NDK_EXTRA_LINK_ARGS="-Wl,-z,max-page-size=16384"
+
 cargo ndk \
   -t aarch64-linux-android \
   -t armv7-linux-androideabi \

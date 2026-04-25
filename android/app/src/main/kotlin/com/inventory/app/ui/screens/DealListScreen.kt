@@ -184,7 +184,7 @@ fun DealListScreen(dealViewModel: DealViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(deals, key = { it.id }) { deal ->
+                    items(deals, key = { it.id.toLong() }) { deal ->
                         EntityListItem(
                             title = deal.title,
                             subtitle = "${deal.status.name.lowercase()

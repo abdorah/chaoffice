@@ -132,7 +132,7 @@ fun PersonListScreen(personViewModel: PersonViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(persons, key = { it.id }) { person ->
+                    items(persons, key = { it.id.toLong() }) { person ->
                         EntityListItem(
                             title = person.name,
                             subtitle = person.role.name.lowercase()

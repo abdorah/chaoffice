@@ -46,6 +46,8 @@ class SyncViewModel : ViewModel() {
                 _config.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -64,6 +66,8 @@ class SyncViewModel : ViewModel() {
                 onSuccess()
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isLoading.value = false
             }
@@ -83,6 +87,8 @@ class SyncViewModel : ViewModel() {
                 _syncResult.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isSyncing.value = false
             }
@@ -102,6 +108,8 @@ class SyncViewModel : ViewModel() {
                 _syncResult.value = result
             } catch (e: FfiException) {
                 _error.value = ErrorHandler.handleFfiError(e)
+            } catch (e: Exception) {
+                _error.value = ErrorHandler.handleAnyError(e)
             } finally {
                 _isSyncing.value = false
             }

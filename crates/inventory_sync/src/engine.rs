@@ -13,6 +13,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use tokio::sync::{Mutex, RwLock};
@@ -29,7 +30,31 @@ use common::database::db_context::DbContext;
 use inventory_security::SecurityContext;
 use inventory_security_macros::check_permission;
 
-const DB_PATH: &str = "inventory_data.db";
+/// Filename for the libsql sync database. This MUST be different from the
+/// redb database file (`inventory_data.db`) because they use incompatible
+/// file formats.
+const LIBSQL_DB_NAME: &str = "inventory_sync.db";
+
+/// Absolute path to the libsql database, derived from the redb database path
+/// passed to `mobile_init`. On Android the working directory is `/`, so a
+/// relative path would try to write to `/inventory_data.db` which is not
+/// writable. This is set once by `set_libsql_db_dir` and read by the sync
+/// engine.
+pub static LIBSQL_DB_DIR: OnceLock<PathBuf> = OnceLock::new();
+
+/// Called from `mobile_init` to store the app-private data directory so the
+/// sync engine can derive an absolute path for its libsql database.
+pub fn set_libsql_db_dir(dir: PathBuf) {
+    let _ = LIBSQL_DB_DIR.set(dir);
+}
+
+/// Returns the absolute path to the libsql sync database file.
+fn libsql_db_path() -> PathBuf {
+    LIBSQL_DB_DIR
+        .get()
+        .map(|dir| dir.join(LIBSQL_DB_NAME))
+        .unwrap_or_else(|| PathBuf::from(LIBSQL_DB_NAME))
+}
 
 /// The core sync engine orchestrating hydrate, dehydrate, and full_sync.
 pub struct SyncEngine {
@@ -54,16 +79,24 @@ impl SyncEngine {
         change_tracker: Arc<ChangeTracker>,
         db_context: DbContext,
     ) -> Result<Self, SyncError> {
-        let metadata_exists = std::path::Path::new(&format!("{}-metadata", DB_PATH)).exists()
-            || std::path::Path::new(&format!("{}-info", DB_PATH)).exists();
-        let db_exists = std::path::Path::new(DB_PATH).exists();
+        // Install bundled Mozilla CA root certificates for TLS.
+        // On Android the native cert store is not accessible via standard
+        // filesystem paths, so rustls-native-certs finds 0 valid roots.
+        // This must happen before any TLS connection is attempted.
+        Self::install_tls_roots();
+
+        let db_path = libsql_db_path();
+        let db_path_str = db_path.to_string_lossy();
+        let metadata_exists = std::path::Path::new(&format!("{}-metadata", db_path_str)).exists()
+            || std::path::Path::new(&format!("{}-info", db_path_str)).exists();
+        let db_exists = db_path.exists();
         let has_url = !config.turso_url.is_empty();
 
         // If we have both db + metadata + a URL, reopen as remote replica directly
         let (db, is_remote) = if db_exists && metadata_exists && has_url {
             log::info!("SyncEngine: reopening existing remote replica");
             match libsql::Builder::new_remote_replica(
-                DB_PATH,
+                db_path_str.as_ref(),
                 config.turso_url.clone(),
                 config.turso_auth_token.clone(),
             )
@@ -74,7 +107,7 @@ impl SyncEngine {
                 Err(e) => {
                     log::warn!("SyncEngine: failed to reopen remote replica ({}), falling back to local-only", e);
                     Self::clean_aux_files();
-                    let db = libsql::Builder::new_local(DB_PATH)
+                    let db = libsql::Builder::new_local(db_path_str.as_ref())
                         .build()
                         .await
                         .map_err(|e| SyncError::ConnectionFailed(e.to_string()))?;
@@ -86,8 +119,8 @@ impl SyncEngine {
             if !db_exists && metadata_exists {
                 Self::clean_aux_files();
             }
-            log::info!("SyncEngine: opening local-only database");
-            let db = libsql::Builder::new_local(DB_PATH)
+            log::info!("SyncEngine: opening local-only database at {}", db_path_str);
+            let db = libsql::Builder::new_local(db_path_str.as_ref())
                 .build()
                 .await
                 .map_err(|e| SyncError::ConnectionFailed(e.to_string()))?;
@@ -115,10 +148,53 @@ impl SyncEngine {
 
     // ── File cleanup helpers ──────────────────────────────────────────
 
+    /// Install bundled Mozilla CA root certificates for TLS on Android.
+    /// On Android the native cert store is not accessible via the standard
+    /// filesystem paths that rustls-native-certs expects. We install the
+    /// ring crypto provider and set SSL_CERT_DIR to Android's system CA
+    /// directory so rustls-native-certs can find the certificates.
+    fn install_tls_roots() {
+        use std::sync::Once;
+
+        static INIT: Once = Once::new();
+        INIT.call_once(|| {
+            // Install the ring crypto provider globally so that libsql's
+            // internal hyper-rustls picks it up automatically.
+            let _ = rustls::crypto::ring::default_provider().install_default();
+
+            // Android stores CA certs as individual DER files in this directory.
+            // rustls-native-certs (via openssl-probe) checks SSL_CERT_DIR.
+            // On newer Android versions (7+), apps can also read from
+            // /system/etc/security/cacerts/.
+            if std::env::var("SSL_CERT_FILE").is_err() && std::env::var("SSL_CERT_DIR").is_err() {
+                // Try the standard Android CA cert locations
+                let cert_dirs = [
+                    "/system/etc/security/cacerts",
+                    "/etc/security/cacerts",
+                ];
+                for dir in &cert_dirs {
+                    if std::path::Path::new(dir).is_dir() {
+                        // SAFETY: called exactly once via Once::call_once during
+                        // init, before any other threads read env vars.
+                        unsafe {
+                            std::env::set_var("SSL_CERT_DIR", dir);
+                        }
+                        log::info!("install_tls_roots: set SSL_CERT_DIR={}", dir);
+                        break;
+                    }
+                }
+            }
+
+            log::info!("install_tls_roots: TLS configured");
+        });
+    }
+
     /// Remove all libsql auxiliary files (wal, shm, metadata/info).
     fn clean_aux_files() {
+        let db_path = libsql_db_path();
+        let db_path_str = db_path.to_string_lossy();
         for suffix in &["-wal", "-shm", "-metadata", "-info"] {
-            let p = format!("{}{}", DB_PATH, suffix);
+            let p = format!("{}{}", db_path_str, suffix);
             if std::path::Path::new(&p).exists() {
                 let _ = std::fs::remove_file(&p);
                 log::info!("clean_aux_files: removed '{}'", p);
@@ -128,7 +204,8 @@ impl SyncEngine {
 
     /// Remove the backup file if it exists.
     fn clean_backup() {
-        let backup = format!("{}.local-backup", DB_PATH);
+        let db_path = libsql_db_path();
+        let backup = format!("{}.local-backup", db_path.to_string_lossy());
         if std::path::Path::new(&backup).exists() {
             let _ = std::fs::remove_file(&backup);
             log::info!("clean_backup: removed '{}'", backup);
@@ -163,15 +240,17 @@ impl SyncEngine {
 
         // 2. Clean all aux files and move local db aside
         Self::clean_aux_files();
-        if std::path::Path::new(DB_PATH).exists() {
-            let backup = format!("{}.local-backup", DB_PATH);
-            let _ = std::fs::rename(DB_PATH, &backup);
+        let db_path = libsql_db_path();
+        let db_path_str = db_path.to_string_lossy();
+        if db_path.exists() {
+            let backup = format!("{}.local-backup", db_path_str);
+            let _ = std::fs::rename(&db_path, &backup);
             log::info!("ensure_remote: backed up local db");
         }
 
         // 3. Build remote replica
         let new_db = libsql::Builder::new_remote_replica(
-            DB_PATH,
+            db_path_str.as_ref(),
             config.turso_url.clone(),
             config.turso_auth_token.clone(),
         )
@@ -336,7 +415,8 @@ impl SyncEngine {
                     *db = tmp;
                 }
                 Self::clean_aux_files();
-                let new_db = libsql::Builder::new_local(DB_PATH)
+                let db_path = libsql_db_path();
+                let new_db = libsql::Builder::new_local(db_path.to_string_lossy().as_ref())
                     .build().await
                     .map_err(|e| SyncError::ConnectionFailed(e.to_string()))?;
                 let new_conn = new_db.connect()

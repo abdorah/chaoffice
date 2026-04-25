@@ -68,7 +68,13 @@ fn get_or_init_sync_engine() -> Result<&'static SyncEngine, FfiError> {
     let ctx = get_app_context()?;
 
     // Derive a config path next to the database.
-    let config_path = PathBuf::from("sync_config.json");
+    // Use the same data directory that mobile_init stored for the sync engine,
+    // falling back to a relative path for desktop/CLI usage.
+    let data_dir = inventory_sync::engine::LIBSQL_DB_DIR
+        .get()
+        .cloned()
+        .unwrap_or_else(|| PathBuf::from("."));
+    let config_path = data_dir.join("sync_config.json");
     let config = SyncConfig::load(&config_path).unwrap_or_default();
 
     let change_tracker = Arc::new(ChangeTracker::new());

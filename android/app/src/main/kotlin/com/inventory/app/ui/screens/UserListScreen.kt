@@ -85,7 +85,7 @@ fun UserListScreen(userViewModel: UserViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(users, key = { it.id }) { user ->
+                    items(users, key = { it.id.toLong() }) { user ->
                         val status = if (user.isActive) "Active" else "Inactive"
                         EntityListItem(
                             title = user.displayName,

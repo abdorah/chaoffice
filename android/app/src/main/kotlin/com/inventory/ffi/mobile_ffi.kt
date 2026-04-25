@@ -1191,7 +1191,7 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_bootstrap() != 37323.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_bootstrap() != 47818.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_change_password() != 44085.toShort()) {
@@ -1233,7 +1233,7 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_generate_purchasing_report() != 42891.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_generate_stock_movement_report() != 44281.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_generate_stock_movement_report() != 38180.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_active_deals() != 38098.toShort()) {
@@ -4426,7 +4426,7 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          * a default admin user. Safe to call multiple times — skips if users
          * already exist.
          *
-         * Default credentials: username `admin`, password `Admin1234`
+         * Default credentials: username `admin`, password `Password1`
          */
     @Throws(FfiException::class) fun `mobileBootstrap`()
         = 
@@ -4644,7 +4644,6 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Generate a stock movement report for a date range.
          *
-         * Uses a wide date range (epoch to now) to include all movements.
          * The report file is written to `output_dir`.
          */
     @Throws(FfiException::class) fun `mobileGenerateStockMovementReport`(`format`: FfiReportFormat, `outputDir`: kotlin.String, `fromDate`: kotlin.String, `toDate`: kotlin.String): FfiReportResult {

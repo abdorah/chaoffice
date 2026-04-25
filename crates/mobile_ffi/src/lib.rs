@@ -61,6 +61,20 @@ pub(crate) fn get_runtime() -> Result<&'static tokio::runtime::Runtime, FfiError
 /// Calling it a second time is a no-op (OnceLock ignores the value).
 #[uniffi::export]
 pub fn mobile_init(db_path: String) -> Result<(), FfiError> {
+    // Ensure the parent directory exists before redb tries to create the file.
+    // On some Android devices / OEM ROMs the app-private files directory
+    // may not be fully materialised at Application.onCreate() time.
+    let path = std::path::Path::new(&db_path);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| FfiError::DatabaseError {
+            message: format!("cannot create db directory {}: {e}", parent.display()),
+        })?;
+
+        // Tell the sync engine where to put its libsql database (must be an
+        // absolute path — on Android the cwd is `/` which is not writable).
+        inventory_sync::set_libsql_db_dir(parent.to_path_buf());
+    }
+
     let db_context = DbContext::new_with_path(&db_path).map_err(|e| FfiError::DatabaseError {
         message: e.to_string(),
     })?;
@@ -97,6 +111,7 @@ pub fn mobile_init(db_path: String) -> Result<(), FfiError> {
     Ok(())
 }
 
+
 /// Cleanly shut down the backend, signalling the event hub to stop.
 #[uniffi::export]
 pub fn mobile_shutdown() -> Result<(), FfiError> {
@@ -109,7 +124,7 @@ pub fn mobile_shutdown() -> Result<(), FfiError> {
 /// a default admin user. Safe to call multiple times — skips if users
 /// already exist.
 ///
-/// Default credentials: username `admin`, password `Admin1234`
+/// Default credentials: username `admin`, password `Password1`
 #[uniffi::export]
 pub fn mobile_bootstrap() -> Result<(), FfiError> {
     let ctx = get_app_context()?;
@@ -128,7 +143,7 @@ pub fn mobile_bootstrap() -> Result<(), FfiError> {
     // Create default admin user
     let create_dto = user_management::dtos::CreateUserDto {
         username: "admin".to_string(),
-        password: "Admin1234".to_string(),
+        password: "Password1".to_string(),
         display_name: "Administrator".to_string(),
         role: user_management::dtos::CreateUserRole::Admin,
         person_id: 0,
