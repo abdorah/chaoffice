@@ -94,7 +94,7 @@ class DealViewModel : ViewModel() {
             _error.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    mobileRemoveDeal(id.toULong())
+                    mobileRemoveDeal(id)
                 }
                 loadDeals()
             } catch (e: FfiException) {

@@ -442,7 +442,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
             let location_id = if sel_location.is_empty() {
                 None
             } else {
-                resolve_location_id(&ctx, &sel_location).map(|id| id as u64)
+                resolve_location_id(&ctx, &sel_location).map(|id| id as i64)
             };
 
             let dto = frontend::direct_access::CreateProductDto {
@@ -476,7 +476,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
         move |id| {
-            let eid = id as u64;
+            let eid = id as i64;
             match frontend::commands::product_commands::remove_product(&ctx, None, &eid) {
                 Ok(()) => {
                     log::info!("Deleted product id {}", eid);
@@ -506,7 +506,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         move |id, name, reference, description, quantity, price_unit| {
             let now = chrono::Utc::now();
             let dto = frontend::direct_access::UpdateProductDto {
-                id: id as u64,
+                id: id as i64,
                 created_at: now,
                 updated_at: now,
                 name: name.to_string(),
@@ -559,7 +559,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
         move |id| {
-            let eid = id as u64;
+            let eid = id as i64;
             match frontend::commands::category_commands::remove_category(&ctx, None, &eid) {
                 Ok(()) => {
                     log::info!("Deleted category id {}", eid);
@@ -589,7 +589,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         move |id, name, description| {
             let now = chrono::Utc::now();
             let dto = frontend::direct_access::UpdateCategoryDto {
-                id: id as u64,
+                id: id as i64,
                 created_at: now,
                 updated_at: now,
                 name: name.to_string(),
@@ -666,7 +666,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
         move |id| {
-            let eid = id as u64;
+            let eid = id as i64;
             match frontend::commands::person_commands::remove_person(&ctx, None, &eid) {
                 Ok(()) => {
                     log::info!("Deleted person id {}", eid);
@@ -701,7 +701,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
             };
 
             // Get the existing person to find their contact ID
-            let person_id = id as u64;
+            let person_id = id as i64;
             let existing_contact_id = frontend::commands::person_commands::get_person(&ctx, &person_id)
                 .ok()
                 .flatten()
@@ -777,7 +777,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
             let prod = if sel_product.is_empty() {
                 None
             } else {
-                resolve_product_id(&ctx, &sel_product).map(|id| id as u64)
+                resolve_product_id(&ctx, &sel_product).map(|id| id as i64)
             };
             let supp = if sel_supplier.is_empty() {
                 None
@@ -829,7 +829,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
         move |id| {
-            let eid = id as u64;
+            let eid = id as i64;
             match frontend::commands::deal_commands::remove_deal(&ctx, None, &eid) {
                 Ok(()) => {
                     log::info!("Deleted deal id {}", eid);
@@ -872,7 +872,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
                 _ => frontend::direct_access::DealStatus::Draft,
             };
             let dto = frontend::direct_access::UpdateDealDto {
-                id: id as u64,
+                id: id as i64,
                 created_at: now,
                 updated_at: now,
                 title: title.to_string(),
@@ -939,7 +939,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
         move |id| {
-            let eid = id as u64;
+            let eid = id as i64;
             match frontend::commands::location_commands::remove_location(&ctx, None, &eid) {
                 Ok(()) => {
                     log::info!("Deleted location id {}", eid);
@@ -977,7 +977,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
             } else { None };
 
             let dto = frontend::direct_access::UpdateLocationDto {
-                id: id as u64,
+                id: id as i64,
                 created_at: now,
                 updated_at: now,
                 name: name.to_string(),
@@ -1059,7 +1059,7 @@ fn setup_crud_callbacks(app: &App, app_context: &Arc<AppContext>) {
         let ctx = Arc::clone(app_context);
         let app_weak = app.as_weak();
         move |user_id, username, password, display_name, role| {
-            let eid = user_id as u64;
+            let eid = user_id as i64;
             match frontend::commands::user_commands::get_user(&ctx, &eid) {
                 Ok(Some(user)) => {
                     let new_role = match role.as_str() {
@@ -1713,12 +1713,12 @@ fn resolve_location_id(ctx: &Arc<AppContext>, name: &str) -> Option<i64> {
 }
 
 /// Resolve a category name to its entity ID by scanning all categories.
-fn resolve_category_id(ctx: &Arc<AppContext>, name: &str) -> Option<u64> {
+fn resolve_category_id(ctx: &Arc<AppContext>, name: &str) -> Option<i64> {
     frontend::commands::category_commands::get_all_category(ctx)
         .ok()?
         .iter()
         .find(|c| c.name == name)
-        .map(|c| c.id as u64)
+        .map(|c| c.id as i64)
 }
 
 
@@ -1727,12 +1727,12 @@ fn resolve_person_id_by_role(
     ctx: &Arc<AppContext>,
     name: &str,
     role: frontend::direct_access::PersonRole,
-) -> Option<u64> {
+) -> Option<i64> {
     frontend::commands::person_commands::get_all_person(ctx)
         .ok()?
         .iter()
         .find(|p| p.name == name && p.role == role)
-        .map(|p| p.id as u64)
+        .map(|p| p.id as i64)
 }
 
 /// Wire StockTrackingAdapter callbacks to the stock_tracking controller.

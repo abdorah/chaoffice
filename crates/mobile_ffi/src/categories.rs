@@ -2,6 +2,7 @@
 
 use crate::dtos::{FfiCategoryDto, FfiCreateCategoryDto, FfiUpdateCategoryDto};
 use crate::error::FfiError;
+
 use crate::get_app_context;
 use frontend::commands::category_commands;
 
@@ -22,7 +23,7 @@ pub fn mobile_create_category(dto: FfiCreateCategoryDto) -> Result<FfiCategoryDt
 ///
 /// Returns `None` if the category does not exist.
 #[uniffi::export]
-pub fn mobile_get_category(id: u64) -> Result<Option<FfiCategoryDto>, FfiError> {
+pub fn mobile_get_category(id: i64) -> Result<Option<FfiCategoryDto>, FfiError> {
     let ctx = get_app_context()?;
     let category = category_commands::get_category(ctx, &id).map_err(FfiError::from)?;
     Ok(category.map(|c| c.into()))
@@ -51,7 +52,7 @@ pub fn mobile_update_category(dto: FfiUpdateCategoryDto) -> Result<FfiCategoryDt
 
 /// Remove a category by ID.
 #[uniffi::export]
-pub fn mobile_remove_category(id: u64) -> Result<(), FfiError> {
+pub fn mobile_remove_category(id: i64) -> Result<(), FfiError> {
     let ctx = get_app_context()?;
     category_commands::remove_category(ctx, None, &id).map_err(FfiError::from)?;
     Ok(())

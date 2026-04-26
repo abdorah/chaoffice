@@ -41,7 +41,7 @@ pub struct RecordBudgetEntryUseCase {
     /// The DTO used for redo.
     saved_dto: Option<RecordBudgetEntryDto>,
     /// The security context user_id for redo.
-    saved_user_id: Option<u64>,
+    saved_user_id: Option<EntityId>,
     /// The created entry id, used for undo snapshot targeting.
     created_entry_id: Option<EntityId>,
 }
@@ -109,7 +109,7 @@ impl RecordBudgetEntryUseCase {
         uow.commit()?;
 
         Ok(RecordBudgetEntryResultDto {
-            entry_id: created.id as i64,
+            entry_id: created.id as EntityId,
         })
     }
 }

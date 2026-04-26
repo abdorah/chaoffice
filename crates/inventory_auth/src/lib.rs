@@ -4,6 +4,7 @@ pub mod session;
 pub mod session_store;
 
 use common::entities::User;
+use common::types::EntityId;
 use inventory_security::AuthError;
 
 use crate::password::{hash_password, verify_password};
@@ -14,7 +15,7 @@ use crate::session::create_session;
 pub struct LoginResult {
     pub success: bool,
     pub token: String,
-    pub user_id: u64,
+    pub user_id: EntityId,
     pub role: String,
     pub display_name: String,
     pub error_message: String,
@@ -24,7 +25,7 @@ pub struct LoginResult {
 /// Summary of a user for list operations.
 #[derive(Debug, Clone)]
 pub struct UserSummary {
-    pub id: u64,
+    pub id: EntityId,
     pub username: String,
     pub display_name: String,
     pub role: String,

@@ -51,7 +51,7 @@ class StockViewModel : ViewModel() {
         }
     }
 
-    fun loadHistory(sessionToken: String, productId: ULong) {
+    fun loadHistory(sessionToken: String, productId: Long) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null

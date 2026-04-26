@@ -507,7 +507,7 @@ impl SyncEngine {
             for p in &items {
                 let (ts, us) = (p.created_at.to_rfc3339(), p.updated_at.to_rfc3339());
                 let st = format!("{:?}", p.status);
-                let params = libsql::params![p.id as i64, p.name.as_str(), p.reference.as_str(), p.description.as_str(), p.quantity, p.price_unit, st.as_str(), p.category.map(|v| v as i64), p.supplier.map(|v| v as i64), p.location.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![p.id, p.name.as_str(), p.reference.as_str(), p.description.as_str(), p.quantity, p.price_unit, st.as_str(), p.category, p.supplier, p.location, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("products".into(), n);
@@ -520,7 +520,7 @@ impl SyncEngine {
             let mut n = 0usize;
             for c in &items {
                 let (ts, us) = (c.created_at.to_rfc3339(), c.updated_at.to_rfc3339());
-                let params = libsql::params![c.id as i64, c.name.as_str(), c.description.as_str(), c.parent_category.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![c.id, c.name.as_str(), c.description.as_str(), c.parent_category, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("categories".into(), n);
@@ -534,7 +534,7 @@ impl SyncEngine {
             for p in &items {
                 let (ts, us) = (p.created_at.to_rfc3339(), p.updated_at.to_rfc3339());
                 let r = format!("{:?}", p.role);
-                let params = libsql::params![p.id as i64, p.name.as_str(), r.as_str(), p.contact.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![p.id, p.name.as_str(), r.as_str(), p.contact, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("persons".into(), n);
@@ -547,7 +547,7 @@ impl SyncEngine {
             let mut n = 0usize;
             for c in &items {
                 let (ts, us) = (c.created_at.to_rfc3339(), c.updated_at.to_rfc3339());
-                let params = libsql::params![c.id as i64, c.phone.as_str(), c.email.as_str(), ts.as_str(), us.as_str()];
+                let params = libsql::params![c.id, c.phone.as_str(), c.email.as_str(), ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("contacts".into(), n);
@@ -562,7 +562,7 @@ impl SyncEngine {
                 let (ts, us) = (d.created_at.to_rfc3339(), d.updated_at.to_rfc3339());
                 let (sd, ed) = (d.start_date.to_rfc3339(), d.end_date.to_rfc3339());
                 let (f, s) = (format!("{:?}", d.frequency), format!("{:?}", d.status));
-                let params = libsql::params![d.id as i64, d.title.as_str(), d.description.as_str(), d.unit_cost, d.total_value, sd.as_str(), ed.as_str(), f.as_str(), s.as_str(), d.product.map(|v| v as i64), d.supplier.map(|v| v as i64), d.manager.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![d.id, d.title.as_str(), d.description.as_str(), d.unit_cost, d.total_value, sd.as_str(), ed.as_str(), f.as_str(), s.as_str(), d.product, d.supplier, d.manager, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("deals".into(), n);
@@ -575,7 +575,7 @@ impl SyncEngine {
             let mut n = 0usize;
             for l in &items {
                 let (ts, us) = (l.created_at.to_rfc3339(), l.updated_at.to_rfc3339());
-                let params = libsql::params![l.id as i64, l.name.as_str(), l.address.as_str(), l.latitude, l.longitude, l.capacity, l.manager.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![l.id, l.name.as_str(), l.address.as_str(), l.latitude, l.longitude, l.capacity, l.manager, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("locations".into(), n);
@@ -589,7 +589,7 @@ impl SyncEngine {
             for u in &items {
                 let (ts, us) = (u.created_at.to_rfc3339(), u.updated_at.to_rfc3339());
                 let r = format!("{:?}", u.role);
-                let params = libsql::params![u.id as i64, u.username.as_str(), u.password_hash.as_str(), u.display_name.as_str(), r.as_str(), u.is_active as i64, u.person.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![u.id, u.username.as_str(), u.password_hash.as_str(), u.display_name.as_str(), r.as_str(), u.is_active as i64, u.person, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("users".into(), n);
@@ -602,7 +602,7 @@ impl SyncEngine {
             let mut n = 0usize;
             for s in &items {
                 let (ts, us, ea) = (s.created_at.to_rfc3339(), s.updated_at.to_rfc3339(), s.expires_at.to_rfc3339());
-                let params = libsql::params![s.id as i64, s.token.as_str(), ea.as_str(), ts.as_str(), us.as_str()];
+                let params = libsql::params![s.id, s.token.as_str(), ea.as_str(), ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("sessions".into(), n);
@@ -616,7 +616,7 @@ impl SyncEngine {
             for m in &items {
                 let (ts, us) = (m.created_at.to_rfc3339(), m.updated_at.to_rfc3339());
                 let mt = format!("{:?}", m.movement_type);
-                let params = libsql::params![m.id as i64, mt.as_str(), m.quantity, m.note.as_str(), m.product.map(|v| v as i64), m.from_location.map(|v| v as i64), m.to_location.map(|v| v as i64), m.performed_by.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![m.id, mt.as_str(), m.quantity, m.note.as_str(), m.product, m.from_location, m.to_location, m.performed_by, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("stock_movements".into(), n);
@@ -630,7 +630,7 @@ impl SyncEngine {
             for b in &items {
                 let (ts, us, ed) = (b.created_at.to_rfc3339(), b.updated_at.to_rfc3339(), b.entry_date.to_rfc3339());
                 let et = format!("{:?}", b.entry_type);
-                let params = libsql::params![b.id as i64, et.as_str(), b.amount, b.description.as_str(), ed.as_str(), b.product.map(|v| v as i64), b.deal.map(|v| v as i64), b.recorded_by.map(|v| v as i64), ts.as_str(), us.as_str()];
+                let params = libsql::params![b.id, et.as_str(), b.amount, b.description.as_str(), ed.as_str(), b.product, b.deal, b.recorded_by, ts.as_str(), us.as_str()];
                 if conn.execute(&sql, params).await.is_ok() { n += 1; }
             }
             counts.insert("budget_entries".into(), n);
@@ -698,16 +698,16 @@ impl SyncEngine {
                     _ => common::entities::ProductStatus::Available,
                 };
                 common::entities::Product {
-                    id: row.get::<i64>(0).unwrap_or(0) as u64,
+                    id: row.get::<i64>(0).unwrap_or(0),
                     name: row.get::<String>(1).unwrap_or_default(),
                     reference: row.get::<String>(2).unwrap_or_default(),
                     description: row.get::<String>(3).unwrap_or_default(),
                     quantity: row.get::<i64>(4).unwrap_or(0),
                     price_unit: row.get::<f64>(5).unwrap_or(0.0),
                     status,
-                    category: row.get::<i64>(7).ok().map(|v| v as u64),
-                    supplier: row.get::<i64>(8).ok().map(|v| v as u64),
-                    location: row.get::<i64>(9).ok().map(|v| v as u64),
+                    category: row.get::<i64>(7).ok(),
+                    supplier: row.get::<i64>(8).ok(),
+                    location: row.get::<i64>(9).ok(),
                     created_at: parse_dt(&row.get::<String>(10).unwrap_or_default()),
                     updated_at: parse_dt(&row.get::<String>(11).unwrap_or_default()),
                 }
@@ -719,10 +719,10 @@ impl SyncEngine {
             "SELECT id, name, description, parent_category_id, created_at, updated_at FROM categories WHERE deleted_at IS NULL",
             write::create_category_repository,
             row => common::entities::Category {
-                id: row.get::<i64>(0).unwrap_or(0) as u64,
+                id: row.get::<i64>(0).unwrap_or(0),
                 name: row.get::<String>(1).unwrap_or_default(),
                 description: row.get::<String>(2).unwrap_or_default(),
-                parent_category: row.get::<i64>(3).ok().map(|v| v as u64),
+                parent_category: row.get::<i64>(3).ok(),
                 subcategories: vec![],
                 created_at: parse_dt(&row.get::<String>(4).unwrap_or_default()),
                 updated_at: parse_dt(&row.get::<String>(5).unwrap_or_default()),
@@ -734,7 +734,7 @@ impl SyncEngine {
             "SELECT id, phone, email, created_at, updated_at FROM contacts WHERE deleted_at IS NULL",
             write::create_contact_repository,
             row => common::entities::Contact {
-                id: row.get::<i64>(0).unwrap_or(0) as u64,
+                id: row.get::<i64>(0).unwrap_or(0),
                 phone: row.get::<String>(1).unwrap_or_default(),
                 email: row.get::<String>(2).unwrap_or_default(),
                 created_at: parse_dt(&row.get::<String>(3).unwrap_or_default()),
@@ -752,10 +752,10 @@ impl SyncEngine {
                     _ => common::entities::PersonRole::Manager,
                 };
                 common::entities::Person {
-                    id: row.get::<i64>(0).unwrap_or(0) as u64,
+                    id: row.get::<i64>(0).unwrap_or(0),
                     name: row.get::<String>(1).unwrap_or_default(),
                     role,
-                    contact: row.get::<i64>(3).ok().map(|v| v as u64),
+                    contact: row.get::<i64>(3).ok(),
                     created_at: parse_dt(&row.get::<String>(4).unwrap_or_default()),
                     updated_at: parse_dt(&row.get::<String>(5).unwrap_or_default()),
                 }
@@ -781,7 +781,7 @@ impl SyncEngine {
                     _ => common::entities::DealStatus::Draft,
                 };
                 common::entities::Deal {
-                    id: row.get::<i64>(0).unwrap_or(0) as u64,
+                    id: row.get::<i64>(0).unwrap_or(0),
                     title: row.get::<String>(1).unwrap_or_default(),
                     description: row.get::<String>(2).unwrap_or_default(),
                     unit_cost: row.get::<f64>(3).unwrap_or(0.0),
@@ -789,9 +789,9 @@ impl SyncEngine {
                     start_date: parse_dt(&row.get::<String>(5).unwrap_or_default()),
                     end_date: parse_dt(&row.get::<String>(6).unwrap_or_default()),
                     frequency: freq, status,
-                    product: row.get::<i64>(9).ok().map(|v| v as u64),
-                    supplier: row.get::<i64>(10).ok().map(|v| v as u64),
-                    manager: row.get::<i64>(11).ok().map(|v| v as u64),
+                    product: row.get::<i64>(9).ok(),
+                    supplier: row.get::<i64>(10).ok(),
+                    manager: row.get::<i64>(11).ok(),
                     created_at: parse_dt(&row.get::<String>(12).unwrap_or_default()),
                     updated_at: parse_dt(&row.get::<String>(13).unwrap_or_default()),
                 }
@@ -803,13 +803,13 @@ impl SyncEngine {
             "SELECT id, name, address, latitude, longitude, capacity, manager_id, created_at, updated_at FROM locations WHERE deleted_at IS NULL",
             write::create_location_repository,
             row => common::entities::Location {
-                id: row.get::<i64>(0).unwrap_or(0) as u64,
+                id: row.get::<i64>(0).unwrap_or(0),
                 name: row.get::<String>(1).unwrap_or_default(),
                 address: row.get::<String>(2).unwrap_or_default(),
                 latitude: row.get::<f64>(3).unwrap_or(0.0),
                 longitude: row.get::<f64>(4).unwrap_or(0.0),
                 capacity: row.get::<i64>(5).unwrap_or(0),
-                manager: row.get::<i64>(6).ok().map(|v| v as u64),
+                manager: row.get::<i64>(6).ok(),
                 created_at: parse_dt(&row.get::<String>(7).unwrap_or_default()),
                 updated_at: parse_dt(&row.get::<String>(8).unwrap_or_default()),
             }
@@ -827,13 +827,13 @@ impl SyncEngine {
                     _ => common::entities::UserRole::Admin,
                 };
                 common::entities::User {
-                    id: row.get::<i64>(0).unwrap_or(0) as u64,
+                    id: row.get::<i64>(0).unwrap_or(0),
                     username: row.get::<String>(1).unwrap_or_default(),
                     password_hash: row.get::<String>(2).unwrap_or_default(),
                     display_name: row.get::<String>(3).unwrap_or_default(),
                     role,
                     is_active: row.get::<i64>(5).unwrap_or(1) != 0,
-                    person: row.get::<i64>(6).ok().map(|v| v as u64),
+                    person: row.get::<i64>(6).ok(),
                     session: None,
                     created_at: parse_dt(&row.get::<String>(7).unwrap_or_default()),
                     updated_at: parse_dt(&row.get::<String>(8).unwrap_or_default()),
@@ -846,7 +846,7 @@ impl SyncEngine {
             "SELECT id, token, expires_at, created_at, updated_at FROM sessions WHERE deleted_at IS NULL",
             write::create_session_repository,
             row => common::entities::Session {
-                id: row.get::<i64>(0).unwrap_or(0) as u64,
+                id: row.get::<i64>(0).unwrap_or(0),
                 token: row.get::<String>(1).unwrap_or_default(),
                 expires_at: parse_dt(&row.get::<String>(2).unwrap_or_default()),
                 created_at: parse_dt(&row.get::<String>(3).unwrap_or_default()),
@@ -867,14 +867,14 @@ impl SyncEngine {
                     _ => common::entities::MovementType::Inbound,
                 };
                 common::entities::StockMovement {
-                    id: row.get::<i64>(0).unwrap_or(0) as u64,
+                    id: row.get::<i64>(0).unwrap_or(0),
                     movement_type: mt,
                     quantity: row.get::<i64>(2).unwrap_or(0),
                     note: row.get::<String>(3).unwrap_or_default(),
-                    product: row.get::<i64>(4).ok().map(|v| v as u64),
-                    from_location: row.get::<i64>(5).ok().map(|v| v as u64),
-                    to_location: row.get::<i64>(6).ok().map(|v| v as u64),
-                    performed_by: row.get::<i64>(7).ok().map(|v| v as u64),
+                    product: row.get::<i64>(4).ok(),
+                    from_location: row.get::<i64>(5).ok(),
+                    to_location: row.get::<i64>(6).ok(),
+                    performed_by: row.get::<i64>(7).ok(),
                     created_at: parse_dt(&row.get::<String>(8).unwrap_or_default()),
                     updated_at: parse_dt(&row.get::<String>(9).unwrap_or_default()),
                 }
@@ -893,14 +893,14 @@ impl SyncEngine {
                     _ => common::entities::BudgetEntryType::Purchase,
                 };
                 common::entities::BudgetEntry {
-                    id: row.get::<i64>(0).unwrap_or(0) as u64,
+                    id: row.get::<i64>(0).unwrap_or(0),
                     entry_type: et,
                     amount: row.get::<f64>(2).unwrap_or(0.0),
                     description: row.get::<String>(3).unwrap_or_default(),
                     entry_date: parse_dt(&row.get::<String>(4).unwrap_or_default()),
-                    product: row.get::<i64>(5).ok().map(|v| v as u64),
-                    deal: row.get::<i64>(6).ok().map(|v| v as u64),
-                    recorded_by: row.get::<i64>(7).ok().map(|v| v as u64),
+                    product: row.get::<i64>(5).ok(),
+                    deal: row.get::<i64>(6).ok(),
+                    recorded_by: row.get::<i64>(7).ok(),
                     created_at: parse_dt(&row.get::<String>(8).unwrap_or_default()),
                     updated_at: parse_dt(&row.get::<String>(9).unwrap_or_default()),
                 }

@@ -1221,7 +1221,7 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_create_user() != 51441.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_deactivate_user() != 29033.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_deactivate_user() != 24773.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_generate_budget_report() != 53307.toShort()) {
@@ -1263,28 +1263,28 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_budget_summary() != 40604.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_category() != 9247.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_category() != 14809.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_contact() != 41927.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_contact() != 15808.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_deal() != 60798.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_deal() != 22050.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_deals_by_supplier() != 55301.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_location() != 57596.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_location() != 844.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_person() != 42216.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_person() != 25962.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_product() != 57869.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_product() != 21695.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_stock_history() != 18490.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_stock_history() != 43840.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_get_stock_summary() != 60523.toShort()) {
@@ -1311,22 +1311,22 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_record_stock_movement() != 29993.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_category() != 6258.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_category() != 53278.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_contact() != 4599.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_contact() != 46046.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_deal() != 14473.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_deal() != 46341.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_location() != 50774.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_location() != 23797.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_person() != 22996.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_person() != 27769.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_product() != 39369.toShort()) {
+    if (lib.uniffi_mobile_ffi_checksum_func_mobile_remove_product() != 10795.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_mobile_ffi_checksum_func_mobile_set_sync_config() != 64734.toShort()) {
@@ -1594,16 +1594,16 @@ public object FfiConverterTypeFfiActiveDealsDto: FfiConverterRustBuffer<FfiActiv
 
 
 data class FfiBudgetEntryDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `entryType`: FfiBudgetEntryType, 
     var `amount`: kotlin.Double, 
     var `description`: kotlin.String, 
     var `entryDate`: kotlin.String, 
-    var `productId`: kotlin.ULong?, 
-    var `dealId`: kotlin.ULong?, 
-    var `recordedById`: kotlin.ULong?
+    var `productId`: kotlin.Long?, 
+    var `dealId`: kotlin.Long?, 
+    var `recordedById`: kotlin.Long?
 ) {
     
     companion object
@@ -1615,43 +1615,43 @@ data class FfiBudgetEntryDto (
 public object FfiConverterTypeFfiBudgetEntryDto: FfiConverterRustBuffer<FfiBudgetEntryDto> {
     override fun read(buf: ByteBuffer): FfiBudgetEntryDto {
         return FfiBudgetEntryDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeFfiBudgetEntryType.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiBudgetEntryDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterTypeFfiBudgetEntryType.allocationSize(value.`entryType`) +
             FfiConverterDouble.allocationSize(value.`amount`) +
             FfiConverterString.allocationSize(value.`description`) +
             FfiConverterString.allocationSize(value.`entryDate`) +
-            FfiConverterOptionalULong.allocationSize(value.`productId`) +
-            FfiConverterOptionalULong.allocationSize(value.`dealId`) +
-            FfiConverterOptionalULong.allocationSize(value.`recordedById`)
+            FfiConverterOptionalLong.allocationSize(value.`productId`) +
+            FfiConverterOptionalLong.allocationSize(value.`dealId`) +
+            FfiConverterOptionalLong.allocationSize(value.`recordedById`)
     )
 
     override fun write(value: FfiBudgetEntryDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterTypeFfiBudgetEntryType.write(value.`entryType`, buf)
             FfiConverterDouble.write(value.`amount`, buf)
             FfiConverterString.write(value.`description`, buf)
             FfiConverterString.write(value.`entryDate`, buf)
-            FfiConverterOptionalULong.write(value.`productId`, buf)
-            FfiConverterOptionalULong.write(value.`dealId`, buf)
-            FfiConverterOptionalULong.write(value.`recordedById`, buf)
+            FfiConverterOptionalLong.write(value.`productId`, buf)
+            FfiConverterOptionalLong.write(value.`dealId`, buf)
+            FfiConverterOptionalLong.write(value.`recordedById`, buf)
     }
 }
 
@@ -1758,13 +1758,13 @@ public object FfiConverterTypeFfiBudgetSummaryDto: FfiConverterRustBuffer<FfiBud
 
 
 data class FfiCategoryDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `name`: kotlin.String, 
     var `description`: kotlin.String, 
-    var `parentCategoryId`: kotlin.ULong?, 
-    var `subcategoryIds`: List<kotlin.ULong>
+    var `parentCategoryId`: kotlin.Long?, 
+    var `subcategoryIds`: List<kotlin.Long>
 ) {
     
     companion object
@@ -1776,34 +1776,34 @@ data class FfiCategoryDto (
 public object FfiConverterTypeFfiCategoryDto: FfiConverterRustBuffer<FfiCategoryDto> {
     override fun read(buf: ByteBuffer): FfiCategoryDto {
         return FfiCategoryDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterSequenceULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterSequenceLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiCategoryDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterString.allocationSize(value.`description`) +
-            FfiConverterOptionalULong.allocationSize(value.`parentCategoryId`) +
-            FfiConverterSequenceULong.allocationSize(value.`subcategoryIds`)
+            FfiConverterOptionalLong.allocationSize(value.`parentCategoryId`) +
+            FfiConverterSequenceLong.allocationSize(value.`subcategoryIds`)
     )
 
     override fun write(value: FfiCategoryDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterString.write(value.`description`, buf)
-            FfiConverterOptionalULong.write(value.`parentCategoryId`, buf)
-            FfiConverterSequenceULong.write(value.`subcategoryIds`, buf)
+            FfiConverterOptionalLong.write(value.`parentCategoryId`, buf)
+            FfiConverterSequenceLong.write(value.`subcategoryIds`, buf)
     }
 }
 
@@ -1842,7 +1842,7 @@ public object FfiConverterTypeFfiChangePasswordResult: FfiConverterRustBuffer<Ff
 
 
 data class FfiContactDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `phone`: kotlin.String, 
@@ -1858,7 +1858,7 @@ data class FfiContactDto (
 public object FfiConverterTypeFfiContactDto: FfiConverterRustBuffer<FfiContactDto> {
     override fun read(buf: ByteBuffer): FfiContactDto {
         return FfiContactDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -1867,7 +1867,7 @@ public object FfiConverterTypeFfiContactDto: FfiConverterRustBuffer<FfiContactDt
     }
 
     override fun allocationSize(value: FfiContactDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterString.allocationSize(value.`phone`) +
@@ -1875,7 +1875,7 @@ public object FfiConverterTypeFfiContactDto: FfiConverterRustBuffer<FfiContactDt
     )
 
     override fun write(value: FfiContactDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterString.write(value.`phone`, buf)
@@ -1888,7 +1888,7 @@ public object FfiConverterTypeFfiContactDto: FfiConverterRustBuffer<FfiContactDt
 data class FfiCreateCategoryDto (
     var `name`: kotlin.String, 
     var `description`: kotlin.String, 
-    var `parentCategoryId`: kotlin.ULong?
+    var `parentCategoryId`: kotlin.Long?
 ) {
     
     companion object
@@ -1902,20 +1902,20 @@ public object FfiConverterTypeFfiCreateCategoryDto: FfiConverterRustBuffer<FfiCr
         return FfiCreateCategoryDto(
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiCreateCategoryDto) = (
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterString.allocationSize(value.`description`) +
-            FfiConverterOptionalULong.allocationSize(value.`parentCategoryId`)
+            FfiConverterOptionalLong.allocationSize(value.`parentCategoryId`)
     )
 
     override fun write(value: FfiCreateCategoryDto, buf: ByteBuffer) {
             FfiConverterString.write(value.`name`, buf)
             FfiConverterString.write(value.`description`, buf)
-            FfiConverterOptionalULong.write(value.`parentCategoryId`, buf)
+            FfiConverterOptionalLong.write(value.`parentCategoryId`, buf)
     }
 }
 
@@ -1962,9 +1962,9 @@ data class FfiCreateDealDto (
     var `endDate`: kotlin.String, 
     var `frequency`: FfiDealFrequency, 
     var `status`: FfiDealStatus, 
-    var `productId`: kotlin.ULong?, 
-    var `supplierId`: kotlin.ULong?, 
-    var `managerId`: kotlin.ULong?
+    var `productId`: kotlin.Long?, 
+    var `supplierId`: kotlin.Long?, 
+    var `managerId`: kotlin.Long?
 ) {
     
     companion object
@@ -1984,9 +1984,9 @@ public object FfiConverterTypeFfiCreateDealDto: FfiConverterRustBuffer<FfiCreate
             FfiConverterString.read(buf),
             FfiConverterTypeFfiDealFrequency.read(buf),
             FfiConverterTypeFfiDealStatus.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
@@ -1999,9 +1999,9 @@ public object FfiConverterTypeFfiCreateDealDto: FfiConverterRustBuffer<FfiCreate
             FfiConverterString.allocationSize(value.`endDate`) +
             FfiConverterTypeFfiDealFrequency.allocationSize(value.`frequency`) +
             FfiConverterTypeFfiDealStatus.allocationSize(value.`status`) +
-            FfiConverterOptionalULong.allocationSize(value.`productId`) +
-            FfiConverterOptionalULong.allocationSize(value.`supplierId`) +
-            FfiConverterOptionalULong.allocationSize(value.`managerId`)
+            FfiConverterOptionalLong.allocationSize(value.`productId`) +
+            FfiConverterOptionalLong.allocationSize(value.`supplierId`) +
+            FfiConverterOptionalLong.allocationSize(value.`managerId`)
     )
 
     override fun write(value: FfiCreateDealDto, buf: ByteBuffer) {
@@ -2013,9 +2013,9 @@ public object FfiConverterTypeFfiCreateDealDto: FfiConverterRustBuffer<FfiCreate
             FfiConverterString.write(value.`endDate`, buf)
             FfiConverterTypeFfiDealFrequency.write(value.`frequency`, buf)
             FfiConverterTypeFfiDealStatus.write(value.`status`, buf)
-            FfiConverterOptionalULong.write(value.`productId`, buf)
-            FfiConverterOptionalULong.write(value.`supplierId`, buf)
-            FfiConverterOptionalULong.write(value.`managerId`, buf)
+            FfiConverterOptionalLong.write(value.`productId`, buf)
+            FfiConverterOptionalLong.write(value.`supplierId`, buf)
+            FfiConverterOptionalLong.write(value.`managerId`, buf)
     }
 }
 
@@ -2027,7 +2027,7 @@ data class FfiCreateLocationDto (
     var `latitude`: kotlin.Double, 
     var `longitude`: kotlin.Double, 
     var `capacity`: kotlin.Long, 
-    var `managerId`: kotlin.ULong?
+    var `managerId`: kotlin.Long?
 ) {
     
     companion object
@@ -2044,7 +2044,7 @@ public object FfiConverterTypeFfiCreateLocationDto: FfiConverterRustBuffer<FfiCr
             FfiConverterDouble.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterLong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
@@ -2054,7 +2054,7 @@ public object FfiConverterTypeFfiCreateLocationDto: FfiConverterRustBuffer<FfiCr
             FfiConverterDouble.allocationSize(value.`latitude`) +
             FfiConverterDouble.allocationSize(value.`longitude`) +
             FfiConverterLong.allocationSize(value.`capacity`) +
-            FfiConverterOptionalULong.allocationSize(value.`managerId`)
+            FfiConverterOptionalLong.allocationSize(value.`managerId`)
     )
 
     override fun write(value: FfiCreateLocationDto, buf: ByteBuffer) {
@@ -2063,7 +2063,7 @@ public object FfiConverterTypeFfiCreateLocationDto: FfiConverterRustBuffer<FfiCr
             FfiConverterDouble.write(value.`latitude`, buf)
             FfiConverterDouble.write(value.`longitude`, buf)
             FfiConverterLong.write(value.`capacity`, buf)
-            FfiConverterOptionalULong.write(value.`managerId`, buf)
+            FfiConverterOptionalLong.write(value.`managerId`, buf)
     }
 }
 
@@ -2072,7 +2072,7 @@ public object FfiConverterTypeFfiCreateLocationDto: FfiConverterRustBuffer<FfiCr
 data class FfiCreatePersonDto (
     var `name`: kotlin.String, 
     var `role`: FfiPersonRole, 
-    var `contactId`: kotlin.ULong?
+    var `contactId`: kotlin.Long?
 ) {
     
     companion object
@@ -2086,20 +2086,20 @@ public object FfiConverterTypeFfiCreatePersonDto: FfiConverterRustBuffer<FfiCrea
         return FfiCreatePersonDto(
             FfiConverterString.read(buf),
             FfiConverterTypeFfiPersonRole.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiCreatePersonDto) = (
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterTypeFfiPersonRole.allocationSize(value.`role`) +
-            FfiConverterOptionalULong.allocationSize(value.`contactId`)
+            FfiConverterOptionalLong.allocationSize(value.`contactId`)
     )
 
     override fun write(value: FfiCreatePersonDto, buf: ByteBuffer) {
             FfiConverterString.write(value.`name`, buf)
             FfiConverterTypeFfiPersonRole.write(value.`role`, buf)
-            FfiConverterOptionalULong.write(value.`contactId`, buf)
+            FfiConverterOptionalLong.write(value.`contactId`, buf)
     }
 }
 
@@ -2112,9 +2112,9 @@ data class FfiCreateProductDto (
     var `quantity`: kotlin.Long, 
     var `priceUnit`: kotlin.Double, 
     var `status`: FfiProductStatus, 
-    var `categoryId`: kotlin.ULong?, 
-    var `supplierId`: kotlin.ULong?, 
-    var `locationId`: kotlin.ULong?
+    var `categoryId`: kotlin.Long?, 
+    var `supplierId`: kotlin.Long?, 
+    var `locationId`: kotlin.Long?
 ) {
     
     companion object
@@ -2132,9 +2132,9 @@ public object FfiConverterTypeFfiCreateProductDto: FfiConverterRustBuffer<FfiCre
             FfiConverterLong.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterTypeFfiProductStatus.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
@@ -2145,9 +2145,9 @@ public object FfiConverterTypeFfiCreateProductDto: FfiConverterRustBuffer<FfiCre
             FfiConverterLong.allocationSize(value.`quantity`) +
             FfiConverterDouble.allocationSize(value.`priceUnit`) +
             FfiConverterTypeFfiProductStatus.allocationSize(value.`status`) +
-            FfiConverterOptionalULong.allocationSize(value.`categoryId`) +
-            FfiConverterOptionalULong.allocationSize(value.`supplierId`) +
-            FfiConverterOptionalULong.allocationSize(value.`locationId`)
+            FfiConverterOptionalLong.allocationSize(value.`categoryId`) +
+            FfiConverterOptionalLong.allocationSize(value.`supplierId`) +
+            FfiConverterOptionalLong.allocationSize(value.`locationId`)
     )
 
     override fun write(value: FfiCreateProductDto, buf: ByteBuffer) {
@@ -2157,9 +2157,9 @@ public object FfiConverterTypeFfiCreateProductDto: FfiConverterRustBuffer<FfiCre
             FfiConverterLong.write(value.`quantity`, buf)
             FfiConverterDouble.write(value.`priceUnit`, buf)
             FfiConverterTypeFfiProductStatus.write(value.`status`, buf)
-            FfiConverterOptionalULong.write(value.`categoryId`, buf)
-            FfiConverterOptionalULong.write(value.`supplierId`, buf)
-            FfiConverterOptionalULong.write(value.`locationId`, buf)
+            FfiConverterOptionalLong.write(value.`categoryId`, buf)
+            FfiConverterOptionalLong.write(value.`supplierId`, buf)
+            FfiConverterOptionalLong.write(value.`locationId`, buf)
     }
 }
 
@@ -2262,7 +2262,7 @@ data class FfiCreateUserDto (
     var `password`: kotlin.String, 
     var `displayName`: kotlin.String, 
     var `role`: FfiUserRole, 
-    var `personId`: kotlin.ULong?
+    var `personId`: kotlin.Long?
 ) {
     
     companion object
@@ -2278,7 +2278,7 @@ public object FfiConverterTypeFfiCreateUserDto: FfiConverterRustBuffer<FfiCreate
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeFfiUserRole.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
@@ -2287,7 +2287,7 @@ public object FfiConverterTypeFfiCreateUserDto: FfiConverterRustBuffer<FfiCreate
             FfiConverterString.allocationSize(value.`password`) +
             FfiConverterString.allocationSize(value.`displayName`) +
             FfiConverterTypeFfiUserRole.allocationSize(value.`role`) +
-            FfiConverterOptionalULong.allocationSize(value.`personId`)
+            FfiConverterOptionalLong.allocationSize(value.`personId`)
     )
 
     override fun write(value: FfiCreateUserDto, buf: ByteBuffer) {
@@ -2295,14 +2295,14 @@ public object FfiConverterTypeFfiCreateUserDto: FfiConverterRustBuffer<FfiCreate
             FfiConverterString.write(value.`password`, buf)
             FfiConverterString.write(value.`displayName`, buf)
             FfiConverterTypeFfiUserRole.write(value.`role`, buf)
-            FfiConverterOptionalULong.write(value.`personId`, buf)
+            FfiConverterOptionalLong.write(value.`personId`, buf)
     }
 }
 
 
 
 data class FfiDealDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `title`: kotlin.String, 
@@ -2313,9 +2313,9 @@ data class FfiDealDto (
     var `endDate`: kotlin.String, 
     var `frequency`: FfiDealFrequency, 
     var `status`: FfiDealStatus, 
-    var `productId`: kotlin.ULong?, 
-    var `supplierId`: kotlin.ULong?, 
-    var `managerId`: kotlin.ULong?
+    var `productId`: kotlin.Long?, 
+    var `supplierId`: kotlin.Long?, 
+    var `managerId`: kotlin.Long?
 ) {
     
     companion object
@@ -2327,7 +2327,7 @@ data class FfiDealDto (
 public object FfiConverterTypeFfiDealDto: FfiConverterRustBuffer<FfiDealDto> {
     override fun read(buf: ByteBuffer): FfiDealDto {
         return FfiDealDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -2338,14 +2338,14 @@ public object FfiConverterTypeFfiDealDto: FfiConverterRustBuffer<FfiDealDto> {
             FfiConverterString.read(buf),
             FfiConverterTypeFfiDealFrequency.read(buf),
             FfiConverterTypeFfiDealStatus.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiDealDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterString.allocationSize(value.`title`) +
@@ -2356,13 +2356,13 @@ public object FfiConverterTypeFfiDealDto: FfiConverterRustBuffer<FfiDealDto> {
             FfiConverterString.allocationSize(value.`endDate`) +
             FfiConverterTypeFfiDealFrequency.allocationSize(value.`frequency`) +
             FfiConverterTypeFfiDealStatus.allocationSize(value.`status`) +
-            FfiConverterOptionalULong.allocationSize(value.`productId`) +
-            FfiConverterOptionalULong.allocationSize(value.`supplierId`) +
-            FfiConverterOptionalULong.allocationSize(value.`managerId`)
+            FfiConverterOptionalLong.allocationSize(value.`productId`) +
+            FfiConverterOptionalLong.allocationSize(value.`supplierId`) +
+            FfiConverterOptionalLong.allocationSize(value.`managerId`)
     )
 
     override fun write(value: FfiDealDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterString.write(value.`title`, buf)
@@ -2373,9 +2373,9 @@ public object FfiConverterTypeFfiDealDto: FfiConverterRustBuffer<FfiDealDto> {
             FfiConverterString.write(value.`endDate`, buf)
             FfiConverterTypeFfiDealFrequency.write(value.`frequency`, buf)
             FfiConverterTypeFfiDealStatus.write(value.`status`, buf)
-            FfiConverterOptionalULong.write(value.`productId`, buf)
-            FfiConverterOptionalULong.write(value.`supplierId`, buf)
-            FfiConverterOptionalULong.write(value.`managerId`, buf)
+            FfiConverterOptionalLong.write(value.`productId`, buf)
+            FfiConverterOptionalLong.write(value.`supplierId`, buf)
+            FfiConverterOptionalLong.write(value.`managerId`, buf)
     }
 }
 
@@ -2474,7 +2474,7 @@ public object FfiConverterTypeFfiGetBudgetSummaryDto: FfiConverterRustBuffer<Ffi
 
 
 data class FfiLocationDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `name`: kotlin.String, 
@@ -2482,7 +2482,7 @@ data class FfiLocationDto (
     var `latitude`: kotlin.Double, 
     var `longitude`: kotlin.Double, 
     var `capacity`: kotlin.Long, 
-    var `managerId`: kotlin.ULong?
+    var `managerId`: kotlin.Long?
 ) {
     
     companion object
@@ -2494,7 +2494,7 @@ data class FfiLocationDto (
 public object FfiConverterTypeFfiLocationDto: FfiConverterRustBuffer<FfiLocationDto> {
     override fun read(buf: ByteBuffer): FfiLocationDto {
         return FfiLocationDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -2502,12 +2502,12 @@ public object FfiConverterTypeFfiLocationDto: FfiConverterRustBuffer<FfiLocation
             FfiConverterDouble.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterLong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiLocationDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterString.allocationSize(value.`name`) +
@@ -2515,11 +2515,11 @@ public object FfiConverterTypeFfiLocationDto: FfiConverterRustBuffer<FfiLocation
             FfiConverterDouble.allocationSize(value.`latitude`) +
             FfiConverterDouble.allocationSize(value.`longitude`) +
             FfiConverterLong.allocationSize(value.`capacity`) +
-            FfiConverterOptionalULong.allocationSize(value.`managerId`)
+            FfiConverterOptionalLong.allocationSize(value.`managerId`)
     )
 
     override fun write(value: FfiLocationDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterString.write(value.`name`, buf)
@@ -2527,7 +2527,7 @@ public object FfiConverterTypeFfiLocationDto: FfiConverterRustBuffer<FfiLocation
             FfiConverterDouble.write(value.`latitude`, buf)
             FfiConverterDouble.write(value.`longitude`, buf)
             FfiConverterLong.write(value.`capacity`, buf)
-            FfiConverterOptionalULong.write(value.`managerId`, buf)
+            FfiConverterOptionalLong.write(value.`managerId`, buf)
     }
 }
 
@@ -2535,7 +2535,7 @@ public object FfiConverterTypeFfiLocationDto: FfiConverterRustBuffer<FfiLocation
 
 data class FfiLoginResult (
     var `sessionToken`: kotlin.String, 
-    var `userId`: kotlin.ULong, 
+    var `userId`: kotlin.Long, 
     var `displayName`: kotlin.String, 
     var `role`: FfiUserRole
 ) {
@@ -2550,7 +2550,7 @@ public object FfiConverterTypeFfiLoginResult: FfiConverterRustBuffer<FfiLoginRes
     override fun read(buf: ByteBuffer): FfiLoginResult {
         return FfiLoginResult(
             FfiConverterString.read(buf),
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeFfiUserRole.read(buf),
         )
@@ -2558,14 +2558,14 @@ public object FfiConverterTypeFfiLoginResult: FfiConverterRustBuffer<FfiLoginRes
 
     override fun allocationSize(value: FfiLoginResult) = (
             FfiConverterString.allocationSize(value.`sessionToken`) +
-            FfiConverterULong.allocationSize(value.`userId`) +
+            FfiConverterLong.allocationSize(value.`userId`) +
             FfiConverterString.allocationSize(value.`displayName`) +
             FfiConverterTypeFfiUserRole.allocationSize(value.`role`)
     )
 
     override fun write(value: FfiLoginResult, buf: ByteBuffer) {
             FfiConverterString.write(value.`sessionToken`, buf)
-            FfiConverterULong.write(value.`userId`, buf)
+            FfiConverterLong.write(value.`userId`, buf)
             FfiConverterString.write(value.`displayName`, buf)
             FfiConverterTypeFfiUserRole.write(value.`role`, buf)
     }
@@ -2574,12 +2574,12 @@ public object FfiConverterTypeFfiLoginResult: FfiConverterRustBuffer<FfiLoginRes
 
 
 data class FfiPersonDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `name`: kotlin.String, 
     var `role`: FfiPersonRole, 
-    var `contactId`: kotlin.ULong?
+    var `contactId`: kotlin.Long?
 ) {
     
     companion object
@@ -2591,38 +2591,38 @@ data class FfiPersonDto (
 public object FfiConverterTypeFfiPersonDto: FfiConverterRustBuffer<FfiPersonDto> {
     override fun read(buf: ByteBuffer): FfiPersonDto {
         return FfiPersonDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeFfiPersonRole.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiPersonDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterTypeFfiPersonRole.allocationSize(value.`role`) +
-            FfiConverterOptionalULong.allocationSize(value.`contactId`)
+            FfiConverterOptionalLong.allocationSize(value.`contactId`)
     )
 
     override fun write(value: FfiPersonDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterTypeFfiPersonRole.write(value.`role`, buf)
-            FfiConverterOptionalULong.write(value.`contactId`, buf)
+            FfiConverterOptionalLong.write(value.`contactId`, buf)
     }
 }
 
 
 
 data class FfiProductDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `name`: kotlin.String, 
@@ -2631,9 +2631,9 @@ data class FfiProductDto (
     var `quantity`: kotlin.Long, 
     var `priceUnit`: kotlin.Double, 
     var `status`: FfiProductStatus, 
-    var `categoryId`: kotlin.ULong?, 
-    var `supplierId`: kotlin.ULong?, 
-    var `locationId`: kotlin.ULong?
+    var `categoryId`: kotlin.Long?, 
+    var `supplierId`: kotlin.Long?, 
+    var `locationId`: kotlin.Long?
 ) {
     
     companion object
@@ -2645,7 +2645,7 @@ data class FfiProductDto (
 public object FfiConverterTypeFfiProductDto: FfiConverterRustBuffer<FfiProductDto> {
     override fun read(buf: ByteBuffer): FfiProductDto {
         return FfiProductDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -2654,14 +2654,14 @@ public object FfiConverterTypeFfiProductDto: FfiConverterRustBuffer<FfiProductDt
             FfiConverterLong.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterTypeFfiProductStatus.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiProductDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterString.allocationSize(value.`name`) +
@@ -2670,13 +2670,13 @@ public object FfiConverterTypeFfiProductDto: FfiConverterRustBuffer<FfiProductDt
             FfiConverterLong.allocationSize(value.`quantity`) +
             FfiConverterDouble.allocationSize(value.`priceUnit`) +
             FfiConverterTypeFfiProductStatus.allocationSize(value.`status`) +
-            FfiConverterOptionalULong.allocationSize(value.`categoryId`) +
-            FfiConverterOptionalULong.allocationSize(value.`supplierId`) +
-            FfiConverterOptionalULong.allocationSize(value.`locationId`)
+            FfiConverterOptionalLong.allocationSize(value.`categoryId`) +
+            FfiConverterOptionalLong.allocationSize(value.`supplierId`) +
+            FfiConverterOptionalLong.allocationSize(value.`locationId`)
     )
 
     override fun write(value: FfiProductDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterString.write(value.`name`, buf)
@@ -2685,9 +2685,9 @@ public object FfiConverterTypeFfiProductDto: FfiConverterRustBuffer<FfiProductDt
             FfiConverterLong.write(value.`quantity`, buf)
             FfiConverterDouble.write(value.`priceUnit`, buf)
             FfiConverterTypeFfiProductStatus.write(value.`status`, buf)
-            FfiConverterOptionalULong.write(value.`categoryId`, buf)
-            FfiConverterOptionalULong.write(value.`supplierId`, buf)
-            FfiConverterOptionalULong.write(value.`locationId`, buf)
+            FfiConverterOptionalLong.write(value.`categoryId`, buf)
+            FfiConverterOptionalLong.write(value.`supplierId`, buf)
+            FfiConverterOptionalLong.write(value.`locationId`, buf)
     }
 }
 
@@ -2698,8 +2698,8 @@ data class FfiRecordBudgetEntryDto (
     var `amount`: kotlin.Double, 
     var `description`: kotlin.String, 
     var `entryDate`: kotlin.String, 
-    var `productId`: kotlin.ULong, 
-    var `dealId`: kotlin.ULong
+    var `productId`: kotlin.Long, 
+    var `dealId`: kotlin.Long
 ) {
     
     companion object
@@ -2715,8 +2715,8 @@ public object FfiConverterTypeFfiRecordBudgetEntryDto: FfiConverterRustBuffer<Ff
             FfiConverterDouble.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterULong.read(buf),
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
         )
     }
 
@@ -2725,8 +2725,8 @@ public object FfiConverterTypeFfiRecordBudgetEntryDto: FfiConverterRustBuffer<Ff
             FfiConverterDouble.allocationSize(value.`amount`) +
             FfiConverterString.allocationSize(value.`description`) +
             FfiConverterString.allocationSize(value.`entryDate`) +
-            FfiConverterULong.allocationSize(value.`productId`) +
-            FfiConverterULong.allocationSize(value.`dealId`)
+            FfiConverterLong.allocationSize(value.`productId`) +
+            FfiConverterLong.allocationSize(value.`dealId`)
     )
 
     override fun write(value: FfiRecordBudgetEntryDto, buf: ByteBuffer) {
@@ -2734,8 +2734,8 @@ public object FfiConverterTypeFfiRecordBudgetEntryDto: FfiConverterRustBuffer<Ff
             FfiConverterDouble.write(value.`amount`, buf)
             FfiConverterString.write(value.`description`, buf)
             FfiConverterString.write(value.`entryDate`, buf)
-            FfiConverterULong.write(value.`productId`, buf)
-            FfiConverterULong.write(value.`dealId`, buf)
+            FfiConverterLong.write(value.`productId`, buf)
+            FfiConverterLong.write(value.`dealId`, buf)
     }
 }
 
@@ -2770,11 +2770,11 @@ public object FfiConverterTypeFfiRecordBudgetEntryResultDto: FfiConverterRustBuf
 
 
 data class FfiRecordStockMovementDto (
-    var `productId`: kotlin.ULong, 
+    var `productId`: kotlin.Long, 
     var `movementType`: FfiMovementType, 
     var `quantity`: kotlin.Long, 
-    var `fromLocationId`: kotlin.ULong, 
-    var `toLocationId`: kotlin.ULong, 
+    var `fromLocationId`: kotlin.Long, 
+    var `toLocationId`: kotlin.Long, 
     var `note`: kotlin.String
 ) {
     
@@ -2787,30 +2787,30 @@ data class FfiRecordStockMovementDto (
 public object FfiConverterTypeFfiRecordStockMovementDto: FfiConverterRustBuffer<FfiRecordStockMovementDto> {
     override fun read(buf: ByteBuffer): FfiRecordStockMovementDto {
         return FfiRecordStockMovementDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterTypeFfiMovementType.read(buf),
             FfiConverterLong.read(buf),
-            FfiConverterULong.read(buf),
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiRecordStockMovementDto) = (
-            FfiConverterULong.allocationSize(value.`productId`) +
+            FfiConverterLong.allocationSize(value.`productId`) +
             FfiConverterTypeFfiMovementType.allocationSize(value.`movementType`) +
             FfiConverterLong.allocationSize(value.`quantity`) +
-            FfiConverterULong.allocationSize(value.`fromLocationId`) +
-            FfiConverterULong.allocationSize(value.`toLocationId`) +
+            FfiConverterLong.allocationSize(value.`fromLocationId`) +
+            FfiConverterLong.allocationSize(value.`toLocationId`) +
             FfiConverterString.allocationSize(value.`note`)
     )
 
     override fun write(value: FfiRecordStockMovementDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`productId`, buf)
+            FfiConverterLong.write(value.`productId`, buf)
             FfiConverterTypeFfiMovementType.write(value.`movementType`, buf)
             FfiConverterLong.write(value.`quantity`, buf)
-            FfiConverterULong.write(value.`fromLocationId`, buf)
-            FfiConverterULong.write(value.`toLocationId`, buf)
+            FfiConverterLong.write(value.`fromLocationId`, buf)
+            FfiConverterLong.write(value.`toLocationId`, buf)
             FfiConverterString.write(value.`note`, buf)
     }
 }
@@ -2898,16 +2898,16 @@ public object FfiConverterTypeFfiStockHistoryDto: FfiConverterRustBuffer<FfiStoc
 
 
 data class FfiStockMovementDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `movementType`: FfiMovementType, 
     var `quantity`: kotlin.Long, 
     var `note`: kotlin.String, 
-    var `productId`: kotlin.ULong?, 
-    var `fromLocationId`: kotlin.ULong?, 
-    var `toLocationId`: kotlin.ULong?, 
-    var `performedById`: kotlin.ULong?
+    var `productId`: kotlin.Long?, 
+    var `fromLocationId`: kotlin.Long?, 
+    var `toLocationId`: kotlin.Long?, 
+    var `performedById`: kotlin.Long?
 ) {
     
     companion object
@@ -2919,43 +2919,43 @@ data class FfiStockMovementDto (
 public object FfiConverterTypeFfiStockMovementDto: FfiConverterRustBuffer<FfiStockMovementDto> {
     override fun read(buf: ByteBuffer): FfiStockMovementDto {
         return FfiStockMovementDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeFfiMovementType.read(buf),
             FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiStockMovementDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterTypeFfiMovementType.allocationSize(value.`movementType`) +
             FfiConverterLong.allocationSize(value.`quantity`) +
             FfiConverterString.allocationSize(value.`note`) +
-            FfiConverterOptionalULong.allocationSize(value.`productId`) +
-            FfiConverterOptionalULong.allocationSize(value.`fromLocationId`) +
-            FfiConverterOptionalULong.allocationSize(value.`toLocationId`) +
-            FfiConverterOptionalULong.allocationSize(value.`performedById`)
+            FfiConverterOptionalLong.allocationSize(value.`productId`) +
+            FfiConverterOptionalLong.allocationSize(value.`fromLocationId`) +
+            FfiConverterOptionalLong.allocationSize(value.`toLocationId`) +
+            FfiConverterOptionalLong.allocationSize(value.`performedById`)
     )
 
     override fun write(value: FfiStockMovementDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterTypeFfiMovementType.write(value.`movementType`, buf)
             FfiConverterLong.write(value.`quantity`, buf)
             FfiConverterString.write(value.`note`, buf)
-            FfiConverterOptionalULong.write(value.`productId`, buf)
-            FfiConverterOptionalULong.write(value.`fromLocationId`, buf)
-            FfiConverterOptionalULong.write(value.`toLocationId`, buf)
-            FfiConverterOptionalULong.write(value.`performedById`, buf)
+            FfiConverterOptionalLong.write(value.`productId`, buf)
+            FfiConverterOptionalLong.write(value.`fromLocationId`, buf)
+            FfiConverterOptionalLong.write(value.`toLocationId`, buf)
+            FfiConverterOptionalLong.write(value.`performedById`, buf)
     }
 }
 
@@ -3118,7 +3118,7 @@ public object FfiConverterTypeFfiSyncResult: FfiConverterRustBuffer<FfiSyncResul
 
 
 data class FfiUpdateCategoryDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `name`: kotlin.String, 
     var `description`: kotlin.String
 ) {
@@ -3132,20 +3132,20 @@ data class FfiUpdateCategoryDto (
 public object FfiConverterTypeFfiUpdateCategoryDto: FfiConverterRustBuffer<FfiUpdateCategoryDto> {
     override fun read(buf: ByteBuffer): FfiUpdateCategoryDto {
         return FfiUpdateCategoryDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiUpdateCategoryDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterString.allocationSize(value.`description`)
     )
 
     override fun write(value: FfiUpdateCategoryDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterString.write(value.`description`, buf)
     }
@@ -3154,7 +3154,7 @@ public object FfiConverterTypeFfiUpdateCategoryDto: FfiConverterRustBuffer<FfiUp
 
 
 data class FfiUpdateContactDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `phone`: kotlin.String, 
     var `email`: kotlin.String
 ) {
@@ -3168,20 +3168,20 @@ data class FfiUpdateContactDto (
 public object FfiConverterTypeFfiUpdateContactDto: FfiConverterRustBuffer<FfiUpdateContactDto> {
     override fun read(buf: ByteBuffer): FfiUpdateContactDto {
         return FfiUpdateContactDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiUpdateContactDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`phone`) +
             FfiConverterString.allocationSize(value.`email`)
     )
 
     override fun write(value: FfiUpdateContactDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`phone`, buf)
             FfiConverterString.write(value.`email`, buf)
     }
@@ -3190,7 +3190,7 @@ public object FfiConverterTypeFfiUpdateContactDto: FfiConverterRustBuffer<FfiUpd
 
 
 data class FfiUpdateDealDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `title`: kotlin.String, 
     var `description`: kotlin.String, 
     var `unitCost`: kotlin.Double, 
@@ -3210,7 +3210,7 @@ data class FfiUpdateDealDto (
 public object FfiConverterTypeFfiUpdateDealDto: FfiConverterRustBuffer<FfiUpdateDealDto> {
     override fun read(buf: ByteBuffer): FfiUpdateDealDto {
         return FfiUpdateDealDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterDouble.read(buf),
@@ -3223,7 +3223,7 @@ public object FfiConverterTypeFfiUpdateDealDto: FfiConverterRustBuffer<FfiUpdate
     }
 
     override fun allocationSize(value: FfiUpdateDealDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`title`) +
             FfiConverterString.allocationSize(value.`description`) +
             FfiConverterDouble.allocationSize(value.`unitCost`) +
@@ -3235,7 +3235,7 @@ public object FfiConverterTypeFfiUpdateDealDto: FfiConverterRustBuffer<FfiUpdate
     )
 
     override fun write(value: FfiUpdateDealDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`title`, buf)
             FfiConverterString.write(value.`description`, buf)
             FfiConverterDouble.write(value.`unitCost`, buf)
@@ -3250,13 +3250,13 @@ public object FfiConverterTypeFfiUpdateDealDto: FfiConverterRustBuffer<FfiUpdate
 
 
 data class FfiUpdateLocationDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `name`: kotlin.String, 
     var `address`: kotlin.String, 
     var `latitude`: kotlin.Double, 
     var `longitude`: kotlin.Double, 
     var `capacity`: kotlin.Long, 
-    var `managerId`: kotlin.ULong?
+    var `managerId`: kotlin.Long?
 ) {
     
     companion object
@@ -3268,41 +3268,41 @@ data class FfiUpdateLocationDto (
 public object FfiConverterTypeFfiUpdateLocationDto: FfiConverterRustBuffer<FfiUpdateLocationDto> {
     override fun read(buf: ByteBuffer): FfiUpdateLocationDto {
         return FfiUpdateLocationDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterDouble.read(buf),
             FfiConverterLong.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiUpdateLocationDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterString.allocationSize(value.`address`) +
             FfiConverterDouble.allocationSize(value.`latitude`) +
             FfiConverterDouble.allocationSize(value.`longitude`) +
             FfiConverterLong.allocationSize(value.`capacity`) +
-            FfiConverterOptionalULong.allocationSize(value.`managerId`)
+            FfiConverterOptionalLong.allocationSize(value.`managerId`)
     )
 
     override fun write(value: FfiUpdateLocationDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterString.write(value.`address`, buf)
             FfiConverterDouble.write(value.`latitude`, buf)
             FfiConverterDouble.write(value.`longitude`, buf)
             FfiConverterLong.write(value.`capacity`, buf)
-            FfiConverterOptionalULong.write(value.`managerId`, buf)
+            FfiConverterOptionalLong.write(value.`managerId`, buf)
     }
 }
 
 
 
 data class FfiUpdatePersonDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `name`: kotlin.String, 
     var `role`: FfiPersonRole
 ) {
@@ -3316,20 +3316,20 @@ data class FfiUpdatePersonDto (
 public object FfiConverterTypeFfiUpdatePersonDto: FfiConverterRustBuffer<FfiUpdatePersonDto> {
     override fun read(buf: ByteBuffer): FfiUpdatePersonDto {
         return FfiUpdatePersonDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeFfiPersonRole.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiUpdatePersonDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterTypeFfiPersonRole.allocationSize(value.`role`)
     )
 
     override fun write(value: FfiUpdatePersonDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterTypeFfiPersonRole.write(value.`role`, buf)
     }
@@ -3338,7 +3338,7 @@ public object FfiConverterTypeFfiUpdatePersonDto: FfiConverterRustBuffer<FfiUpda
 
 
 data class FfiUpdateProductDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `name`: kotlin.String, 
     var `reference`: kotlin.String, 
     var `description`: kotlin.String, 
@@ -3356,7 +3356,7 @@ data class FfiUpdateProductDto (
 public object FfiConverterTypeFfiUpdateProductDto: FfiConverterRustBuffer<FfiUpdateProductDto> {
     override fun read(buf: ByteBuffer): FfiUpdateProductDto {
         return FfiUpdateProductDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -3367,7 +3367,7 @@ public object FfiConverterTypeFfiUpdateProductDto: FfiConverterRustBuffer<FfiUpd
     }
 
     override fun allocationSize(value: FfiUpdateProductDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterString.allocationSize(value.`reference`) +
             FfiConverterString.allocationSize(value.`description`) +
@@ -3377,7 +3377,7 @@ public object FfiConverterTypeFfiUpdateProductDto: FfiConverterRustBuffer<FfiUpd
     )
 
     override fun write(value: FfiUpdateProductDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`name`, buf)
             FfiConverterString.write(value.`reference`, buf)
             FfiConverterString.write(value.`description`, buf)
@@ -3390,14 +3390,14 @@ public object FfiConverterTypeFfiUpdateProductDto: FfiConverterRustBuffer<FfiUpd
 
 
 data class FfiUserDto (
-    var `id`: kotlin.ULong, 
+    var `id`: kotlin.Long, 
     var `createdAt`: kotlin.String, 
     var `updatedAt`: kotlin.String, 
     var `username`: kotlin.String, 
     var `displayName`: kotlin.String, 
     var `role`: FfiUserRole, 
     var `isActive`: kotlin.Boolean, 
-    var `personId`: kotlin.ULong?
+    var `personId`: kotlin.Long?
 ) {
     
     companion object
@@ -3409,37 +3409,37 @@ data class FfiUserDto (
 public object FfiConverterTypeFfiUserDto: FfiConverterRustBuffer<FfiUserDto> {
     override fun read(buf: ByteBuffer): FfiUserDto {
         return FfiUserDto(
-            FfiConverterULong.read(buf),
+            FfiConverterLong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterTypeFfiUserRole.read(buf),
             FfiConverterBoolean.read(buf),
-            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalLong.read(buf),
         )
     }
 
     override fun allocationSize(value: FfiUserDto) = (
-            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterLong.allocationSize(value.`id`) +
             FfiConverterString.allocationSize(value.`createdAt`) +
             FfiConverterString.allocationSize(value.`updatedAt`) +
             FfiConverterString.allocationSize(value.`username`) +
             FfiConverterString.allocationSize(value.`displayName`) +
             FfiConverterTypeFfiUserRole.allocationSize(value.`role`) +
             FfiConverterBoolean.allocationSize(value.`isActive`) +
-            FfiConverterOptionalULong.allocationSize(value.`personId`)
+            FfiConverterOptionalLong.allocationSize(value.`personId`)
     )
 
     override fun write(value: FfiUserDto, buf: ByteBuffer) {
-            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterLong.write(value.`id`, buf)
             FfiConverterString.write(value.`createdAt`, buf)
             FfiConverterString.write(value.`updatedAt`, buf)
             FfiConverterString.write(value.`username`, buf)
             FfiConverterString.write(value.`displayName`, buf)
             FfiConverterTypeFfiUserRole.write(value.`role`, buf)
             FfiConverterBoolean.write(value.`isActive`, buf)
-            FfiConverterOptionalULong.write(value.`personId`, buf)
+            FfiConverterOptionalLong.write(value.`personId`, buf)
     }
 }
 
@@ -3896,28 +3896,28 @@ public object FfiConverterTypeFfiUserRole: FfiConverterRustBuffer<FfiUserRole> {
 /**
  * @suppress
  */
-public object FfiConverterOptionalULong: FfiConverterRustBuffer<kotlin.ULong?> {
-    override fun read(buf: ByteBuffer): kotlin.ULong? {
+public object FfiConverterOptionalLong: FfiConverterRustBuffer<kotlin.Long?> {
+    override fun read(buf: ByteBuffer): kotlin.Long? {
         if (buf.get().toInt() == 0) {
             return null
         }
-        return FfiConverterULong.read(buf)
+        return FfiConverterLong.read(buf)
     }
 
-    override fun allocationSize(value: kotlin.ULong?): ULong {
+    override fun allocationSize(value: kotlin.Long?): ULong {
         if (value == null) {
             return 1UL
         } else {
-            return 1UL + FfiConverterULong.allocationSize(value)
+            return 1UL + FfiConverterLong.allocationSize(value)
         }
     }
 
-    override fun write(value: kotlin.ULong?, buf: ByteBuffer) {
+    override fun write(value: kotlin.Long?, buf: ByteBuffer) {
         if (value == null) {
             buf.put(0)
         } else {
             buf.put(1)
-            FfiConverterULong.write(value, buf)
+            FfiConverterLong.write(value, buf)
         }
     }
 }
@@ -4110,34 +4110,6 @@ public object FfiConverterOptionalTypeFfiProductDto: FfiConverterRustBuffer<FfiP
         } else {
             buf.put(1)
             FfiConverterTypeFfiProductDto.write(value, buf)
-        }
-    }
-}
-
-
-
-
-/**
- * @suppress
- */
-public object FfiConverterSequenceULong: FfiConverterRustBuffer<List<kotlin.ULong>> {
-    override fun read(buf: ByteBuffer): List<kotlin.ULong> {
-        val len = buf.getInt()
-        return List<kotlin.ULong>(len) {
-            FfiConverterULong.read(buf)
-        }
-    }
-
-    override fun allocationSize(value: List<kotlin.ULong>): ULong {
-        val sizeForLength = 4UL
-        val sizeForItems = value.map { FfiConverterULong.allocationSize(it) }.sum()
-        return sizeForLength + sizeForItems
-    }
-
-    override fun write(value: List<kotlin.ULong>, buf: ByteBuffer) {
-        buf.putInt(value.size)
-        value.iterator().forEach {
-            FfiConverterULong.write(it, buf)
         }
     }
 }
@@ -4586,11 +4558,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Deactivate an existing user by ID.
          */
-    @Throws(FfiException::class) fun `mobileDeactivateUser`(`userId`: kotlin.ULong)
+    @Throws(FfiException::class) fun `mobileDeactivateUser`(`userId`: kotlin.Long)
         = 
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_deactivate_user(
-        FfiConverterULong.lower(`userId`),_status)
+        FfiConverterLong.lower(`userId`),_status)
 }
     
     
@@ -4781,11 +4753,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          *
          * Returns `None` if the category does not exist.
          */
-    @Throws(FfiException::class) fun `mobileGetCategory`(`id`: kotlin.ULong): FfiCategoryDto? {
+    @Throws(FfiException::class) fun `mobileGetCategory`(`id`: kotlin.Long): FfiCategoryDto? {
             return FfiConverterOptionalTypeFfiCategoryDto.lift(
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_get_category(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     )
     }
@@ -4796,11 +4768,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          *
          * Returns `None` if the contact does not exist.
          */
-    @Throws(FfiException::class) fun `mobileGetContact`(`id`: kotlin.ULong): FfiContactDto? {
+    @Throws(FfiException::class) fun `mobileGetContact`(`id`: kotlin.Long): FfiContactDto? {
             return FfiConverterOptionalTypeFfiContactDto.lift(
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_get_contact(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     )
     }
@@ -4811,11 +4783,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          *
          * Returns `None` if the deal does not exist.
          */
-    @Throws(FfiException::class) fun `mobileGetDeal`(`id`: kotlin.ULong): FfiDealDto? {
+    @Throws(FfiException::class) fun `mobileGetDeal`(`id`: kotlin.Long): FfiDealDto? {
             return FfiConverterOptionalTypeFfiDealDto.lift(
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_get_deal(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     )
     }
@@ -4842,11 +4814,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          *
          * Returns `None` if the location does not exist.
          */
-    @Throws(FfiException::class) fun `mobileGetLocation`(`id`: kotlin.ULong): FfiLocationDto? {
+    @Throws(FfiException::class) fun `mobileGetLocation`(`id`: kotlin.Long): FfiLocationDto? {
             return FfiConverterOptionalTypeFfiLocationDto.lift(
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_get_location(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     )
     }
@@ -4857,11 +4829,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          *
          * Returns `None` if the person does not exist.
          */
-    @Throws(FfiException::class) fun `mobileGetPerson`(`id`: kotlin.ULong): FfiPersonDto? {
+    @Throws(FfiException::class) fun `mobileGetPerson`(`id`: kotlin.Long): FfiPersonDto? {
             return FfiConverterOptionalTypeFfiPersonDto.lift(
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_get_person(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     )
     }
@@ -4872,11 +4844,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          *
          * Returns `None` if the product does not exist.
          */
-    @Throws(FfiException::class) fun `mobileGetProduct`(`id`: kotlin.ULong): FfiProductDto? {
+    @Throws(FfiException::class) fun `mobileGetProduct`(`id`: kotlin.Long): FfiProductDto? {
             return FfiConverterOptionalTypeFfiProductDto.lift(
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_get_product(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     )
     }
@@ -4888,11 +4860,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
          * Retrieves all movements for the given product ID. Uses a wide date range
          * (epoch to now) to return the full history.
          */
-    @Throws(FfiException::class) fun `mobileGetStockHistory`(`sessionToken`: kotlin.String, `productId`: kotlin.ULong): FfiStockHistoryDto {
+    @Throws(FfiException::class) fun `mobileGetStockHistory`(`sessionToken`: kotlin.String, `productId`: kotlin.Long): FfiStockHistoryDto {
             return FfiConverterTypeFfiStockHistoryDto.lift(
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_get_stock_history(
-        FfiConverterString.lower(`sessionToken`),FfiConverterULong.lower(`productId`),_status)
+        FfiConverterString.lower(`sessionToken`),FfiConverterLong.lower(`productId`),_status)
 }
     )
     }
@@ -5024,11 +4996,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Remove a category by ID.
          */
-    @Throws(FfiException::class) fun `mobileRemoveCategory`(`id`: kotlin.ULong)
+    @Throws(FfiException::class) fun `mobileRemoveCategory`(`id`: kotlin.Long)
         = 
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_remove_category(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     
     
@@ -5036,11 +5008,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Remove a contact by ID.
          */
-    @Throws(FfiException::class) fun `mobileRemoveContact`(`id`: kotlin.ULong)
+    @Throws(FfiException::class) fun `mobileRemoveContact`(`id`: kotlin.Long)
         = 
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_remove_contact(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     
     
@@ -5048,11 +5020,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Remove a deal by ID.
          */
-    @Throws(FfiException::class) fun `mobileRemoveDeal`(`id`: kotlin.ULong)
+    @Throws(FfiException::class) fun `mobileRemoveDeal`(`id`: kotlin.Long)
         = 
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_remove_deal(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     
     
@@ -5060,11 +5032,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Remove a location by ID.
          */
-    @Throws(FfiException::class) fun `mobileRemoveLocation`(`id`: kotlin.ULong)
+    @Throws(FfiException::class) fun `mobileRemoveLocation`(`id`: kotlin.Long)
         = 
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_remove_location(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     
     
@@ -5072,11 +5044,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Remove a person by ID.
          */
-    @Throws(FfiException::class) fun `mobileRemovePerson`(`id`: kotlin.ULong)
+    @Throws(FfiException::class) fun `mobileRemovePerson`(`id`: kotlin.Long)
         = 
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_remove_person(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     
     
@@ -5084,11 +5056,11 @@ public object FfiConverterSequenceTypeFfiUserDto: FfiConverterRustBuffer<List<Ff
         /**
          * Remove a product by ID.
          */
-    @Throws(FfiException::class) fun `mobileRemoveProduct`(`id`: kotlin.ULong)
+    @Throws(FfiException::class) fun `mobileRemoveProduct`(`id`: kotlin.Long)
         = 
     uniffiRustCallWithError(FfiException) { _status ->
     UniffiLib.INSTANCE.uniffi_mobile_ffi_fn_func_mobile_remove_product(
-        FfiConverterULong.lower(`id`),_status)
+        FfiConverterLong.lower(`id`),_status)
 }
     
     

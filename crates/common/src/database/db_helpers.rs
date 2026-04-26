@@ -5,7 +5,7 @@ use crate::types::EntityId;
 use redb::ReadableTable;
 
 pub(crate) fn delete_from_backward_junction_table(
-    junction_table: &mut redb::Table<'_, u64, Vec<u64>>,
+    junction_table: &mut redb::Table<'_, EntityId, Vec<EntityId>>,
     id: &EntityId,
 ) -> Result<(), RepositoryError> {
     // First, collect all the keys and values that need to be modified

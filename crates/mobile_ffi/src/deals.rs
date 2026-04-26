@@ -22,7 +22,7 @@ pub fn mobile_create_deal(dto: FfiCreateDealDto) -> Result<FfiDealDto, FfiError>
 ///
 /// Returns `None` if the deal does not exist.
 #[uniffi::export]
-pub fn mobile_get_deal(id: u64) -> Result<Option<FfiDealDto>, FfiError> {
+pub fn mobile_get_deal(id: i64) -> Result<Option<FfiDealDto>, FfiError> {
     let ctx = get_app_context()?;
     let deal = deal_commands::get_deal(ctx, &id).map_err(FfiError::from)?;
     Ok(deal.map(|d| d.into()))
@@ -51,7 +51,7 @@ pub fn mobile_update_deal(dto: FfiUpdateDealDto) -> Result<FfiDealDto, FfiError>
 
 /// Remove a deal by ID.
 #[uniffi::export]
-pub fn mobile_remove_deal(id: u64) -> Result<(), FfiError> {
+pub fn mobile_remove_deal(id: i64) -> Result<(), FfiError> {
     let ctx = get_app_context()?;
     deal_commands::remove_deal(ctx, None, &id).map_err(FfiError::from)?;
     Ok(())

@@ -85,7 +85,7 @@ fun UserListScreen(userViewModel: UserViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(users, key = { it.id.toLong() }) { user ->
+                    items(users, key = { it.id }) { user ->
                         val status = if (user.isActive) "Active" else "Inactive"
                         EntityListItem(
                             title = user.displayName,
@@ -93,7 +93,7 @@ fun UserListScreen(userViewModel: UserViewModel) {
                             trailingContent = {
                                 if (user.isActive) {
                                     IconButton(onClick = {
-                                        userViewModel.deactivateUser(user.id.toLong())
+                                        userViewModel.deactivateUser(user.id)
                                     }) {
                                         Icon(
                                             Icons.Default.Close,

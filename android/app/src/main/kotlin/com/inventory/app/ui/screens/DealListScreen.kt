@@ -125,7 +125,7 @@ fun DealListScreen(dealViewModel: DealViewModel) {
                     if (editingId != null) {
                         dealViewModel.updateDeal(
                             FfiUpdateDealDto(
-                                id = editingId!!.toULong(),
+                                id = editingId!!,
                                 title = title,
                                 description = description,
                                 unitCost = cost,
@@ -184,14 +184,14 @@ fun DealListScreen(dealViewModel: DealViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(deals, key = { it.id.toLong() }) { deal ->
+                    items(deals, key = { it.id }) { deal ->
                         EntityListItem(
                             title = deal.title,
                             subtitle = "${deal.status.name.lowercase()
                                 .replaceFirstChar { it.uppercase() }} · ${deal.frequency.name.lowercase()
                                 .replace("_", " ").replaceFirstChar { it.uppercase() }}",
                             onClick = {
-                                editingId = deal.id.toLong()
+                                editingId = deal.id
                                 title = deal.title
                                 description = deal.description
                                 unitCost = deal.unitCost.toString()
@@ -204,7 +204,7 @@ fun DealListScreen(dealViewModel: DealViewModel) {
                             },
                             trailingContent = {
                                 IconButton(onClick = {
-                                    dealViewModel.removeDeal(deal.id.toLong())
+                                    dealViewModel.removeDeal(deal.id)
                                 }) {
                                     Icon(
                                         Icons.Default.Delete,

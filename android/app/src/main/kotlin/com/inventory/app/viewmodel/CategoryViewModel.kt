@@ -94,7 +94,7 @@ class CategoryViewModel : ViewModel() {
             _error.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    mobileRemoveCategory(id.toULong())
+                    mobileRemoveCategory(id)
                 }
                 loadCategories()
             } catch (e: FfiException) {

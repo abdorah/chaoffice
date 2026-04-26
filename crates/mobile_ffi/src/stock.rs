@@ -67,12 +67,12 @@ pub fn mobile_record_stock_movement(
 #[uniffi::export]
 pub fn mobile_get_stock_history(
     session_token: String,
-    product_id: u64,
+    product_id: i64,
 ) -> Result<FfiStockHistoryDto, FfiError> {
     let ctx = get_app_context()?;
     let security_context = build_security_context(&session_token)?;
     let dto = stock_tracking::dtos::GetStockHistoryDto {
-        product_id: product_id as i64,
+        product_id,
         from_date: chrono::DateTime::<chrono::Utc>::MIN_UTC,
         to_date: chrono::Utc::now(),
     };

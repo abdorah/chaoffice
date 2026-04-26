@@ -95,7 +95,7 @@ class PersonViewModel : ViewModel() {
             _error.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    mobileRemovePerson(id.toULong())
+                    mobileRemovePerson(id)
                 }
                 loadPersons()
             } catch (e: FfiException) {

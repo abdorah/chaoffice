@@ -89,7 +89,7 @@ fun PersonListScreen(personViewModel: PersonViewModel) {
                     if (editingId != null) {
                         personViewModel.updatePerson(
                             FfiUpdatePersonDto(
-                                id = editingId!!.toULong(),
+                                id = editingId!!,
                                 name = name,
                                 role = role
                             )
@@ -132,13 +132,13 @@ fun PersonListScreen(personViewModel: PersonViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(persons, key = { it.id.toLong() }) { person ->
+                    items(persons, key = { it.id }) { person ->
                         EntityListItem(
                             title = person.name,
                             subtitle = person.role.name.lowercase()
                                 .replaceFirstChar { it.uppercase() },
                             onClick = {
-                                editingId = person.id.toLong()
+                                editingId = person.id
                                 name = person.name
                                 role = person.role
                                 phone = ""; email = ""
@@ -146,7 +146,7 @@ fun PersonListScreen(personViewModel: PersonViewModel) {
                             },
                             trailingContent = {
                                 IconButton(onClick = {
-                                    personViewModel.removePerson(person.id.toLong())
+                                    personViewModel.removePerson(person.id)
                                 }) {
                                     Icon(
                                         Icons.Default.Delete,

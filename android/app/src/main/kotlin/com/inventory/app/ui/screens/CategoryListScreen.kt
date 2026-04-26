@@ -50,7 +50,7 @@ fun CategoryListScreen(categoryViewModel: CategoryViewModel) {
     var editingId by remember { mutableStateOf<Long?>(null) }
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var parentCategoryId by remember { mutableStateOf<ULong?>(null) }
+    var parentCategoryId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) { categoryViewModel.loadCategories() }
 
@@ -71,7 +71,7 @@ fun CategoryListScreen(categoryViewModel: CategoryViewModel) {
                     Spacer(modifier = Modifier.height(8.dp))
                     AppTextField(value = description, onValueChange = { description = it }, label = "Description")
                     Spacer(modifier = Modifier.height(8.dp))
-                    val parentOptions = listOf<ULong?>(null) + categories.map { it.id }
+                    val parentOptions = listOf<Long?>(null) + categories.map { it.id }
                     AppDropdown(
                         items = parentOptions,
                         selectedItem = parentCategoryId,
@@ -89,7 +89,7 @@ fun CategoryListScreen(categoryViewModel: CategoryViewModel) {
                     if (editingId != null) {
                         categoryViewModel.updateCategory(
                             FfiUpdateCategoryDto(
-                                id = editingId!!.toULong(),
+                                id = editingId!!,
                                 name = name,
                                 description = description
                             )
@@ -131,12 +131,12 @@ fun CategoryListScreen(categoryViewModel: CategoryViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(categories, key = { it.id.toLong() }) { category ->
+                    items(categories, key = { it.id }) { category ->
                         EntityListItem(
                             title = category.name,
                             subtitle = category.description.ifEmpty { null },
                             onClick = {
-                                editingId = category.id.toLong()
+                                editingId = category.id
                                 name = category.name
                                 description = category.description
                                 parentCategoryId = category.parentCategoryId
@@ -144,7 +144,7 @@ fun CategoryListScreen(categoryViewModel: CategoryViewModel) {
                             },
                             trailingContent = {
                                 IconButton(onClick = {
-                                    categoryViewModel.removeCategory(category.id.toLong())
+                                    categoryViewModel.removeCategory(category.id)
                                 }) {
                                     Icon(
                                         Icons.Default.Delete,

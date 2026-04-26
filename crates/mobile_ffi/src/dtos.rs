@@ -33,7 +33,7 @@ pub enum FfiProductStatus {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiProductDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub name: String,
@@ -42,9 +42,9 @@ pub struct FfiProductDto {
     pub quantity: i64,
     pub price_unit: f64,
     pub status: FfiProductStatus,
-    pub category_id: Option<u64>,
-    pub supplier_id: Option<u64>,
-    pub location_id: Option<u64>,
+    pub category_id: Option<i64>,
+    pub supplier_id: Option<i64>,
+    pub location_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -55,14 +55,14 @@ pub struct FfiCreateProductDto {
     pub quantity: i64,
     pub price_unit: f64,
     pub status: FfiProductStatus,
-    pub category_id: Option<u64>,
-    pub supplier_id: Option<u64>,
-    pub location_id: Option<u64>,
+    pub category_id: Option<i64>,
+    pub supplier_id: Option<i64>,
+    pub location_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiUpdateProductDto {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub reference: String,
     pub description: String,
@@ -155,25 +155,25 @@ impl From<FfiUpdateProductDto> for direct_access::product::dtos::UpdateProductDt
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiCategoryDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub name: String,
     pub description: String,
-    pub parent_category_id: Option<u64>,
-    pub subcategory_ids: Vec<u64>,
+    pub parent_category_id: Option<i64>,
+    pub subcategory_ids: Vec<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiCreateCategoryDto {
     pub name: String,
     pub description: String,
-    pub parent_category_id: Option<u64>,
+    pub parent_category_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiUpdateCategoryDto {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub description: String,
 }
@@ -230,24 +230,24 @@ pub enum FfiPersonRole {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiPersonDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub name: String,
     pub role: FfiPersonRole,
-    pub contact_id: Option<u64>,
+    pub contact_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiCreatePersonDto {
     pub name: String,
     pub role: FfiPersonRole,
-    pub contact_id: Option<u64>,
+    pub contact_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiUpdatePersonDto {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub role: FfiPersonRole,
 }
@@ -314,7 +314,7 @@ impl From<FfiUpdatePersonDto> for direct_access::person::dtos::UpdatePersonDto {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiContactDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub phone: String,
@@ -329,7 +329,7 @@ pub struct FfiCreateContactDto {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiUpdateContactDto {
-    pub id: u64,
+    pub id: i64,
     pub phone: String,
     pub email: String,
 }
@@ -393,7 +393,7 @@ pub enum FfiDealStatus {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiDealDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub title: String,
@@ -404,9 +404,9 @@ pub struct FfiDealDto {
     pub end_date: String,
     pub frequency: FfiDealFrequency,
     pub status: FfiDealStatus,
-    pub product_id: Option<u64>,
-    pub supplier_id: Option<u64>,
-    pub manager_id: Option<u64>,
+    pub product_id: Option<i64>,
+    pub supplier_id: Option<i64>,
+    pub manager_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -419,14 +419,14 @@ pub struct FfiCreateDealDto {
     pub end_date: String,
     pub frequency: FfiDealFrequency,
     pub status: FfiDealStatus,
-    pub product_id: Option<u64>,
-    pub supplier_id: Option<u64>,
-    pub manager_id: Option<u64>,
+    pub product_id: Option<i64>,
+    pub supplier_id: Option<i64>,
+    pub manager_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiUpdateDealDto {
-    pub id: u64,
+    pub id: i64,
     pub title: String,
     pub description: String,
     pub unit_cost: f64,
@@ -549,7 +549,7 @@ impl From<FfiUpdateDealDto> for direct_access::deal::dtos::UpdateDealDto {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiLocationDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub name: String,
@@ -557,7 +557,7 @@ pub struct FfiLocationDto {
     pub latitude: f64,
     pub longitude: f64,
     pub capacity: i64,
-    pub manager_id: Option<u64>,
+    pub manager_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -567,18 +567,18 @@ pub struct FfiCreateLocationDto {
     pub latitude: f64,
     pub longitude: f64,
     pub capacity: i64,
-    pub manager_id: Option<u64>,
+    pub manager_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiUpdateLocationDto {
-    pub id: u64,
+    pub id: i64,
     pub name: String,
     pub address: String,
     pub latitude: f64,
     pub longitude: f64,
     pub capacity: i64,
-    pub manager_id: Option<u64>,
+    pub manager_id: Option<i64>,
 }
 
 impl From<direct_access::location::dtos::LocationDto> for FfiLocationDto {
@@ -643,14 +643,14 @@ pub enum FfiUserRole {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiUserDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub username: String,
     pub display_name: String,
     pub role: FfiUserRole,
     pub is_active: bool,
-    pub person_id: Option<u64>,
+    pub person_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -659,7 +659,7 @@ pub struct FfiCreateUserDto {
     pub password: String,
     pub display_name: String,
     pub role: FfiUserRole,
-    pub person_id: Option<u64>,
+    pub person_id: Option<i64>,
 }
 
 impl From<common::entities::UserRole> for FfiUserRole {
@@ -737,25 +737,25 @@ pub enum FfiMovementType {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiStockMovementDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub movement_type: FfiMovementType,
     pub quantity: i64,
     pub note: String,
-    pub product_id: Option<u64>,
-    pub from_location_id: Option<u64>,
-    pub to_location_id: Option<u64>,
-    pub performed_by_id: Option<u64>,
+    pub product_id: Option<i64>,
+    pub from_location_id: Option<i64>,
+    pub to_location_id: Option<i64>,
+    pub performed_by_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiRecordStockMovementDto {
-    pub product_id: u64,
+    pub product_id: i64,
     pub movement_type: FfiMovementType,
     pub quantity: i64,
-    pub from_location_id: u64,
-    pub to_location_id: u64,
+    pub from_location_id: i64,
+    pub to_location_id: i64,
     pub note: String,
 }
 
@@ -887,16 +887,16 @@ pub enum FfiBudgetEntryType {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiBudgetEntryDto {
-    pub id: u64,
+    pub id: i64,
     pub created_at: String,
     pub updated_at: String,
     pub entry_type: FfiBudgetEntryType,
     pub amount: f64,
     pub description: String,
     pub entry_date: String,
-    pub product_id: Option<u64>,
-    pub deal_id: Option<u64>,
-    pub recorded_by_id: Option<u64>,
+    pub product_id: Option<i64>,
+    pub deal_id: Option<i64>,
+    pub recorded_by_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -905,8 +905,8 @@ pub struct FfiRecordBudgetEntryDto {
     pub amount: f64,
     pub description: String,
     pub entry_date: String,
-    pub product_id: u64,
-    pub deal_id: u64,
+    pub product_id: i64,
+    pub deal_id: i64,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -1068,7 +1068,7 @@ impl From<budget_finance::dtos::RecordBudgetEntryResultDto> for FfiRecordBudgetE
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct FfiLoginResult {
     pub session_token: String,
-    pub user_id: u64,
+    pub user_id: i64,
     pub display_name: String,
     pub role: FfiUserRole,
 }
@@ -1089,7 +1089,7 @@ impl From<authentication::dtos::LoginResultDto> for FfiLoginResult {
         };
         FfiLoginResult {
             session_token: d.token,
-            user_id: d.user_id as u64,
+            user_id: d.user_id,
             display_name: d.display_name,
             role,
         }

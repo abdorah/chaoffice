@@ -22,7 +22,7 @@ pub fn mobile_create_location(dto: FfiCreateLocationDto) -> Result<FfiLocationDt
 ///
 /// Returns `None` if the location does not exist.
 #[uniffi::export]
-pub fn mobile_get_location(id: u64) -> Result<Option<FfiLocationDto>, FfiError> {
+pub fn mobile_get_location(id: i64) -> Result<Option<FfiLocationDto>, FfiError> {
     let ctx = get_app_context()?;
     let location = location_commands::get_location(ctx, &id).map_err(FfiError::from)?;
     Ok(location.map(|l| l.into()))
@@ -51,7 +51,7 @@ pub fn mobile_update_location(dto: FfiUpdateLocationDto) -> Result<FfiLocationDt
 
 /// Remove a location by ID.
 #[uniffi::export]
-pub fn mobile_remove_location(id: u64) -> Result<(), FfiError> {
+pub fn mobile_remove_location(id: i64) -> Result<(), FfiError> {
     let ctx = get_app_context()?;
     location_commands::remove_location(ctx, None, &id).map_err(FfiError::from)?;
     Ok(())

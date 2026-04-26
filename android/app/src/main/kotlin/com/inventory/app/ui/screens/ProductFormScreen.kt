@@ -93,7 +93,7 @@ fun ProductFormScreen(
         if (isEditMode) {
             productViewModel.updateProduct(
                 FfiUpdateProductDto(
-                    id = productId.toULong(),
+                    id = productId,
                     name = name,
                     reference = reference,
                     description = description,

@@ -3,6 +3,7 @@
 //! Fully implemented (pure Rust, no external deps). Thread-safe via Mutex.
 
 use std::collections::{HashMap, HashSet};
+use common::types::EntityId;
 use std::sync::Mutex;
 
 /// Tracks which entities have been modified since the last dehydration.
@@ -10,7 +11,7 @@ use std::sync::Mutex;
 /// Thread-safe: can be written to from EventHub callbacks and drained
 /// from the dehydrate operation concurrently.
 pub struct ChangeTracker {
-    pending: Mutex<HashMap<String, HashSet<u64>>>,
+    pending: Mutex<HashMap<String, HashSet<EntityId>>>,
 }
 
 impl ChangeTracker {
@@ -24,7 +25,7 @@ impl ChangeTracker {
     ///
     /// Called when Qleany emits entity events (create/update/delete).
     /// Uses set semantics — duplicate IDs are stored only once.
-    pub fn on_entity_event(&self, entity_type: &str, entity_ids: &[u64]) {
+    pub fn on_entity_event(&self, entity_type: &str, entity_ids: &[EntityId]) {
         let mut pending = self.pending.lock().unwrap();
         let set = pending.entry(entity_type.to_string()).or_default();
         for &id in entity_ids {
@@ -35,7 +36,7 @@ impl ChangeTracker {
     /// Drain all pending changes, resetting internal state to empty.
     ///
     /// Returns the accumulated changes. After this call, `pending_count()` is 0.
-    pub fn drain(&self) -> HashMap<String, HashSet<u64>> {
+    pub fn drain(&self) -> HashMap<String, HashSet<EntityId>> {
         let mut pending = self.pending.lock().unwrap();
         std::mem::take(&mut *pending)
     }

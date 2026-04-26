@@ -71,14 +71,14 @@ fun ProductListScreen(
                 }
                 else -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(products, key = { it.id.toLong() }) { product ->
+                        items(products, key = { it.id }) { product ->
                             EntityListItem(
                                 title = product.name,
                                 subtitle = "${product.reference} · Qty: ${product.quantity}",
-                                onClick = { onNavigateToForm(product.id.toLong()) },
+                                onClick = { onNavigateToForm(product.id) },
                                 trailingContent = {
                                     IconButton(onClick = {
-                                        productViewModel.removeProduct(product.id.toLong())
+                                        productViewModel.removeProduct(product.id)
                                     }) {
                                         Icon(
                                             Icons.Default.Delete,

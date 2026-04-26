@@ -74,7 +74,7 @@ class UserViewModel : ViewModel() {
             _error.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    mobileDeactivateUser(userId.toULong())
+                    mobileDeactivateUser(userId)
                 }
                 loadUsers()
             } catch (e: FfiException) {

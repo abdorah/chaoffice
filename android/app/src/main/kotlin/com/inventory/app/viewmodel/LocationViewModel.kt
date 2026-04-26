@@ -94,7 +94,7 @@ class LocationViewModel : ViewModel() {
             _error.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    mobileRemoveLocation(id.toULong())
+                    mobileRemoveLocation(id)
                 }
                 loadLocations()
             } catch (e: FfiException) {

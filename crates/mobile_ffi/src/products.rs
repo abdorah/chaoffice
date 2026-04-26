@@ -22,7 +22,7 @@ pub fn mobile_create_product(dto: FfiCreateProductDto) -> Result<FfiProductDto, 
 ///
 /// Returns `None` if the product does not exist.
 #[uniffi::export]
-pub fn mobile_get_product(id: u64) -> Result<Option<FfiProductDto>, FfiError> {
+pub fn mobile_get_product(id: i64) -> Result<Option<FfiProductDto>, FfiError> {
     let ctx = get_app_context()?;
     let product = product_commands::get_product(ctx, &id).map_err(FfiError::from)?;
     Ok(product.map(|p| p.into()))
@@ -51,7 +51,7 @@ pub fn mobile_update_product(dto: FfiUpdateProductDto) -> Result<FfiProductDto, 
 
 /// Remove a product by ID.
 #[uniffi::export]
-pub fn mobile_remove_product(id: u64) -> Result<(), FfiError> {
+pub fn mobile_remove_product(id: i64) -> Result<(), FfiError> {
     let ctx = get_app_context()?;
     product_commands::remove_product(ctx, None, &id).map_err(FfiError::from)?;
     Ok(())

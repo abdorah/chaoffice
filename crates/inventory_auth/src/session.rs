@@ -1,5 +1,6 @@
 use chrono::Utc;
 use common::entities::Session;
+use common::types::EntityId;
 use uuid::Uuid;
 
 /// Generate a new UUID v4 session token.
@@ -11,7 +12,7 @@ pub fn generate_token() -> String {
 ///
 /// The `_user_id` is accepted for context but not stored on the Session entity
 /// itself (the User→Session link is managed by the Qleany controller layer).
-pub fn create_session(_user_id: u64) -> Session {
+pub fn create_session(_user_id: EntityId) -> Session {
     let now = Utc::now();
     Session {
         id: 0, // assigned by DB on persist

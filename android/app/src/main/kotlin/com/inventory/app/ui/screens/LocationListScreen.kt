@@ -94,7 +94,7 @@ fun LocationListScreen(locationViewModel: LocationViewModel) {
                     if (editingId != null) {
                         locationViewModel.updateLocation(
                             FfiUpdateLocationDto(
-                                id = editingId!!.toULong(),
+                                id = editingId!!,
                                 name = name,
                                 address = address,
                                 latitude = lat,
@@ -144,12 +144,12 @@ fun LocationListScreen(locationViewModel: LocationViewModel) {
                     modifier = Modifier.align(Alignment.Center)
                 )
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(locations, key = { it.id.toLong() }) { location ->
+                    items(locations, key = { it.id }) { location ->
                         EntityListItem(
                             title = location.name,
                             subtitle = "${location.address} · Cap: ${location.capacity}",
                             onClick = {
-                                editingId = location.id.toLong()
+                                editingId = location.id
                                 name = location.name
                                 address = location.address
                                 latitude = location.latitude.toString()
@@ -159,7 +159,7 @@ fun LocationListScreen(locationViewModel: LocationViewModel) {
                             },
                             trailingContent = {
                                 IconButton(onClick = {
-                                    locationViewModel.removeLocation(location.id.toLong())
+                                    locationViewModel.removeLocation(location.id)
                                 }) {
                                     Icon(
                                         Icons.Default.Delete,

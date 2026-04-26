@@ -19,7 +19,7 @@ pub fn mobile_create_user(dto: FfiCreateUserDto) -> Result<FfiUserDto, FfiError>
         user_management_commands::create_user(ctx, &create_dto).map_err(FfiError::from)?;
 
     // The create result only contains the user_id; fetch the full record.
-    let user = user_commands::get_user(ctx, &(result.user_id as u64))
+    let user = user_commands::get_user(ctx, &(result.user_id))
         .map_err(FfiError::from)?
         .ok_or_else(|| FfiError::DatabaseError {
             message: format!("User {} created but not found", result.user_id),
@@ -29,7 +29,7 @@ pub fn mobile_create_user(dto: FfiCreateUserDto) -> Result<FfiUserDto, FfiError>
 
 /// Deactivate an existing user by ID.
 #[uniffi::export]
-pub fn mobile_deactivate_user(user_id: u64) -> Result<(), FfiError> {
+pub fn mobile_deactivate_user(user_id: i64) -> Result<(), FfiError> {
     let ctx = get_app_context()?;
     let dto = DeactivateUserDto {
         user_id: user_id as i64,

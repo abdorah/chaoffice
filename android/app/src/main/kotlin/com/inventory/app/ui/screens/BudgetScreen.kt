@@ -207,8 +207,8 @@ private fun RecordBudgetEntryDialog(
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         description = description,
                         entryDate = entryDate.ifEmpty { "2024-01-01T00:00:00Z" },
-                        productId = productId.toULongOrNull() ?: 0u,
-                        dealId = dealId.toULongOrNull() ?: 0u
+                        productId = productId.toLongOrNull() ?: 0L,
+                        dealId = dealId.toLongOrNull() ?: 0L
                     )
                 )
             }) { Text("Record") }

@@ -51,7 +51,7 @@ fun StockTrackingScreen(
     val error by stockViewModel.error.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showMovementDialog by remember { mutableStateOf(false) }
-    var showHistoryProductId by remember { mutableStateOf<ULong?>(null) }
+    var showHistoryProductId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(sessionToken) {
         sessionToken?.let { stockViewModel.loadSummary(it) }
@@ -102,7 +102,7 @@ fun StockTrackingScreen(
                                 title = name,
                                 subtitle = "Qty: $qty · In(30d): $inbound · Out(30d): $outbound",
                                 onClick = {
-                                    val pid = s.productIds[index].toULong()
+                                    val pid = s.productIds[index]
                                     showHistoryProductId = pid
                                     sessionToken?.let { stockViewModel.loadHistory(it, pid) }
                                 }
@@ -199,11 +199,11 @@ private fun RecordMovementDialog(
             TextButton(onClick = {
                 onConfirm(
                     FfiRecordStockMovementDto(
-                        productId = productId.toULongOrNull() ?: 0u,
+                        productId = productId.toLongOrNull() ?: 0L,
                         movementType = selectedType,
                         quantity = quantity.toLongOrNull() ?: 0L,
-                        fromLocationId = fromLocationId.toULongOrNull() ?: 0u,
-                        toLocationId = toLocationId.toULongOrNull() ?: 0u,
+                        fromLocationId = fromLocationId.toLongOrNull() ?: 0L,
+                        toLocationId = toLocationId.toLongOrNull() ?: 0L,
                         note = note
                     )
                 )

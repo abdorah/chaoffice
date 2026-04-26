@@ -58,7 +58,7 @@ class ProductViewModel : ViewModel() {
             _error.value = null
             try {
                 val result = withContext(Dispatchers.IO) {
-                    mobileGetProduct(id.toULong())
+                    mobileGetProduct(id)
                 }
                 _selectedProduct.value = result
             } catch (e: FfiException) {
@@ -117,7 +117,7 @@ class ProductViewModel : ViewModel() {
             _error.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    mobileRemoveProduct(id.toULong())
+                    mobileRemoveProduct(id)
                 }
                 loadProducts()
             } catch (e: FfiException) {

@@ -1,11 +1,12 @@
 use common::entities::UserRole;
+use common::types::EntityId;
 
 use crate::error::AuthError;
 use crate::permission::{Permission, permission_matches, permissions_for_role};
 
 #[derive(Debug, Clone)]
 pub struct SecurityContext {
-    pub user_id: u64,
+    pub user_id: EntityId,
     pub role: UserRole,
     pub permissions: Vec<Permission>,
     pub token: String,
@@ -25,7 +26,7 @@ impl SecurityContext {
 
     /// Build a SecurityContext from known user information.
     /// Resolves the role's permissions automatically.
-    pub fn from_user(user_id: u64, role: UserRole, token: String) -> Self {
+    pub fn from_user(user_id: EntityId, role: UserRole, token: String) -> Self {
         let permissions = permissions_for_role(&role);
         Self {
             user_id,

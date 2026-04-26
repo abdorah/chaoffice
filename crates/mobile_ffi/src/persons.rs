@@ -22,7 +22,7 @@ pub fn mobile_create_person(dto: FfiCreatePersonDto) -> Result<FfiPersonDto, Ffi
 ///
 /// Returns `None` if the person does not exist.
 #[uniffi::export]
-pub fn mobile_get_person(id: u64) -> Result<Option<FfiPersonDto>, FfiError> {
+pub fn mobile_get_person(id: i64) -> Result<Option<FfiPersonDto>, FfiError> {
     let ctx = get_app_context()?;
     let person = person_commands::get_person(ctx, &id).map_err(FfiError::from)?;
     Ok(person.map(|p| p.into()))
@@ -51,7 +51,7 @@ pub fn mobile_update_person(dto: FfiUpdatePersonDto) -> Result<FfiPersonDto, Ffi
 
 /// Remove a person by ID.
 #[uniffi::export]
-pub fn mobile_remove_person(id: u64) -> Result<(), FfiError> {
+pub fn mobile_remove_person(id: i64) -> Result<(), FfiError> {
     let ctx = get_app_context()?;
     person_commands::remove_person(ctx, None, &id).map_err(FfiError::from)?;
     Ok(())

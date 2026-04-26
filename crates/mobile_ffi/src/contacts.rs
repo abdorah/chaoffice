@@ -22,7 +22,7 @@ pub fn mobile_create_contact(dto: FfiCreateContactDto) -> Result<FfiContactDto, 
 ///
 /// Returns `None` if the contact does not exist.
 #[uniffi::export]
-pub fn mobile_get_contact(id: u64) -> Result<Option<FfiContactDto>, FfiError> {
+pub fn mobile_get_contact(id: i64) -> Result<Option<FfiContactDto>, FfiError> {
     let ctx = get_app_context()?;
     let contact = contact_commands::get_contact(ctx, &id).map_err(FfiError::from)?;
     Ok(contact.map(|c| c.into()))
@@ -51,7 +51,7 @@ pub fn mobile_update_contact(dto: FfiUpdateContactDto) -> Result<FfiContactDto, 
 
 /// Remove a contact by ID.
 #[uniffi::export]
-pub fn mobile_remove_contact(id: u64) -> Result<(), FfiError> {
+pub fn mobile_remove_contact(id: i64) -> Result<(), FfiError> {
     let ctx = get_app_context()?;
     contact_commands::remove_contact(ctx, None, &id).map_err(FfiError::from)?;
     Ok(())
